@@ -22,6 +22,8 @@ type TranslationKeys = {
   goodEvening: string;
   todaysAssignment: string;
   noAssignmentToday: string;
+  upcomingAssignments: string;
+  noUpcomingAssignments: string;
   checkIn: string;
   checkedIn: string;
   sickLeave: string;
@@ -39,6 +41,8 @@ type TranslationKeys = {
   sickReport: string;
   today: string;
   tomorrow: string;
+  otherDate: string;
+  pickDate: string;
   reason: string;
   reasonOptional: string;
   sendSickReport: string;
@@ -60,6 +64,14 @@ type TranslationKeys = {
   savePassword: string;
   saving: string;
   showPassword: string;
+  sickConfirmTitle: string;
+  sickConfirmMessage: string;
+  sickConfirmYes: string;
+  sickConfirmNo: string;
+  youAreSick: string;
+  sickSince: string;
+  at: string;
+  clock: string;
 };
 
 const translations: Record<Lang, TranslationKeys> = {
@@ -69,6 +81,8 @@ const translations: Record<Lang, TranslationKeys> = {
     goodEvening: 'Guten Abend',
     todaysAssignment: 'Dein heutiger Einsatz',
     noAssignmentToday: 'Heute kein Einsatz geplant',
+    upcomingAssignments: 'Deine kommenden Einsätze',
+    noUpcomingAssignments: 'Keine kommenden Einsätze',
     checkIn: 'Einchecken',
     checkedIn: 'Eingechekt',
     sickLeave: 'Krank melden',
@@ -86,6 +100,8 @@ const translations: Record<Lang, TranslationKeys> = {
     sickReport: 'Krankmeldung',
     today: 'Heute',
     tomorrow: 'Morgen',
+    otherDate: 'Anderes Datum',
+    pickDate: 'Datum wählen',
     reason: 'Grund',
     reasonOptional: 'Grund (optional)',
     sendSickReport: 'Krankmeldung absenden',
@@ -107,6 +123,14 @@ const translations: Record<Lang, TranslationKeys> = {
     savePassword: 'Passwort speichern',
     saving: 'Wird gespeichert...',
     showPassword: 'Passwort anzeigen',
+    sickConfirmTitle: 'Bist du sicher?',
+    sickConfirmMessage: 'Du bist für einen Einsatz eingetragen. Wenn du dich krank meldest, muss dein Chef Ersatz finden.',
+    sickConfirmYes: 'Ja, krank melden',
+    sickConfirmNo: 'Abbrechen',
+    youAreSick: 'Du bist krankgemeldet',
+    sickSince: 'Krank seit',
+    at: 'um',
+    clock: 'Uhr',
   },
   ro: {
     goodMorning: 'Buna dimineata',
@@ -114,6 +138,8 @@ const translations: Record<Lang, TranslationKeys> = {
     goodEvening: 'Buna seara',
     todaysAssignment: 'Sarcina ta de azi',
     noAssignmentToday: 'Nicio sarcina planificata pentru azi',
+    upcomingAssignments: 'Sarcinile tale viitoare',
+    noUpcomingAssignments: 'Nicio sarcina viitoare',
     checkIn: 'Check-in',
     checkedIn: 'Check-in efectuat',
     sickLeave: 'Concediu medical',
@@ -131,6 +157,8 @@ const translations: Record<Lang, TranslationKeys> = {
     sickReport: 'Raport medical',
     today: 'Azi',
     tomorrow: 'Maine',
+    otherDate: 'Alta data',
+    pickDate: 'Alege data',
     reason: 'Motiv',
     reasonOptional: 'Motiv (optional)',
     sendSickReport: 'Trimite raportul medical',
@@ -152,6 +180,14 @@ const translations: Record<Lang, TranslationKeys> = {
     savePassword: 'Salveaza parola',
     saving: 'Se salveaza...',
     showPassword: 'Arata parola',
+    sickConfirmTitle: 'Esti sigur?',
+    sickConfirmMessage: 'Esti asignat pentru o sarcina. Daca te declari bolnav, seful va trebui sa gaseasca un inlocuitor.',
+    sickConfirmYes: 'Da, declar bolnav',
+    sickConfirmNo: 'Anuleaza',
+    youAreSick: 'Esti in concediu medical',
+    sickSince: 'Bolnav din',
+    at: 'la',
+    clock: '',
   },
   ar: {
     goodMorning: 'صباح الخير',
@@ -159,6 +195,8 @@ const translations: Record<Lang, TranslationKeys> = {
     goodEvening: 'مساء الخير',
     todaysAssignment: 'مهمتك اليوم',
     noAssignmentToday: 'لا توجد مهمة مخططة اليوم',
+    upcomingAssignments: 'مهماتك القادمة',
+    noUpcomingAssignments: 'لا توجد مهمات قادمة',
     checkIn: 'تسجيل الحضور',
     checkedIn: 'تم تسجيل الحضور',
     sickLeave: 'إبلاغ عن مرض',
@@ -176,6 +214,8 @@ const translations: Record<Lang, TranslationKeys> = {
     sickReport: 'تقرير مرضي',
     today: 'اليوم',
     tomorrow: 'غداً',
+    otherDate: 'تاريخ آخر',
+    pickDate: 'اختر التاريخ',
     reason: 'السبب',
     reasonOptional: 'السبب (اختياري)',
     sendSickReport: 'إرسال التقرير المرضي',
@@ -197,6 +237,14 @@ const translations: Record<Lang, TranslationKeys> = {
     savePassword: 'حفظ كلمة المرور',
     saving: 'جارٍ الحفظ...',
     showPassword: 'إظهار كلمة المرور',
+    sickConfirmTitle: 'هل أنت متأكد؟',
+    sickConfirmMessage: 'لديك مهمة مسجلة. إذا أبلغت عن مرضك، سيحتاج المدير لإيجاد بديل.',
+    sickConfirmYes: 'نعم، إبلاغ عن مرض',
+    sickConfirmNo: 'إلغاء',
+    youAreSick: 'أنت مبلغ عن مرضك',
+    sickSince: 'مريض منذ',
+    at: 'في',
+    clock: '',
   },
   pl: {
     goodMorning: 'Dzien dobry',
@@ -204,6 +252,8 @@ const translations: Record<Lang, TranslationKeys> = {
     goodEvening: 'Dobry wieczor',
     todaysAssignment: 'Twoje dzisiejsze zadanie',
     noAssignmentToday: 'Brak zaplanowanych zadan na dzis',
+    upcomingAssignments: 'Twoje nadchodzace zadania',
+    noUpcomingAssignments: 'Brak nadchodzacych zadan',
     checkIn: 'Check-in',
     checkedIn: 'Zalogowano',
     sickLeave: 'Zglos chorobe',
@@ -221,6 +271,8 @@ const translations: Record<Lang, TranslationKeys> = {
     sickReport: 'Zgloszenie chorobowe',
     today: 'Dzis',
     tomorrow: 'Jutro',
+    otherDate: 'Inna data',
+    pickDate: 'Wybierz date',
     reason: 'Powod',
     reasonOptional: 'Powod (opcjonalnie)',
     sendSickReport: 'Wyslij zgloszenie chorobowe',
@@ -242,6 +294,14 @@ const translations: Record<Lang, TranslationKeys> = {
     savePassword: 'Zapisz haslo',
     saving: 'Zapisywanie...',
     showPassword: 'Pokaz haslo',
+    sickConfirmTitle: 'Czy jestes pewny?',
+    sickConfirmMessage: 'Masz przypisane zadanie. Jesli zglosisz chorobe, szef bedzie musial znalezc zastepstwo.',
+    sickConfirmYes: 'Tak, zglos chorobe',
+    sickConfirmNo: 'Anuluj',
+    youAreSick: 'Jestes na zwolnieniu chorobowym',
+    sickSince: 'Chory od',
+    at: 'o',
+    clock: '',
   },
   en: {
     goodMorning: 'Good morning',
@@ -249,6 +309,8 @@ const translations: Record<Lang, TranslationKeys> = {
     goodEvening: 'Good evening',
     todaysAssignment: 'Your assignment today',
     noAssignmentToday: 'No assignment scheduled for today',
+    upcomingAssignments: 'Your upcoming assignments',
+    noUpcomingAssignments: 'No upcoming assignments',
     checkIn: 'Check in',
     checkedIn: 'Checked in',
     sickLeave: 'Report sick',
@@ -266,6 +328,8 @@ const translations: Record<Lang, TranslationKeys> = {
     sickReport: 'Sick report',
     today: 'Today',
     tomorrow: 'Tomorrow',
+    otherDate: 'Other date',
+    pickDate: 'Pick a date',
     reason: 'Reason',
     reasonOptional: 'Reason (optional)',
     sendSickReport: 'Submit sick report',
@@ -287,6 +351,14 @@ const translations: Record<Lang, TranslationKeys> = {
     savePassword: 'Save password',
     saving: 'Saving...',
     showPassword: 'Show password',
+    sickConfirmTitle: 'Are you sure?',
+    sickConfirmMessage: 'You are assigned to a shift. If you report sick, your boss will need to find a replacement.',
+    sickConfirmYes: 'Yes, report sick',
+    sickConfirmNo: 'Cancel',
+    youAreSick: 'You are reported sick',
+    sickSince: 'Sick since',
+    at: 'at',
+    clock: '',
   },
 };
 

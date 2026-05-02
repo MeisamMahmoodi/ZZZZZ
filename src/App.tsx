@@ -132,6 +132,7 @@ function AppRoutes() {
 
   useEffect(() => {
     if (!user) { setRole(null); setChecking(false); return; }
+    setChecking(true);
     supabase
       .from('profiles')
       .select('role')
@@ -147,7 +148,7 @@ function AppRoutes() {
       });
   }, [user]);
 
-  if (loading || checking) {
+  if (loading || (user && checking)) {
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[#0F172A] border-t-transparent rounded-full animate-spin" />
