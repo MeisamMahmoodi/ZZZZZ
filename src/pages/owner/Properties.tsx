@@ -275,8 +275,8 @@ export function Properties({ company, refreshKey, onRefresh }: PropertiesProps) 
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[#0F172A]">Objekte</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A]">Objekte</h1>
         <button
           onClick={() => setAddModal(true)}
           className="flex items-center gap-2 bg-[#22C55E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
@@ -285,7 +285,7 @@ export function Properties({ company, refreshKey, onRefresh }: PropertiesProps) 
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {properties.map(prop => {
           const propEmployees = getPropertyEmployees(prop.id);
           const isToday = prop.cleaning_days?.includes(todayDay);

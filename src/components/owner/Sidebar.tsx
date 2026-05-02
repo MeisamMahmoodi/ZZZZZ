@@ -1,4 +1,5 @@
-import { LayoutDashboard, Users, Building2, Settings, LogOut } from 'lucide-react';
+import { useState } from 'react';
+import { LayoutDashboard, Users, Building2, Settings, LogOut, Menu, X, CalendarDays } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -12,14 +13,21 @@ const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'employees', label: 'Mitarbeiter', icon: Users },
   { id: 'properties', label: 'Objekte', icon: Building2 },
+  { id: 'assignments', label: 'Einsätze', icon: CalendarDays },
   { id: 'settings', label: 'Einstellungen', icon: Settings },
 ];
 
 export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
   const { signOut } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  return (
-    <aside className="fixed left-0 top-0 bottom-0 w-60 bg-[#0F172A] flex flex-col z-40">
+  const handleNav = (id: string) => {
+    onNavigate(id);
+    setMobileOpen(false);
+  };
+
+  const sidebarContent = (
+    <>
       <div className="px-6 pt-6 pb-2">
         <h1 className="text-white text-xl font-bold tracking-tight">Putzo</h1>
         <p className="text-slate-400 text-[13px] mt-0.5">Reinigungsservice</p>
@@ -31,7 +39,7 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
           return (
             <button
               key={item.id}
-              onClick={() => onNavigate(item.id)}
+              onClick={() => handleNav(item.id)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all mb-1 ${
                 isActive
                   ? 'bg-white/10 text-white border-l-[3px] border-[#22C55E] pl-[9px]'
@@ -56,6 +64,36 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
           </button>
         </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile header bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-[#0F172A] flex items-center justify-between px-4 z-40">
+        <h1 className="text-white text-lg font-bold">Putzo</h1>
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-white p-1">
+          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div className="lg:hidden fixed inset-0 z-40" onClick={() => setMobileOpen(false)}>
+          <div className="absolute inset-0 bg-black/50" />
+          <aside
+            className="relative w-60 h-full bg-[#0F172A] flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            {sidebarContent}
+          </aside>
+        </div>
+      )}
+
+      {/* Desktop sidebar */}
+      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-60 bg-[#0F172A] flex-col z-40">
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

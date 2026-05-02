@@ -113,26 +113,17 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
       );
     }
 
-    // Create auth account if email and password provided
     if (data && newEmail && newPassword) {
       try {
         const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-employee-user`;
-        const headers = {
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        };
         const session = (await supabase.auth.getSession()).data.session;
         const res = await fetch(apiUrl, {
           method: 'POST',
           headers: {
-            ...headers,
             'Authorization': `Bearer ${session?.access_token || ''}`,
+            'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            email: newEmail,
-            password: newPassword,
-            employeeId: data.id,
-          }),
+          body: JSON.stringify({ email: newEmail, password: newPassword, employeeId: data.id }),
         });
         const result = await res.json();
         if (result.error) {
@@ -184,16 +175,10 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
     const toRemove = currentPropIds.filter(id => !editPropertyIds.includes(id));
 
     if (toRemove.length > 0) {
-      await supabase
-        .from('employee_properties')
-        .delete()
-        .eq('employee_id', editModal.id)
-        .in('property_id', toRemove);
+      await supabase.from('employee_properties').delete().eq('employee_id', editModal.id).in('property_id', toRemove);
     }
     if (toAdd.length > 0) {
-      await supabase.from('employee_properties').insert(
-        toAdd.map(pid => ({ employee_id: editModal.id, property_id: pid }))
-      );
+      await supabase.from('employee_properties').insert(toAdd.map(pid => ({ employee_id: editModal.id, property_id: pid })));
     }
 
     setEditModal(null);
@@ -235,37 +220,163 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
     free: employees.filter(e => e.status === 'active').length,
   }), [employees]);
 
-  const renderPropertyChips = (
-    selectedIds: string[],
-    setter: typeof setNewPropertyIds,
-  ) => (
+  const renderPropertyChips = (selectedIds: string[], setter: typeof setNewPropertyIds) => (
     <div className="flex flex-wrap gap-2">
       {properties.map(p => (
         <button
           key={p.id}
           onClick={() => toggleProperty(p.id, setter)}
           className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-            selectedIds.includes(p.id)
-              ? 'bg-[#22C55E] text-white'
-              : 'bg-gray-100 text-[#64748B] hover:bg-gray-200'
+            selectedIds.includes(p.id) ? 'bg-[#22C55E] text-white' : 'bg-gray-100 text-[#64748B] hover:bg-gray-200'
           }`}
         >
           {p.name}
         </button>
       ))}
-      {properties.length === 0 && (
-        <span className="text-sm text-[#64748B]">Keine Objekte vorhanden</span>
-      )}
+      {properties.length === 0 && <span className="text-sm text-[#64748B]">Keine Objekte vorhanden</span>}
     </div>
   );
 
+  const renderEmployeeCard = (emp: Employee) => {
+    const knownProps = getKnownProperties(emp.id);
+    return (
+      <div key={emp.id} className="bg-white rounded-xl p-4 shadow-[0_1px_3px_rgba(0,0,0,0.08)] relative">
+        <div className="flex items-start gap-3">
+          <Avatar firstName={emp.first_name} lastName={emp.last_name} id={emp.id} size="md" />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-[#0F172A]">{emp.first_name} {emp.last_name}</p>
+            <p className="text-[13px] text-[#64748B] flex items-center gap-1 mt-0.5">
+              <Phone size={12} /> {emp.phone}
+            </p>
+            {emp.email && (
+              <p className="text-[13px] text-[#64748B] flex items-center gap-1 mt-0.5">
+                <Mail size={12} /> {emp.email}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
+              emp.status === 'sick' ? 'bg-red-50 text-[#EF4444]' : 'bg-green-50 text-[#22C55E]'
+            }`}>
+              {emp.status === 'sick' ? 'Krank' : 'Aktiv'}
+            </span>
+            {emp.user_id ? (
+              <Shield size={14} className="text-blue-500" />
+            ) : (
+              <ShieldOff size={14} className="text-gray-300" />
+            )}
+          </div>
+        </div>
+        {knownProps.length > 0 && (
+          <div className="flex gap-1 flex-wrap mt-2">
+            {knownProps.map(p => (
+              <span key={p.id} className="px-2 py-0.5 bg-gray-100 rounded text-xs text-[#64748B]">{p.name}</span>
+            ))}
+          </div>
+        )}
+        <div className="absolute top-3 right-3" ref={menuOpen === emp.id ? menuRef : null}>
+          <button
+            onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)}
+            className="p-1 rounded hover:bg-gray-100 transition-colors"
+          >
+            <MoreVertical size={16} className="text-[#64748B]" />
+          </button>
+          {menuOpen === emp.id && (
+            <div className="absolute right-0 top-8 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20 min-w-[180px]">
+              <button onClick={() => openEditModal(emp)} className="w-full text-left px-4 py-2 text-sm text-[#0F172A] hover:bg-gray-50 transition-colors flex items-center gap-2">
+                <Pencil size={14} /> Bearbeiten
+              </button>
+              {emp.status === 'active' ? (
+                <button onClick={() => handleMarkSick(emp)} className="w-full text-left px-4 py-2 text-sm text-[#EF4444] hover:bg-red-50 transition-colors">
+                  Als krank melden
+                </button>
+              ) : (
+                <button onClick={() => handleMarkActive(emp)} className="w-full text-left px-4 py-2 text-sm text-[#22C55E] hover:bg-green-50 transition-colors">
+                  Als aktiv markieren
+                </button>
+              )}
+              <button onClick={() => handleDelete(emp)} className="w-full text-left px-4 py-2 text-sm text-[#EF4444] hover:bg-red-50 transition-colors flex items-center gap-2">
+                <Trash2 size={14} /> Löschen
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  const renderEmployeeRow = (emp: Employee) => {
+    const knownProps = getKnownProperties(emp.id);
+    return (
+      <tr key={emp.id} className="border-b border-gray-50 hover:bg-gray-50/50">
+        <td className="px-5 py-3">
+          <div className="flex items-center gap-3">
+            <Avatar firstName={emp.first_name} lastName={emp.last_name} id={emp.id} size="sm" />
+            <span className="text-sm font-medium text-[#0F172A]">{emp.first_name} {emp.last_name}</span>
+          </div>
+        </td>
+        <td className="px-5 py-3">
+          <div className="space-y-0.5">
+            <span className="text-sm text-[#64748B] flex items-center gap-1.5"><Phone size={13} /> {emp.phone}</span>
+            {emp.email && <span className="text-sm text-[#64748B] flex items-center gap-1.5"><Mail size={13} /> {emp.email}</span>}
+          </div>
+        </td>
+        <td className="px-5 py-3">
+          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+            emp.status === 'sick' ? 'bg-red-50 text-[#EF4444]' : 'bg-green-50 text-[#22C55E]'
+          }`}>
+            <span className={`w-1.5 h-1.5 rounded-full ${emp.status === 'sick' ? 'bg-[#EF4444]' : 'bg-[#22C55E]'}`} />
+            {emp.status === 'sick' ? 'Krank' : 'Aktiv'}
+          </span>
+        </td>
+        <td className="px-5 py-3">
+          {emp.user_id ? (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-600">
+              <Shield size={12} /> Aktiv
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-[#64748B]">
+              <ShieldOff size={12} /> Kein Zugang
+            </span>
+          )}
+        </td>
+        <td className="px-5 py-3">
+          <div className="flex gap-1 flex-wrap">
+            {knownProps.map(p => <span key={p.id} className="px-2 py-0.5 bg-gray-100 rounded text-xs text-[#64748B]">{p.name}</span>)}
+            {knownProps.length === 0 && <span className="text-xs text-[#64748B]">—</span>}
+          </div>
+        </td>
+        <td className="px-5 py-3 relative" ref={menuOpen === emp.id ? menuRef : null}>
+          <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1 rounded hover:bg-gray-100 transition-colors">
+            <MoreVertical size={16} className="text-[#64748B]" />
+          </button>
+          {menuOpen === emp.id && (
+            <div className="absolute right-5 top-10 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20 min-w-[180px]">
+              <button onClick={() => openEditModal(emp)} className="w-full text-left px-4 py-2 text-sm text-[#0F172A] hover:bg-gray-50 transition-colors flex items-center gap-2">
+                <Pencil size={14} /> Bearbeiten
+              </button>
+              {emp.status === 'active' ? (
+                <button onClick={() => handleMarkSick(emp)} className="w-full text-left px-4 py-2 text-sm text-[#EF4444] hover:bg-red-50 transition-colors">Als krank melden</button>
+              ) : (
+                <button onClick={() => handleMarkActive(emp)} className="w-full text-left px-4 py-2 text-sm text-[#22C55E] hover:bg-green-50 transition-colors">Als aktiv markieren</button>
+              )}
+              <button onClick={() => handleDelete(emp)} className="w-full text-left px-4 py-2 text-sm text-[#EF4444] hover:bg-red-50 transition-colors flex items-center gap-2">
+                <Trash2 size={14} /> Löschen
+              </button>
+            </div>
+          )}
+        </td>
+      </tr>
+    );
+  };
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[#0F172A]">Mitarbeiter</h1>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A]">Mitarbeiter</h1>
         <button
           onClick={() => setAddModal(true)}
-          className="flex items-center gap-2 bg-[#22C55E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
+          className="flex items-center justify-center gap-2 bg-[#22C55E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
         >
           <Plus size={16} /> Mitarbeiter hinzufügen
         </button>
@@ -276,7 +387,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" />
         <input
           type="text"
-          placeholder="Name, Telefon oder E-Mail suchen..."
+          placeholder="Name, Telefon oder E-Mail..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]"
@@ -284,20 +395,18 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
       </div>
 
       {/* Filter Pills */}
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto pb-1">
         {[
           { key: 'all', label: `Alle ${counts.all}` },
           { key: 'active', label: `Aktiv ${counts.active}` },
           { key: 'sick', label: `Krank ${counts.sick}` },
-          { key: 'free', label: `Frei heute ${counts.free}` },
+          { key: 'free', label: `Frei ${counts.free}` },
         ].map(f => (
           <button
             key={f.key}
             onClick={() => setFilter(f.key as typeof filter)}
-            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-              filter === f.key
-                ? 'bg-[#0F172A] text-white'
-                : 'bg-gray-100 text-[#64748B] hover:bg-gray-200'
+            className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors whitespace-nowrap ${
+              filter === f.key ? 'bg-[#0F172A] text-white' : 'bg-gray-100 text-[#64748B] hover:bg-gray-200'
             }`}
           >
             {f.label}
@@ -305,8 +414,18 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
         ))}
       </div>
 
-      {/* Table */}
-      <div className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
+      {/* Mobile: Card layout */}
+      <div className="lg:hidden space-y-3">
+        {filteredEmployees.map(renderEmployeeCard)}
+        {filteredEmployees.length === 0 && (
+          <div className="bg-white rounded-xl p-8 text-center shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
+            <p className="text-[#64748B]">Keine Mitarbeiter gefunden</p>
+          </div>
+        )}
+      </div>
+
+      {/* Desktop: Table layout */}
+      <div className="hidden lg:block bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100">
@@ -314,112 +433,14 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
               <th className="text-left px-5 py-3 text-[11px] text-[#64748B] uppercase tracking-wider font-medium">Kontakt</th>
               <th className="text-left px-5 py-3 text-[11px] text-[#64748B] uppercase tracking-wider font-medium">Status</th>
               <th className="text-left px-5 py-3 text-[11px] text-[#64748B] uppercase tracking-wider font-medium">Login</th>
-              <th className="text-left px-5 py-3 text-[11px] text-[#64748B] uppercase tracking-wider font-medium">Bekannte Objekte</th>
+              <th className="text-left px-5 py-3 text-[11px] text-[#64748B] uppercase tracking-wider font-medium">Objekte</th>
               <th className="px-5 py-3"></th>
             </tr>
           </thead>
           <tbody>
-            {filteredEmployees.map(emp => {
-              const knownProps = getKnownProperties(emp.id);
-              return (
-                <tr key={emp.id} className="border-b border-gray-50 hover:bg-gray-50/50">
-                  <td className="px-5 py-3">
-                    <div className="flex items-center gap-3">
-                      <Avatar firstName={emp.first_name} lastName={emp.last_name} id={emp.id} size="sm" />
-                      <span className="text-sm font-medium text-[#0F172A]">{emp.first_name} {emp.last_name}</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="space-y-0.5">
-                      <span className="text-sm text-[#64748B] flex items-center gap-1.5">
-                        <Phone size={13} /> {emp.phone}
-                      </span>
-                      {emp.email && (
-                        <span className="text-sm text-[#64748B] flex items-center gap-1.5">
-                          <Mail size={13} /> {emp.email}
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                      emp.status === 'sick'
-                        ? 'bg-red-50 text-[#EF4444]'
-                        : 'bg-green-50 text-[#22C55E]'
-                    }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${emp.status === 'sick' ? 'bg-[#EF4444]' : 'bg-[#22C55E]'}`} />
-                      {emp.status === 'sick' ? 'Krank' : 'Aktiv'}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3">
-                    {emp.user_id ? (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-600">
-                        <Shield size={12} /> Aktiv
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-[#64748B]">
-                        <ShieldOff size={12} /> Kein Zugang
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-5 py-3">
-                    <div className="flex gap-1 flex-wrap">
-                      {knownProps.map(p => (
-                        <span key={p.id} className="px-2 py-0.5 bg-gray-100 rounded text-xs text-[#64748B]">
-                          {p.name}
-                        </span>
-                      ))}
-                      {knownProps.length === 0 && <span className="text-xs text-[#64748B]">—</span>}
-                    </div>
-                  </td>
-                  <td className="px-5 py-3 relative" ref={menuOpen === emp.id ? menuRef : null}>
-                    <button
-                      onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)}
-                      className="p-1 rounded hover:bg-gray-100 transition-colors"
-                    >
-                      <MoreVertical size={16} className="text-[#64748B]" />
-                    </button>
-                    {menuOpen === emp.id && (
-                      <div className="absolute right-5 top-10 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20 min-w-[180px]">
-                        <button
-                          onClick={() => openEditModal(emp)}
-                          className="w-full text-left px-4 py-2 text-sm text-[#0F172A] hover:bg-gray-50 transition-colors flex items-center gap-2"
-                        >
-                          <Pencil size={14} /> Bearbeiten
-                        </button>
-                        {emp.status === 'active' ? (
-                          <button
-                            onClick={() => handleMarkSick(emp)}
-                            className="w-full text-left px-4 py-2 text-sm text-[#EF4444] hover:bg-red-50 transition-colors"
-                          >
-                            Als krank melden
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleMarkActive(emp)}
-                            className="w-full text-left px-4 py-2 text-sm text-[#22C55E] hover:bg-green-50 transition-colors"
-                          >
-                            Als aktiv markieren
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handleDelete(emp)}
-                          className="w-full text-left px-4 py-2 text-sm text-[#EF4444] hover:bg-red-50 transition-colors flex items-center gap-2"
-                        >
-                          <Trash2 size={14} /> Löschen
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              );
-            })}
+            {filteredEmployees.map(renderEmployeeRow)}
             {filteredEmployees.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-5 py-8 text-center text-sm text-[#64748B]">
-                  Keine Mitarbeiter gefunden
-                </td>
-              </tr>
+              <tr><td colSpan={6} className="px-5 py-8 text-center text-sm text-[#64748B]">Keine Mitarbeiter gefunden</td></tr>
             )}
           </tbody>
         </table>
@@ -451,18 +472,13 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
               <label className="block text-sm font-medium text-[#0F172A] mb-1">Bekannte Objekte</label>
               {renderPropertyChips(newPropertyIds, setNewPropertyIds)}
             </div>
-
             <hr className="border-gray-100 my-2" />
-
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <Shield size={16} className="text-[#0F172A]" />
                 <label className="text-sm font-medium text-[#0F172A]">Login-Daten (optional)</label>
               </div>
-              <p className="text-xs text-[#64748B] mb-3">
-                Wenn du E-Mail und Passwort angibst, kann der Mitarbeiter sich in der App anmelden.
-                Er muss beim ersten Login ein eigenes Passwort setzen.
-              </p>
+              <p className="text-xs text-[#64748B] mb-3">Mitarbeiter kann sich nach Erstellung in der App anmelden und muss beim ersten Login ein eigenes Passwort setzen.</p>
               <div className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-[#0F172A] mb-1">E-Mail</label>
@@ -478,10 +494,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             </div>
           </div>
           <div className="flex justify-end gap-3 mt-6">
-            <button onClick={() => setAddModal(false)}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-[#64748B] hover:bg-gray-100 transition-colors">
-              Abbrechen
-            </button>
+            <button onClick={() => setAddModal(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-[#64748B] hover:bg-gray-100 transition-colors">Abbrechen</button>
             <button onClick={handleAddEmployee} disabled={!newFirst || !newLast || creatingAccount}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-[#22C55E] text-white hover:bg-green-600 transition-colors disabled:opacity-50">
               {creatingAccount ? 'Wird erstellt...' : 'Speichern'}
@@ -518,21 +531,14 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             </div>
             {editModal?.email && (
               <div className="bg-gray-50 rounded-lg p-3">
-                <p className="text-xs text-[#64748B]">
-                  Login: <span className="font-medium text-[#0F172A]">{editModal.email}</span>
-                </p>
+                <p className="text-xs text-[#64748B]">Login: <span className="font-medium text-[#0F172A]">{editModal.email}</span></p>
               </div>
             )}
           </div>
           <div className="flex justify-end gap-3 mt-6">
-            <button onClick={() => setEditModal(null)}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-[#64748B] hover:bg-gray-100 transition-colors">
-              Abbrechen
-            </button>
+            <button onClick={() => setEditModal(null)} className="px-4 py-2 rounded-lg text-sm font-medium text-[#64748B] hover:bg-gray-100 transition-colors">Abbrechen</button>
             <button onClick={handleEditEmployee} disabled={!editFirst || !editLast}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#22C55E] text-white hover:bg-green-600 transition-colors disabled:opacity-50">
-              Speichern
-            </button>
+              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#22C55E] text-white hover:bg-green-600 transition-colors disabled:opacity-50">Speichern</button>
           </div>
         </div>
       </Modal>

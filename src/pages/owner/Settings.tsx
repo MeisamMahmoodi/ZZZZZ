@@ -66,7 +66,7 @@ export function Settings({ company, onRefresh }: SettingsProps) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-[#0F172A] mb-6">Einstellungen</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A] mb-6">Einstellungen</h1>
 
       <div className="space-y-6 max-w-lg">
         {/* Company Settings */}

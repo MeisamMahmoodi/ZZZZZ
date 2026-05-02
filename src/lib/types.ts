@@ -84,3 +84,13 @@ export interface SickReportWithDetails extends SickReport {
   employee: Employee;
   assignments: AssignmentWithDetails[];
 }
+
+export interface Notification {
+  id: string;
+  employee_id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  created_at: string;
+}
