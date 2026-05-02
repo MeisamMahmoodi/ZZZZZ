@@ -27,39 +27,24 @@ Deno.serve(async (req: Request) => {
     });
 
     if (ownerError) {
-      // If user already exists, try to get them
       if (ownerError.message?.includes("already been registered")) {
         const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
         const existingOwner = existingUsers?.users?.find((u: { email: string }) => u.email === "owner@putzo.de");
         if (existingOwner) {
-          // Update password for existing user
-          const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-            existingOwner.id,
-            { password: "demo1234" }
-          );
-          if (updateError) throw updateError;
+          await supabaseAdmin.auth.admin.updateUserById(existingOwner.id, { password: "demo1234" });
+          await supabaseAdmin.from("profiles").upsert({ id: existingOwner.id, role: "owner" });
+          await supabaseAdmin.from("companies").update({ owner_id: existingOwner.id }).eq("owner_email", "owner@putzo.de");
 
-          // Create profile
-          await supabaseAdmin.from("profiles").upsert({
-            id: existingOwner.id,
-            role: "owner",
-          });
-
-          // Update company owner_id
-          await supabaseAdmin.from("companies").update({
-            owner_id: existingOwner.id,
-          }).eq("owner_email", "owner@putzo.de");
-
-          // Update employee user_id for Lisa
-          const { data: existingLisa } = await supabaseAdmin.auth.admin.listUsers();
-          const lisaUser = existingLisa?.users?.find((u: { email: string }) => u.email === "lisa@putzo.de");
+          // Also update Lisa if she exists
+          const existingLisa = existingUsers?.users?.find((u: { email: string }) => u.email === "lisa@putzo.de");
+          if (existingLisa) {
+            await supabaseAdmin.auth.admin.updateUserById(existingLisa.id, { password: "demo1234" });
+            await supabaseAdmin.from("profiles").upsert({ id: existingLisa.id, role: "employee" });
+            await supabaseAdmin.from("employees").update({ user_id: existingLisa.id, email: "lisa@putzo.de" }).eq("first_name", "Lisa").eq("last_name", "Müller");
+          }
 
           return new Response(
-            JSON.stringify({
-              message: "Owner user already existed, password updated",
-              owner_id: existingOwner.id,
-              lisa_id: lisaUser?.id ?? null,
-            }),
+            JSON.stringify({ message: "Owner user already existed, password updated", owner_id: existingOwner.id, lisa_id: existingLisa?.id ?? null }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -74,6 +59,7 @@ Deno.serve(async (req: Request) => {
       email: "lisa@putzo.de",
       password: "demo1234",
       email_confirm: true,
+      user_metadata: { must_change_password: true },
     });
 
     if (employeeError) {
@@ -83,19 +69,13 @@ Deno.serve(async (req: Request) => {
         if (existingLisa) {
           await supabaseAdmin.auth.admin.updateUserById(existingLisa.id, { password: "demo1234" });
           await supabaseAdmin.from("profiles").upsert({ id: existingLisa.id, role: "employee" });
-          await supabaseAdmin.from("employees").update({ user_id: existingLisa.id }).eq("first_name", "Lisa").eq("last_name", "Müller");
+          await supabaseAdmin.from("employees").update({ user_id: existingLisa.id, email: "lisa@putzo.de" }).eq("first_name", "Lisa").eq("last_name", "Müller");
 
-          // Create profiles and link data
           await supabaseAdmin.from("profiles").upsert({ id: ownerId, role: "owner" });
           await supabaseAdmin.from("companies").update({ owner_id: ownerId }).eq("owner_email", "owner@putzo.de");
-          await supabaseAdmin.from("employees").update({ user_id: existingLisa.id }).eq("first_name", "Lisa").eq("last_name", "Müller");
 
           return new Response(
-            JSON.stringify({
-              message: "Users created/updated",
-              owner_id: ownerId,
-              lisa_id: existingLisa.id,
-            }),
+            JSON.stringify({ message: "Users created/updated", owner_id: ownerId, lisa_id: existingLisa.id }),
             { headers: { ...corsHeaders, "Content-Type": "application/json" } }
           );
         }
@@ -114,8 +94,8 @@ Deno.serve(async (req: Request) => {
     // Update company owner_id
     await supabaseAdmin.from("companies").update({ owner_id: ownerId }).eq("owner_email", "owner@putzo.de");
 
-    // Update Lisa's employee record with user_id
-    await supabaseAdmin.from("employees").update({ user_id: lisaId }).eq("first_name", "Lisa").eq("last_name", "Müller");
+    // Update Lisa's employee record with user_id and email
+    await supabaseAdmin.from("employees").update({ user_id: lisaId, email: "lisa@putzo.de" }).eq("first_name", "Lisa").eq("last_name", "Müller");
 
     return new Response(
       JSON.stringify({

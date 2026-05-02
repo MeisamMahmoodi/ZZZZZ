@@ -21,6 +21,7 @@ export interface Employee {
   phone: string;
   status: 'active' | 'sick';
   user_id: string | null;
+  email: string | null;
   created_at: string;
 }
 

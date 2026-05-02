@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Search, MoreVertical, Phone, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Search, MoreVertical, Phone, Pencil, Trash2, Mail, Shield, ShieldOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
@@ -21,12 +21,15 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState<Employee | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
+  const [creatingAccount, setCreatingAccount] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
 
   const [newFirst, setNewFirst] = useState('');
   const [newLast, setNewLast] = useState('');
   const [newPhone, setNewPhone] = useState('');
+  const [newEmail, setNewEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [newPropertyIds, setNewPropertyIds] = useState<string[]>([]);
 
   const [editFirst, setEditFirst] = useState('');
@@ -71,7 +74,8 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
       const s = search.toLowerCase();
       list = list.filter(e =>
         `${e.first_name} ${e.last_name}`.toLowerCase().includes(s) ||
-        e.phone.toLowerCase().includes(s)
+        e.phone.toLowerCase().includes(s) ||
+        (e.email || '').toLowerCase().includes(s)
       );
     }
     if (filter === 'active') list = list.filter(e => e.status === 'active');
@@ -82,22 +86,72 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
 
   const handleAddEmployee = async () => {
     if (!newFirst || !newLast) return;
+    setCreatingAccount(true);
+
     const { data, error } = await supabase
       .from('employees')
-      .insert({ company_id: company.id, first_name: newFirst, last_name: newLast, phone: newPhone, status: 'active' })
+      .insert({
+        company_id: company.id,
+        first_name: newFirst,
+        last_name: newLast,
+        phone: newPhone,
+        email: newEmail || null,
+        status: 'active',
+      })
       .select()
       .maybeSingle();
 
-    if (error) { addToast('Fehler beim Speichern', 'error'); return; }
+    if (error) {
+      addToast('Fehler beim Speichern', 'error');
+      setCreatingAccount(false);
+      return;
+    }
+
     if (data && newPropertyIds.length > 0) {
       await supabase.from('employee_properties').insert(
         newPropertyIds.map(pid => ({ employee_id: data.id, property_id: pid }))
       );
     }
+
+    // Create auth account if email and password provided
+    if (data && newEmail && newPassword) {
+      try {
+        const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-employee-user`;
+        const headers = {
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        };
+        const session = (await supabase.auth.getSession()).data.session;
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: {
+            ...headers,
+            'Authorization': `Bearer ${session?.access_token || ''}`,
+          },
+          body: JSON.stringify({
+            email: newEmail,
+            password: newPassword,
+            employeeId: data.id,
+          }),
+        });
+        const result = await res.json();
+        if (result.error) {
+          addToast(`Account-Fehler: ${result.error}`, 'error');
+        } else {
+          addToast('Mitarbeiter mit Login erstellt');
+        }
+      } catch {
+        addToast('Account konnte nicht erstellt werden', 'error');
+      }
+    } else {
+      addToast('Mitarbeiter hinzugefügt');
+    }
+
     setAddModal(false);
-    setNewFirst(''); setNewLast(''); setNewPhone(''); setNewPropertyIds([]);
+    setNewFirst(''); setNewLast(''); setNewPhone(''); setNewEmail(''); setNewPassword('');
+    setNewPropertyIds([]);
+    setCreatingAccount(false);
     onRefresh();
-    addToast('Mitarbeiter hinzugefügt');
   };
 
   const openEditModal = (emp: Employee) => {
@@ -122,7 +176,6 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
 
     if (error) { addToast('Fehler beim Speichern', 'error'); return; }
 
-    // Update property assignments
     const currentPropIds = employeeProperties
       .filter(ep => ep.employee_id === editModal.id)
       .map(ep => ep.property_id);
@@ -223,7 +276,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-[#64748B]" />
         <input
           type="text"
-          placeholder="Name oder Telefon suchen..."
+          placeholder="Name, Telefon oder E-Mail suchen..."
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]"
@@ -258,8 +311,9 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
           <thead>
             <tr className="border-b border-gray-100">
               <th className="text-left px-5 py-3 text-[11px] text-[#64748B] uppercase tracking-wider font-medium">Mitarbeiter</th>
-              <th className="text-left px-5 py-3 text-[11px] text-[#64748B] uppercase tracking-wider font-medium">Telefon</th>
+              <th className="text-left px-5 py-3 text-[11px] text-[#64748B] uppercase tracking-wider font-medium">Kontakt</th>
               <th className="text-left px-5 py-3 text-[11px] text-[#64748B] uppercase tracking-wider font-medium">Status</th>
+              <th className="text-left px-5 py-3 text-[11px] text-[#64748B] uppercase tracking-wider font-medium">Login</th>
               <th className="text-left px-5 py-3 text-[11px] text-[#64748B] uppercase tracking-wider font-medium">Bekannte Objekte</th>
               <th className="px-5 py-3"></th>
             </tr>
@@ -276,9 +330,16 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
                     </div>
                   </td>
                   <td className="px-5 py-3">
-                    <span className="text-sm text-[#64748B] flex items-center gap-1.5">
-                      <Phone size={13} /> {emp.phone}
-                    </span>
+                    <div className="space-y-0.5">
+                      <span className="text-sm text-[#64748B] flex items-center gap-1.5">
+                        <Phone size={13} /> {emp.phone}
+                      </span>
+                      {emp.email && (
+                        <span className="text-sm text-[#64748B] flex items-center gap-1.5">
+                          <Mail size={13} /> {emp.email}
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-5 py-3">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
@@ -289,6 +350,17 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
                       <span className={`w-1.5 h-1.5 rounded-full ${emp.status === 'sick' ? 'bg-[#EF4444]' : 'bg-[#22C55E]'}`} />
                       {emp.status === 'sick' ? 'Krank' : 'Aktiv'}
                     </span>
+                  </td>
+                  <td className="px-5 py-3">
+                    {emp.user_id ? (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-600">
+                        <Shield size={12} /> Aktiv
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-gray-100 text-[#64748B]">
+                        <ShieldOff size={12} /> Kein Zugang
+                      </span>
+                    )}
                   </td>
                   <td className="px-5 py-3">
                     <div className="flex gap-1 flex-wrap">
@@ -344,7 +416,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             })}
             {filteredEmployees.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-5 py-8 text-center text-sm text-[#64748B]">
+                <td colSpan={6} className="px-5 py-8 text-center text-sm text-[#64748B]">
                   Keine Mitarbeiter gefunden
                 </td>
               </tr>
@@ -358,15 +430,17 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
         <div className="p-6">
           <h2 className="text-lg font-bold text-[#0F172A] mb-4">Mitarbeiter hinzufügen</h2>
           <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">Vorname</label>
-              <input type="text" value={newFirst} onChange={e => setNewFirst(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">Nachname</label>
-              <input type="text" value={newLast} onChange={e => setNewLast(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" />
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-[#0F172A] mb-1">Vorname</label>
+                <input type="text" value={newFirst} onChange={e => setNewFirst(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-[#0F172A] mb-1">Nachname</label>
+                <input type="text" value={newLast} onChange={e => setNewLast(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1">Telefon</label>
@@ -377,15 +451,40 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
               <label className="block text-sm font-medium text-[#0F172A] mb-1">Bekannte Objekte</label>
               {renderPropertyChips(newPropertyIds, setNewPropertyIds)}
             </div>
+
+            <hr className="border-gray-100 my-2" />
+
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Shield size={16} className="text-[#0F172A]" />
+                <label className="text-sm font-medium text-[#0F172A]">Login-Daten (optional)</label>
+              </div>
+              <p className="text-xs text-[#64748B] mb-3">
+                Wenn du E-Mail und Passwort angibst, kann der Mitarbeiter sich in der App anmelden.
+                Er muss beim ersten Login ein eigenes Passwort setzen.
+              </p>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1">E-Mail</label>
+                  <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="max@beispiel.de"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1">Initiales Passwort</label>
+                  <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mind. 6 Zeichen"
+                    className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" />
+                </div>
+              </div>
+            </div>
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <button onClick={() => setAddModal(false)}
               className="px-4 py-2 rounded-lg text-sm font-medium text-[#64748B] hover:bg-gray-100 transition-colors">
               Abbrechen
             </button>
-            <button onClick={handleAddEmployee} disabled={!newFirst || !newLast}
+            <button onClick={handleAddEmployee} disabled={!newFirst || !newLast || creatingAccount}
               className="px-4 py-2 rounded-lg text-sm font-medium bg-[#22C55E] text-white hover:bg-green-600 transition-colors disabled:opacity-50">
-              Speichern
+              {creatingAccount ? 'Wird erstellt...' : 'Speichern'}
             </button>
           </div>
         </div>
@@ -396,15 +495,17 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
         <div className="p-6">
           <h2 className="text-lg font-bold text-[#0F172A] mb-4">Mitarbeiter bearbeiten</h2>
           <div className="space-y-3">
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">Vorname</label>
-              <input type="text" value={editFirst} onChange={e => setEditFirst(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">Nachname</label>
-              <input type="text" value={editLast} onChange={e => setEditLast(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" />
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-[#0F172A] mb-1">Vorname</label>
+                <input type="text" value={editFirst} onChange={e => setEditFirst(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" />
+              </div>
+              <div className="flex-1">
+                <label className="block text-sm font-medium text-[#0F172A] mb-1">Nachname</label>
+                <input type="text" value={editLast} onChange={e => setEditLast(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" />
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1">Telefon</label>
@@ -415,6 +516,13 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
               <label className="block text-sm font-medium text-[#0F172A] mb-1">Bekannte Objekte</label>
               {renderPropertyChips(editPropertyIds, setEditPropertyIds)}
             </div>
+            {editModal?.email && (
+              <div className="bg-gray-50 rounded-lg p-3">
+                <p className="text-xs text-[#64748B]">
+                  Login: <span className="font-medium text-[#0F172A]">{editModal.email}</span>
+                </p>
+              </div>
+            )}
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <button onClick={() => setEditModal(null)}

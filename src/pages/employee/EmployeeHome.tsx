@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Clock, LogIn, Mail, LogOut } from 'lucide-react';
+import { MapPin, Clock, LogIn, Mail, LogOut, Heart } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDateLong, formatTime } from '../../lib/utils';
@@ -169,7 +169,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-[#22C55E] hover:underline"
             >
-              Route anzeigen →
+              Route anzeigen
             </a>
           )}
         </div>
@@ -202,33 +202,33 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
       {todayAssignment && !checkedIn && (
         <button
           onClick={handleCheckIn}
-          className="w-full py-3.5 rounded-xl text-base font-semibold bg-[#22C55E] text-white hover:bg-green-600 transition-colors flex items-center justify-center gap-2 mb-4"
+          className="w-full py-3.5 rounded-xl text-base font-semibold bg-[#22C55E] text-white hover:bg-green-600 transition-colors flex items-center justify-center gap-2 mb-6"
         >
           <LogIn size={20} /> Einchecken
         </button>
       )}
 
       {checkedIn && (
-        <div className="w-full py-3.5 rounded-xl text-base font-semibold bg-green-50 text-[#22C55E] text-center mb-4">
+        <div className="w-full py-3.5 rounded-xl text-base font-semibold bg-green-50 text-[#22C55E] text-center mb-6">
           Eingechekt
         </div>
       )}
 
-      {/* Sick Leave Link */}
-      <button
-        onClick={onSickLeave}
-        className="w-full text-center text-sm text-[#64748B] hover:text-[#0F172A] transition-colors py-2"
-      >
-        Krank melden
-      </button>
-
-      {/* Logout */}
-      <button
-        onClick={signOut}
-        className="w-full flex items-center justify-center gap-2 text-sm text-[#64748B] hover:text-[#0F172A] transition-colors py-3 mt-4"
-      >
-        <LogOut size={16} /> Abmelden
-      </button>
+      {/* Bottom Actions */}
+      <div className="border-t border-gray-100 pt-4 mt-2 space-y-1">
+        <button
+          onClick={onSickLeave}
+          className="w-full flex items-center justify-center gap-2 text-sm text-[#EF4444] hover:bg-red-50 transition-colors py-3 rounded-lg font-medium"
+        >
+          <Heart size={16} /> Krank melden
+        </button>
+        <button
+          onClick={signOut}
+          className="w-full flex items-center justify-center gap-2 text-sm text-[#64748B] hover:bg-gray-50 transition-colors py-3 rounded-lg"
+        >
+          <LogOut size={16} /> Abmelden
+        </button>
+      </div>
     </div>
   );
 }

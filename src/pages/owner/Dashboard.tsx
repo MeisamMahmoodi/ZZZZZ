@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Bell, AlertTriangle, MapPin, User, Clock } from 'lucide-react';
+import { Bell, AlertTriangle, MapPin, User, Clock, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDateLong, formatTime, getTodayDayAbbrev } from '../../lib/utils';
 import type { Employee, Property, Assignment, SickReport, EmployeeProperty } from '../../lib/types';
@@ -29,6 +29,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const [sickReports, setSickReports] = useState<SickReportWithEmployee[]>([]);
   const [employeeProperties, setEmployeeProperties] = useState<EmployeeProperty[]>([]);
   const [replacementModal, setReplacementModal] = useState<{ sickReport: SickReportWithEmployee; property: Property; assignment: AssignmentWithDetails } | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
   const { addToast } = useToast();
 
   const today = new Date();
@@ -137,14 +138,48 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
           </h1>
           <p className="text-[#64748B] text-sm mt-1">{formatDateLong(today)}</p>
         </div>
-        <button className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
-          <Bell size={20} className="text-[#64748B]" />
-          {sickCount > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#EF4444] rounded-full text-white text-[10px] flex items-center justify-center font-bold">
-              {sickCount}
-            </span>
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifications(!showNotifications)}
+            className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <Bell size={20} className="text-[#64748B]" />
+            {sickCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#EF4444] rounded-full text-white text-[10px] flex items-center justify-center font-bold">
+                {sickCount}
+              </span>
+            )}
+          </button>
+          {showNotifications && (
+            <div className="absolute right-0 top-12 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-30 w-80 max-h-80 overflow-y-auto">
+              <div className="px-4 py-2 border-b border-gray-100">
+                <p className="text-sm font-semibold text-[#0F172A]">Benachrichtigungen</p>
+              </div>
+              {sickReportsForCompany.length === 0 ? (
+                <div className="px-4 py-6 text-center">
+                  <p className="text-sm text-[#64748B]">Keine Benachrichtigungen</p>
+                </div>
+              ) : (
+                sickReportsForCompany.map(sr => (
+                  <div key={sr.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle size={16} className="text-[#EF4444] shrink-0 mt-0.5" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-[#0F172A]">
+                          {sr.employee?.first_name} {sr.employee?.last_name} ist krank
+                        </p>
+                        <p className="text-xs text-[#64748B] mt-0.5">
+                          {new Date(sr.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                          {sr.reason ? ` — ${sr.reason}` : ''}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           )}
-        </button>
+        </div>
       </div>
 
       {/* Sick Report Banners */}
@@ -182,7 +217,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                   onClick={() => handleFindReplacement(sr)}
                   className="bg-[#EF4444] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors shrink-0"
                 >
-                  Ersatz finden →
+                  Ersatz finden
                 </button>
               );
             }
@@ -295,7 +330,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                       onClick={() => handleFindReplacement(sickForProp[0])}
                       className="bg-[#EF4444] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors shrink-0"
                     >
-                      Ersatz finden →
+                      Ersatz finden
                     </button>
                   )}
                 </div>

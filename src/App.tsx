@@ -10,6 +10,7 @@ import { Settings } from './pages/owner/Settings';
 import { EmployeeHome } from './pages/employee/EmployeeHome';
 import { SickLeave } from './pages/employee/SickLeave';
 import { supabase } from './lib/supabase';
+import { Lock, Eye, EyeOff } from 'lucide-react';
 
 function OwnerApp() {
   const [page, setPage] = useState('dashboard');
@@ -39,8 +40,90 @@ function EmployeeApp() {
   return <EmployeeHome onSickLeave={() => setScreen('sick')} />;
 }
 
+function ChangePasswordScreen() {
+  const { changePassword } = useAuth();
+  const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (password.length < 6) {
+      setError('Passwort muss mindestens 6 Zeichen haben');
+      return;
+    }
+    if (password !== confirm) {
+      setError('Passwörter stimmen nicht überein');
+      return;
+    }
+
+    setLoading(true);
+    const { error: err } = await changePassword(password);
+    setLoading(false);
+    if (err) setError(err);
+  };
+
+  return (
+    <div className="min-h-screen bg-white flex items-center justify-center px-6">
+      <div className="w-full max-w-sm">
+        <div className="text-center mb-8">
+          <div className="w-14 h-14 rounded-2xl bg-[#22C55E] flex items-center justify-center mx-auto mb-4">
+            <Lock size={28} className="text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-[#0F172A]">Passwort setzen</h1>
+          <p className="text-[#64748B] text-sm mt-1">
+            Bitte wähle ein eigenes Passwort für deinen Account
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="relative">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Neues Passwort"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#0F172A] transition-colors"
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+          <div>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Passwort bestätigen"
+              value={confirm}
+              onChange={e => setConfirm(e.target.value)}
+              className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]"
+            />
+          </div>
+
+          {error && <p className="text-sm text-[#EF4444] text-center">{error}</p>}
+
+          <button
+            type="submit"
+            disabled={loading || !password || !confirm}
+            className="w-full py-3 rounded-lg text-sm font-semibold bg-[#22C55E] text-white hover:bg-green-600 transition-colors disabled:opacity-50"
+          >
+            {loading ? 'Wird gespeichert...' : 'Passwort speichern'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function AppRoutes() {
-  const { user, loading } = useAuth();
+  const { user, loading, mustChangePassword } = useAuth();
   const [role, setRole] = useState<'owner' | 'employee' | null>(null);
   const [checking, setChecking] = useState(true);
 
@@ -75,6 +158,11 @@ function AppRoutes() {
         <Route path="/*" element={<UnifiedLogin />} />
       </Routes>
     );
+  }
+
+  // Force password change for employees on first login
+  if (mustChangePassword && role === 'employee') {
+    return <ChangePasswordScreen />;
   }
 
   if (role === 'employee') {
