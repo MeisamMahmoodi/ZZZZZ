@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { useLang } from '../../hooks/useLang';
 
 interface SickLeaveProps {
   onBack: () => void;
@@ -10,6 +11,7 @@ interface SickLeaveProps {
 
 export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
   const { user } = useAuth();
+  const { t, rtl } = useLang();
   const [day, setDay] = useState<'today' | 'tomorrow'>('today');
   const [reason, setReason] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -51,20 +53,20 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center px-6">
+      <div className={`min-h-screen bg-white flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
         <div className="text-center max-w-sm">
           <div className="w-16 h-16 rounded-full bg-[#22C55E]/10 flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl text-[#22C55E]">✓</span>
+            <span className="text-2xl text-[#22C55E]">&#10003;</span>
           </div>
-          <h2 className="text-xl font-bold text-[#0F172A] mb-2">Gemeldet</h2>
-          <p className="text-[#64748B] text-sm mb-6">
-            Dein Chef wurde informiert.<br />Gute Besserung!
+          <h2 className="text-xl font-bold text-[#0F172A] mb-2">{t('reported')}</h2>
+          <p className="text-[#64748B] text-sm mb-6 whitespace-pre-line">
+            {t('bossInformedGetWell')}
           </p>
           <button
             onClick={onComplete}
             className="px-6 py-2.5 rounded-lg text-sm font-medium bg-[#22C55E] text-white hover:bg-green-600 transition-colors"
           >
-            Zurück zur Übersicht
+            {t('backToOverview')}
           </button>
         </div>
       </div>
@@ -72,15 +74,15 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white px-6 py-8 max-w-md mx-auto">
+    <div className={`min-h-screen bg-white px-6 py-8 max-w-md mx-auto ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
       <button
         onClick={onBack}
         className="flex items-center gap-1.5 text-sm text-[#64748B] hover:text-[#0F172A] transition-colors mb-6"
       >
-        <ArrowLeft size={16} /> Zurück
+        <ArrowLeft size={16} /> {t('back')}
       </button>
 
-      <h1 className="text-2xl font-bold text-[#0F172A] mb-6">Krankmeldung</h1>
+      <h1 className="text-2xl font-bold text-[#0F172A] mb-6">{t('sickReport')}</h1>
 
       <div className="space-y-4 mb-6">
         <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
@@ -92,7 +94,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
             className="accent-[#22C55E]"
           />
           <div>
-            <p className="text-sm font-medium text-[#0F172A]">Heute</p>
+            <p className="text-sm font-medium text-[#0F172A]">{t('today')}</p>
             <p className="text-xs text-[#64748B]">
               {today.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' })}
             </p>
@@ -108,7 +110,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
             className="accent-[#22C55E]"
           />
           <div>
-            <p className="text-sm font-medium text-[#0F172A]">Morgen</p>
+            <p className="text-sm font-medium text-[#0F172A]">{t('tomorrow')}</p>
             <p className="text-xs text-[#64748B]">
               {tomorrow.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' })}
             </p>
@@ -117,7 +119,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
       </div>
 
       <div className="mb-6">
-        <label className="block text-sm font-medium text-[#0F172A] mb-1">Grund (optional)</label>
+        <label className="block text-sm font-medium text-[#0F172A] mb-1">{t('reasonOptional')}</label>
         <textarea
           value={reason}
           onChange={e => setReason(e.target.value)}
@@ -131,7 +133,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
         disabled={loading}
         className="w-full py-3 rounded-xl text-base font-semibold bg-[#EF4444] text-white hover:bg-red-600 transition-colors disabled:opacity-50"
       >
-        {loading ? 'Wird gesendet...' : 'Krankmeldung absenden'}
+        {loading ? t('sending') : t('sendSickReport')}
       </button>
     </div>
   );
