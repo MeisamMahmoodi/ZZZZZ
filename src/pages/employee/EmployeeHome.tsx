@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapPin, Clock, LogIn, Mail } from 'lucide-react';
+import { MapPin, Clock, LogIn, Mail, LogOut } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { formatDateLong, formatTime } from '../../lib/utils';
@@ -10,7 +10,7 @@ interface EmployeeHomeProps {
 }
 
 export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [todayAssignment, setTodayAssignment] = useState<(Assignment & { property: Property }) | null>(null);
   const [replacementRequest, setReplacementRequest] = useState<(ReplacementRequest & { property: Property; sickEmployee: Employee }) | null>(null);
@@ -220,6 +220,14 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
         className="w-full text-center text-sm text-[#64748B] hover:text-[#0F172A] transition-colors py-2"
       >
         Krank melden
+      </button>
+
+      {/* Logout */}
+      <button
+        onClick={signOut}
+        className="w-full flex items-center justify-center gap-2 text-sm text-[#64748B] hover:text-[#0F172A] transition-colors py-3 mt-4"
+      >
+        <LogOut size={16} /> Abmelden
       </button>
     </div>
   );
