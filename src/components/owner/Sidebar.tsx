@@ -35,36 +35,45 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
 
   const sidebarContent = (
     <>
-      <div className="px-6 pt-6 pb-2">
-        <h1 className="text-white text-xl font-bold tracking-tight">Putzo</h1>
-        <p className="text-slate-400 text-[13px] mt-0.5">Reinigungsservice</p>
+      {/* Brand */}
+      <div className="px-6 pt-7 pb-5">
+        <h1 className="text-white text-[22px] font-bold tracking-tight leading-none">Putzo</h1>
+        <p className="text-slate-500 text-[12px] font-medium mt-1.5 tracking-wide uppercase">Reinigungsservice</p>
       </div>
 
-      <nav className="flex-1 mt-6 px-3">
+      <div className="mx-5 h-px bg-white/[0.06]" />
+
+      {/* Navigation */}
+      <nav className="flex-1 mt-3 px-4">
         {navItems.map(item => {
           const isActive = active === item.id;
           return (
             <button key={item.id} onClick={() => handleNav(item.id)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all mb-1 ${
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 mb-0.5 ${
                 isActive
-                  ? 'bg-white/10 text-white border-l-[3px] border-[#22C55E] pl-[9px]'
-                  : 'text-slate-400 hover:text-white hover:bg-white/5 border-l-[3px] border-transparent'
+                  ? 'bg-white/[0.08] text-white'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
               }`}>
-              <item.icon size={18} />
+              <item.icon size={18} strokeWidth={isActive ? 2 : 1.5} className={isActive ? 'text-brand-400' : ''} />
               {item.label}
+              {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-400" />}
             </button>
           );
         })}
       </nav>
 
-      <div className="px-4 pb-6">
-        <div className="flex items-center gap-3 px-2 py-3">
+      <div className="mx-5 h-px bg-white/[0.06]" />
+
+      {/* User */}
+      <div className="px-4 py-5">
+        <div className="flex items-center gap-3 px-2 py-2">
           <Avatar firstName={ownerName?.split(' ')[0] || 'O'} lastName={ownerName?.split(' ')[1] || ''} id="owner" size="sm" />
           <div className="flex-1 min-w-0">
-            <p className="text-white text-sm font-medium truncate">{ownerName || 'Inhaber'}</p>
+            <p className="text-white text-sm font-medium truncate leading-tight">{ownerName || 'Inhaber'}</p>
+            <p className="text-slate-500 text-[11px] font-medium mt-0.5">Inhaber</p>
           </div>
-          <button onClick={() => setLogoutConfirm(true)} className="text-slate-400 hover:text-white transition-colors" title="Abmelden">
-            <LogOut size={16} />
+          <button onClick={() => setLogoutConfirm(true)} className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all" title="Abmelden">
+            <LogOut size={15} />
           </button>
         </div>
       </div>
@@ -73,34 +82,40 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
 
   return (
     <>
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-[#0F172A] flex items-center justify-between px-4 z-40">
-        <h1 className="text-white text-lg font-bold">Putzo</h1>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-white p-1">
-          {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-ink-900/95 backdrop-blur-sm flex items-center justify-between px-4 z-40 border-b border-white/[0.06]">
+        <h1 className="text-white text-lg font-bold tracking-tight">Putzo</h1>
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-slate-400 hover:text-white p-1.5 rounded-lg transition-colors">
+          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
         </button>
       </div>
 
+      {/* Mobile Overlay */}
       {mobileOpen && (
         <div className="lg:hidden fixed inset-0 z-40" onClick={() => setMobileOpen(false)}>
-          <div className="absolute inset-0 bg-black/50" />
-          <aside className="relative w-60 h-full bg-[#0F172A] flex flex-col" onClick={e => e.stopPropagation()}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <aside className="relative w-64 h-full bg-ink-900 flex flex-col animate-fade-in" onClick={e => e.stopPropagation()}>
             {sidebarContent}
           </aside>
         </div>
       )}
 
-      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-60 bg-[#0F172A] flex-col z-40">
+      {/* Desktop Sidebar */}
+      <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-60 bg-ink-900 flex-col z-40">
         {sidebarContent}
       </aside>
 
       {/* Logout Confirmation */}
       <Modal open={logoutConfirm} onClose={() => setLogoutConfirm(false)} width="max-w-sm">
-        <div className="p-6">
-          <h2 className="text-lg font-bold text-[#0F172A] mb-2">Wirklich abmelden?</h2>
-          <p className="text-sm text-[#64748B] mb-6">Du wirst ausgeloggt und musst dich erneut anmelden.</p>
+        <div className="p-8">
+          <div className="w-12 h-12 rounded-2xl bg-danger-50 flex items-center justify-center mb-5">
+            <LogOut size={22} className="text-danger-500" />
+          </div>
+          <h2 className="text-lg font-bold text-ink-900 mb-2">Wirklich abmelden?</h2>
+          <p className="text-sm text-ink-500 leading-relaxed mb-8">Du wirst ausgeloggt und musst dich erneut anmelden.</p>
           <div className="flex justify-end gap-3">
-            <button onClick={() => setLogoutConfirm(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-[#64748B] hover:bg-gray-100 transition-colors">Abbrechen</button>
-            <button onClick={handleLogout} className="px-4 py-2 rounded-lg text-sm font-medium bg-[#EF4444] text-white hover:bg-red-600 transition-colors">Abmelden</button>
+            <button onClick={() => setLogoutConfirm(false)} className="btn-ghost">Abbrechen</button>
+            <button onClick={handleLogout} className="btn-danger">Abmelden</button>
           </div>
         </div>
       </Modal>

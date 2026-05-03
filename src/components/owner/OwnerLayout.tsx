@@ -45,10 +45,10 @@ export function OwnerLayout({ children, activePage, onNavigate }: OwnerLayoutPro
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
+      <div className="min-h-screen bg-surface-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-2 border-[#0F172A] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#64748B] text-sm">Laden...</p>
+          <div className="w-8 h-8 border-2 border-ink-900 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-ink-300 text-sm font-medium">Laden...</p>
         </div>
       </div>
     );
@@ -56,10 +56,10 @@ export function OwnerLayout({ children, activePage, onNavigate }: OwnerLayoutPro
 
   if (error || !company) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-6">
+      <div className="min-h-screen bg-surface-50 flex items-center justify-center px-6">
         <div className="text-center max-w-sm">
-          <p className="text-[#64748B] text-sm mb-4">{error || 'Kein Unternehmen gefunden'}</p>
-          <button onClick={() => { setLoading(true); setError(''); onRefresh(); }} className="px-4 py-2 rounded-lg text-sm font-medium bg-[#0F172A] text-white hover:bg-slate-800 transition-colors">
+          <p className="text-ink-500 text-sm mb-5">{error || 'Kein Unternehmen gefunden'}</p>
+          <button onClick={() => { setLoading(true); setError(''); onRefresh(); }} className="btn-primary">
             Erneut versuchen
           </button>
         </div>
@@ -68,7 +68,7 @@ export function OwnerLayout({ children, activePage, onNavigate }: OwnerLayoutPro
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen bg-surface-50">
       <Sidebar active={activePage} onNavigate={onNavigate} ownerName={company.owner_name} />
       <main className="lg:ml-60 pt-14 lg:pt-0 p-4 sm:p-6 lg:p-8">
         {children({ company, refreshKey, onRefresh, onNavigate })}

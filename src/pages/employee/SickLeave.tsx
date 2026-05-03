@@ -95,18 +95,18 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
 
   if (submitted) {
     return (
-      <div className={`min-h-screen bg-white flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
+      <div className={`min-h-screen bg-surface-50 flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
         <div className="text-center max-w-sm">
-          <div className="w-16 h-16 rounded-full bg-[#22C55E]/10 flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl text-[#22C55E]">&#10003;</span>
+          <div className="w-16 h-16 rounded-2xl bg-brand-50 flex items-center justify-center mx-auto mb-5">
+            <span className="text-2xl text-brand-500">&#10003;</span>
           </div>
-          <h2 className="text-xl font-bold text-[#0F172A] mb-2">{t('reported')}</h2>
-          <p className="text-[#64748B] text-sm mb-6 whitespace-pre-line">
+          <h2 className="text-xl font-bold text-ink-900 mb-2">{t('reported')}</h2>
+          <p className="text-ink-500 text-sm mb-8 whitespace-pre-line leading-relaxed">
             {t('bossInformedGetWell')}
           </p>
           <button
             onClick={onComplete}
-            className="px-6 py-2.5 rounded-lg text-sm font-medium bg-[#22C55E] text-white hover:bg-green-600 transition-colors"
+            className="btn-primary px-6"
           >
             {t('backToOverview')}
           </button>
@@ -116,106 +116,106 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
   }
 
   return (
-    <div className={`min-h-screen bg-white px-6 py-8 max-w-md mx-auto ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
+    <div className={`min-h-screen bg-surface-50 px-6 py-8 max-w-md mx-auto ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
       <button
         onClick={onBack}
-        className="flex items-center gap-1.5 text-sm text-[#64748B] hover:text-[#0F172A] transition-colors mb-6"
+        className="flex items-center gap-1.5 text-sm text-ink-500 hover:text-ink-900 transition-colors mb-8 font-medium"
       >
         <ArrowLeft size={16} /> {t('back')}
       </button>
 
-      <h1 className="text-2xl font-bold text-[#0F172A] mb-6">{t('sickReport')}</h1>
+      <h1 className="text-2xl font-bold text-ink-900 mb-8 tracking-tight">{t('sickReport')}</h1>
 
-      <div className="space-y-3 mb-6">
-        <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+      <div className="space-y-3 mb-8">
+        <label className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${day === 'today' ? 'border-brand-500 bg-brand-50/50' : 'border-surface-200 hover:bg-surface-50'}`}>
           <input
             type="radio"
             name="day"
             checked={day === 'today'}
             onChange={() => setDay('today')}
-            className="accent-[#22C55E]"
+            className="accent-brand-500"
           />
           <div>
-            <p className="text-sm font-medium text-[#0F172A]">{t('today')}</p>
-            <p className="text-xs text-[#64748B]">
+            <p className="text-sm font-semibold text-ink-900">{t('today')}</p>
+            <p className="text-xs text-ink-300 mt-0.5">
               {today.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' })}
             </p>
           </div>
         </label>
 
-        <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+        <label className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${day === 'tomorrow' ? 'border-brand-500 bg-brand-50/50' : 'border-surface-200 hover:bg-surface-50'}`}>
           <input
             type="radio"
             name="day"
             checked={day === 'tomorrow'}
             onChange={() => setDay('tomorrow')}
-            className="accent-[#22C55E]"
+            className="accent-brand-500"
           />
           <div>
-            <p className="text-sm font-medium text-[#0F172A]">{t('tomorrow')}</p>
-            <p className="text-xs text-[#64748B]">
+            <p className="text-sm font-semibold text-ink-900">{t('tomorrow')}</p>
+            <p className="text-xs text-ink-300 mt-0.5">
               {tomorrow.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' })}
             </p>
           </div>
         </label>
 
-        <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors">
+        <label className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${day === 'custom' ? 'border-brand-500 bg-brand-50/50' : 'border-surface-200 hover:bg-surface-50'}`}>
           <input
             type="radio"
             name="day"
             checked={day === 'custom'}
             onChange={() => setDay('custom')}
-            className="accent-[#22C55E]"
+            className="accent-brand-500"
           />
           <div className="flex-1">
-            <p className="text-sm font-medium text-[#0F172A]">{t('otherDate')}</p>
+            <p className="text-sm font-semibold text-ink-900">{t('otherDate')}</p>
           </div>
         </label>
 
         {day === 'custom' && (
-          <div className="pl-8">
+          <div className="pl-8 animate-fade-in">
             <input
               type="date"
               value={customDate}
               onChange={e => setCustomDate(e.target.value)}
               min={today.toISOString().split('T')[0]}
-              className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#EF4444]/30 focus:border-[#EF4444]"
+              className="input-field"
             />
           </div>
         )}
       </div>
 
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-[#0F172A] mb-1">{t('reasonOptional')}</label>
+      <div className="mb-8">
+        <label className="block text-sm font-medium text-ink-900 mb-1.5">{t('reasonOptional')}</label>
         <textarea
           value={reason}
           onChange={e => setReason(e.target.value)}
           rows={3}
-          className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#EF4444]/30 focus:border-[#EF4444] resize-none"
+          className="input-field resize-none"
         />
       </div>
 
       {/* Confirmation dialog when employee has assignment */}
       {showConfirm && hasAssignment && (
-        <div className="bg-[#FEF2F2] border-2 border-[#FECACA] rounded-xl p-4 mb-4">
-          <div className="flex items-start gap-3">
-            <AlertTriangle size={24} className="text-[#EF4444] shrink-0 mt-0.5" />
+        <div className="bg-danger-50 border border-danger-200/60 rounded-2xl p-5 mb-5 animate-scale-in">
+          <div className="flex items-start gap-3.5">
+            <AlertTriangle size={22} className="text-danger-500 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-base font-bold text-[#0F172A]">{t('sickConfirmTitle')}</p>
-              <p className="text-sm text-[#64748B] mt-1">{t('sickConfirmMessage')}</p>
+              <p className="text-base font-bold text-ink-900">{t('sickConfirmTitle')}</p>
+              <p className="text-sm text-ink-500 mt-1 leading-relaxed">{t('sickConfirmMessage')}</p>
             </div>
           </div>
-          <div className="flex gap-3 mt-4">
+          <div className="flex gap-3 mt-5">
             <button
               onClick={() => setShowConfirm(false)}
-              className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-gray-100 text-[#64748B] hover:bg-gray-200 transition-colors"
+              className="flex-1 py-3 rounded-xl text-sm font-semibold bg-surface-100 text-ink-500 hover:bg-surface-200 transition-colors"
             >
               {t('sickConfirmNo')}
             </button>
             <button
               onClick={handleSubmit}
               disabled={loading}
-              className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-[#EF4444] text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+              className="flex-1 py-3 rounded-xl text-sm font-semibold bg-danger-500 text-white hover:bg-danger-600 transition-colors disabled:opacity-50"
             >
               {t('sickConfirmYes')}
             </button>
@@ -227,7 +227,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
         <button
           onClick={handleSubmit}
           disabled={loading || (day === 'custom' && !customDate)}
-          className="w-full py-3 rounded-xl text-base font-semibold bg-[#EF4444] text-white hover:bg-red-600 transition-colors disabled:opacity-50"
+          className="w-full py-3.5 rounded-2xl text-base font-semibold bg-danger-500 text-white hover:bg-danger-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {loading ? t('sending') : t('sendSickReport')}
         </button>

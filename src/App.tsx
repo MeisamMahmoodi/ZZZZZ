@@ -73,14 +73,14 @@ function ChangePasswordScreen() {
   };
 
   return (
-    <div className={`min-h-screen bg-white flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
+    <div className={`min-h-screen bg-surface-50 flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-[#22C55E] flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-brand-500 flex items-center justify-center mx-auto mb-5 shadow-sm">
             <Lock size={28} className="text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">{t('setPassword')}</h1>
-          <p className="text-[#64748B] text-sm mt-1">{t('chooseOwnPassword')}</p>
+          <h1 className="text-2xl font-bold text-ink-900 tracking-tight">{t('setPassword')}</h1>
+          <p className="text-ink-500 text-sm mt-1.5">{t('chooseOwnPassword')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,12 +90,12 @@ function ChangePasswordScreen() {
               placeholder={t('newPassword')}
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]"
+              className="input-field pr-10"
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className={`absolute top-1/2 -translate-y-1/2 text-[#64748B] hover:text-[#0F172A] transition-colors ${rtl ? 'left-3' : 'right-3'}`}
+              className={`absolute top-1/2 -translate-y-1/2 text-ink-300 hover:text-ink-700 transition-colors ${rtl ? 'left-3.5' : 'right-3.5'}`}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
             </button>
@@ -106,16 +106,16 @@ function ChangePasswordScreen() {
               placeholder={t('confirmPassword')}
               value={confirm}
               onChange={e => setConfirm(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]"
+              className="input-field"
             />
           </div>
 
-          {error && <p className="text-sm text-[#EF4444] text-center">{error}</p>}
+          {error && <p className="text-sm text-danger-500 text-center font-medium">{error}</p>}
 
           <button
             type="submit"
             disabled={loading || !password || !confirm}
-            className="w-full py-3 rounded-lg text-sm font-semibold bg-[#22C55E] text-white hover:bg-green-600 transition-colors disabled:opacity-50"
+            className="btn-primary w-full py-3"
           >
             {loading ? t('saving') : t('savePassword')}
           </button>
@@ -156,8 +156,8 @@ function AppRoutes() {
 
   if (loading || (user && checking)) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#0F172A] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-surface-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-ink-900 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -170,7 +170,6 @@ function AppRoutes() {
     );
   }
 
-  // Force password change for employees on first login
   if (mustChangePassword && role === 'employee') {
     return <ChangePasswordScreen />;
   }
@@ -192,9 +191,9 @@ function AppRoutes() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center px-6">
+    <div className="min-h-screen bg-surface-50 flex items-center justify-center px-6">
       <div className="text-center">
-        <p className="text-[#64748B] text-sm">Kein Profil gefunden. Bitte wenden Sie sich an den Administrator.</p>
+        <p className="text-ink-500 text-sm">Kein Profil gefunden. Bitte wenden Sie sich an den Administrator.</p>
       </div>
     </div>
   );
@@ -219,14 +218,14 @@ function UnifiedLogin() {
   };
 
   return (
-    <div className={`min-h-screen bg-white flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
+    <div className={`min-h-screen bg-surface-50 flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-[#22C55E] flex items-center justify-center mx-auto mb-4">
+          <div className="w-14 h-14 rounded-2xl bg-brand-500 flex items-center justify-center mx-auto mb-5 shadow-sm">
             <span className="text-white text-2xl font-bold">P</span>
           </div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">Putzo</h1>
-          <p className="text-[#64748B] text-sm mt-1">{t('login')}</p>
+          <h1 className="text-2xl font-bold text-ink-900 tracking-tight">Putzo</h1>
+          <p className="text-ink-500 text-sm mt-1.5">{t('login')}</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -236,7 +235,7 @@ function UnifiedLogin() {
               placeholder={t('email')}
               value={email}
               onChange={e => setEmail(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]"
+              className="input-field"
             />
           </div>
           <div>
@@ -245,29 +244,29 @@ function UnifiedLogin() {
               placeholder={t('password')}
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="w-full px-4 py-3 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]"
+              className="input-field"
             />
           </div>
 
-          {error && <p className="text-sm text-[#EF4444] text-center">{error}</p>}
+          {error && <p className="text-sm text-danger-500 text-center font-medium">{error}</p>}
 
           <button
             type="submit"
             disabled={loading || !email || !password}
-            className="w-full py-3 rounded-lg text-sm font-semibold bg-[#0F172A] text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
+            className="w-full py-3 rounded-xl text-sm font-semibold bg-ink-900 text-white hover:bg-ink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? t('sending') : t('login')}
           </button>
         </form>
 
         {/* Language switcher on login page */}
-        <div className="flex justify-center gap-2 mt-6">
+        <div className="flex justify-center gap-2 mt-8">
           {(['de', 'ro', 'ar', 'pl', 'en'] as const).map(l => (
             <button
               key={l}
               onClick={() => setLang(l)}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                lang === l ? 'bg-[#0F172A] text-white' : 'bg-gray-100 text-[#64748B] hover:bg-gray-200'
+              className={`px-3 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                lang === l ? 'bg-ink-900 text-white shadow-sm' : 'bg-surface-100 text-ink-500 hover:bg-surface-200'
               }`}
             >
               {l.toUpperCase()}

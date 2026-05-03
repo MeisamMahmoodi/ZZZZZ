@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Calendar, MapPin, Clock, Check, X, AlertTriangle } from 'lucide-react';
+import { Plus, Calendar, MapPin, Clock, Check, X, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Modal } from '../../components/shared/Modal';
 import { Avatar } from '../../components/shared/Avatar';
@@ -66,7 +66,6 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
       return;
     }
 
-    // Check for duplicates
     const existing = companyAssignments.filter(a => a.property_id === newPropertyId);
     const duplicateEmpIds = newEmployeeIds.filter(eid => existing.some(a => a.employee_id === eid));
     if (duplicateEmpIds.length > 0) {
@@ -113,7 +112,6 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   };
 
   const selectedProperty = properties.find(p => p.id === newPropertyId);
-
   const employeesForProperty = activeEmployees;
 
   const statusLabel = (status: string) => {
@@ -123,16 +121,6 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
       case 'completed': return 'Abgeschlossen';
       case 'cancelled': return 'Storniert';
       default: return status;
-    }
-  };
-
-  const statusColor = (status: string) => {
-    switch (status) {
-      case 'assigned': return 'bg-blue-50 text-blue-600';
-      case 'checked_in': return 'bg-green-50 text-[#22C55E]';
-      case 'completed': return 'bg-gray-100 text-[#64748B]';
-      case 'cancelled': return 'bg-red-50 text-[#EF4444]';
-      default: return 'bg-gray-100 text-[#64748B]';
     }
   };
 
@@ -151,67 +139,82 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
     setSelectedDate(d.toISOString().split('T')[0]);
   };
 
+  const isToday = selectedDate === new Date().toISOString().split('T')[0];
+
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A]">Einsätze</h1>
-        <button onClick={() => setAddModal(true)} className="flex items-center justify-center gap-2 bg-[#22C55E] text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-600 transition-colors">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <h1 className="text-2xl sm:text-[28px] font-bold text-ink-900 tracking-tight">Einsätze</h1>
+        <button onClick={() => setAddModal(true)} className="btn-primary flex items-center justify-center gap-2">
           <Plus size={16} /> Einsatz erstellen
         </button>
       </div>
 
       {/* Date Navigation */}
-      <div className="flex items-center gap-3 mb-6 bg-white rounded-xl p-3 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
-        <button onClick={() => dateNav(-1)} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-[#64748B] hover:bg-gray-200 transition-colors">Zurück</button>
+      <div className="card p-2 mb-6 flex items-center gap-1.5">
+        <button onClick={() => dateNav(-1)} className="p-2.5 rounded-xl hover:bg-surface-50 transition-colors text-ink-500">
+          <ChevronLeft size={18} />
+        </button>
         <div className="flex-1 text-center">
-          <p className="text-sm font-semibold text-[#0F172A]">
+          <p className="text-sm font-semibold text-ink-900">
             {new Date(selectedDate).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
           </p>
         </div>
-        <button onClick={() => dateNav(1)} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-gray-100 text-[#64748B] hover:bg-gray-200 transition-colors">Weiter</button>
-        <button onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])} className="px-3 py-1.5 rounded-lg text-sm font-medium bg-[#0F172A] text-white hover:bg-slate-800 transition-colors">Heute</button>
+        <button onClick={() => dateNav(1)} className="p-2.5 rounded-xl hover:bg-surface-50 transition-colors text-ink-500">
+          <ChevronRight size={18} />
+        </button>
+        {!isToday && (
+          <button onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])} className="px-3.5 py-2 rounded-xl text-sm font-semibold bg-ink-900 text-white hover:bg-ink-700 transition-colors ml-1">
+            Heute
+          </button>
+        )}
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12"><div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" /></div>
+        <div className="flex items-center justify-center py-16"><div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" /></div>
       ) : groupedAssignments.length === 0 ? (
-        <div className="bg-white rounded-xl p-8 text-center shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
-          <Calendar size={40} className="text-gray-300 mx-auto mb-3" />
-          <p className="text-[#64748B]">Keine Einsätze für diesen Tag</p>
+        <div className="card p-10 text-center">
+          <Calendar size={36} className="text-ink-100 mx-auto mb-3" />
+          <p className="text-ink-300 text-sm">Keine Einsätze für diesen Tag</p>
         </div>
       ) : (
         <div className="space-y-4">
           {groupedAssignments.map(({ property, assignments: propAssignments }) => (
-            <div key={property.id} className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
-              <div className="px-4 sm:px-5 py-4 border-b border-gray-50 bg-[#F8FAFC]">
-                <p className="text-base font-bold text-[#0F172A]">{property.name}</p>
-                <p className="text-[13px] text-[#64748B] mt-0.5 flex items-center gap-1.5"><MapPin size={13} /> {property.address}</p>
-                <p className="text-[13px] text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={13} /> {formatTime(property.time_from)} – {formatTime(property.time_to)} Uhr</p>
+            <div key={property.id} className="card overflow-hidden">
+              <div className="px-5 sm:px-6 py-4 border-b border-surface-100 bg-surface-50/50">
+                <p className="text-base font-bold text-ink-900">{property.name}</p>
+                <p className="text-[13px] text-ink-500 mt-0.5 flex items-center gap-1.5"><MapPin size={13} className="text-ink-300" /> {property.address}</p>
+                <p className="text-[13px] text-ink-500 mt-0.5 flex items-center gap-1.5"><Clock size={13} className="text-ink-300" /> {formatTime(property.time_from)} – {formatTime(property.time_to)} Uhr</p>
               </div>
-              <div className="divide-y divide-gray-50">
+              <div className="divide-y divide-surface-100">
                 {propAssignments.map(a => {
                   const isSick = sickEmployeeIds.has(a.employee_id);
                   return (
-                    <div key={a.id} className={`px-4 sm:px-5 py-3 flex items-center gap-3 ${isSick ? 'bg-red-50/50' : ''}`}>
+                    <div key={a.id} className={`px-5 sm:px-6 py-4 flex items-center gap-3.5 ${isSick ? 'bg-danger-50/30' : ''}`}>
                       <Avatar firstName={a.employee?.first_name || ''} lastName={a.employee?.last_name || ''} id={a.employee_id} size="sm" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#0F172A]">
+                        <p className="text-sm font-medium text-ink-900">
                           {a.employee?.first_name} {a.employee?.last_name}
-                          {isSick && <span className="ml-2 text-[#EF4444] text-xs font-medium">(krank)</span>}
+                          {isSick && <span className="ml-2 text-danger-500 text-xs font-semibold">(krank)</span>}
                         </p>
                         {a.status === 'checked_in' && a.updated_at && (
-                          <p className="text-[11px] text-[#64748B]">Eingecheckt {new Date(a.updated_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</p>
+                          <p className="text-[11px] text-ink-300 mt-0.5 font-medium">Eingecheckt {new Date(a.updated_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</p>
                         )}
                       </div>
                       {isSick ? (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-[#EF4444] flex items-center gap-1"><AlertTriangle size={12} /> Krank</span>
+                        <span className="badge-danger"><AlertTriangle size={12} /> Krank</span>
                       ) : (
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${statusColor(a.status)}`}>{statusLabel(a.status)}</span>
+                        <span className={
+                          a.status === 'assigned' ? 'badge-info' :
+                          a.status === 'checked_in' ? 'badge-success' :
+                          a.status === 'completed' ? 'badge-neutral' :
+                          'badge-danger'
+                        }>{statusLabel(a.status)}</span>
                       )}
                       {a.status === 'assigned' && !isSick && (
                         <div className="flex items-center gap-1">
-                          <button onClick={() => handleStatusChange(a, 'checked_in')} className="p-1.5 rounded-lg hover:bg-green-50 transition-colors text-[#22C55E]" title="Einchecken"><Check size={16} /></button>
-                          <button onClick={() => handleRemoveAssignment(a)} className="p-1.5 rounded-lg hover:bg-red-50 transition-colors text-[#EF4444]" title="Entfernen"><X size={16} /></button>
+                          <button onClick={() => handleStatusChange(a, 'checked_in')} className="p-1.5 rounded-lg hover:bg-brand-50 transition-colors text-brand-500" title="Einchecken"><Check size={16} /></button>
+                          <button onClick={() => handleRemoveAssignment(a)} className="p-1.5 rounded-lg hover:bg-danger-50 transition-colors text-danger-400" title="Entfernen"><X size={16} /></button>
                         </div>
                       )}
                     </div>
@@ -225,53 +228,51 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
 
       {/* Add Assignment Modal */}
       <Modal open={addModal} onClose={() => setAddModal(false)} width="max-w-md">
-        <div className="p-6">
-          <h2 className="text-lg font-bold text-[#0F172A] mb-4">Einsatz erstellen</h2>
+        <div className="p-8">
+          <h2 className="text-lg font-bold text-ink-900 mb-6">Einsatz erstellen</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">Datum</label>
-              <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" />
+              <label className="block text-sm font-medium text-ink-900 mb-1.5">Datum</label>
+              <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="input-field" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1">Objekt <span className="text-[#EF4444]">*</span></label>
+              <label className="block text-sm font-medium text-ink-900 mb-1.5">Objekt <span className="text-danger-500">*</span></label>
               <select value={newPropertyId} onChange={e => {
                 setNewPropertyId(e.target.value);
                 const prop = properties.find(p => p.id === e.target.value);
                 if (prop) { setNewTimeFrom(prop.time_from); setNewTimeTo(prop.time_to); }
                 else { setNewTimeFrom(''); setNewTimeTo(''); }
-              }} className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]">
+              }} className="input-field">
                 <option value="">Objekt auswählen...</option>
                 {properties.map(p => <option key={p.id} value={p.id}>{p.name} — {p.address}</option>)}
               </select>
             </div>
             {selectedProperty && (
-              <div className="bg-[#F8FAFC] rounded-lg p-3 text-sm text-[#64748B]">
-                <p className="flex items-center gap-1.5"><MapPin size={14} /> {selectedProperty.address}</p>
-                <p className="flex items-center gap-1.5 mt-1"><Clock size={14} /> {formatTime(selectedProperty.time_from)} – {formatTime(selectedProperty.time_to)} Uhr</p>
+              <div className="bg-surface-50 rounded-xl p-3.5 text-sm text-ink-500">
+                <p className="flex items-center gap-1.5"><MapPin size={14} className="text-ink-300" /> {selectedProperty.address}</p>
+                <p className="flex items-center gap-1.5 mt-1"><Clock size={14} className="text-ink-300" /> {formatTime(selectedProperty.time_from)} – {formatTime(selectedProperty.time_to)} Uhr</p>
               </div>
             )}
             <div className="flex gap-3">
-              <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1">Uhrzeit von</label><input type="time" value={newTimeFrom} onChange={e => setNewTimeFrom(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" /></div>
-              <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1">Uhrzeit bis</label><input type="time" value={newTimeTo} onChange={e => setNewTimeTo(e.target.value)} className="w-full px-3 py-2 rounded-lg border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]" /></div>
+              <div className="flex-1"><label className="block text-sm font-medium text-ink-900 mb-1.5">Uhrzeit von</label><input type="time" value={newTimeFrom} onChange={e => setNewTimeFrom(e.target.value)} className="input-field" /></div>
+              <div className="flex-1"><label className="block text-sm font-medium text-ink-900 mb-1.5">Uhrzeit bis</label><input type="time" value={newTimeTo} onChange={e => setNewTimeTo(e.target.value)} className="input-field" /></div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-2">Mitarbeiter zuweisen</label>
+              <label className="block text-sm font-medium text-ink-900 mb-2">Mitarbeiter zuweisen</label>
               <div className="flex flex-wrap gap-2">
                 {employeesForProperty.map(emp => (
                   <button key={emp.id} onClick={() => toggleEmployee(emp.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${newEmployeeIds.includes(emp.id) ? 'bg-[#22C55E] text-white shadow-sm' : 'bg-gray-100 text-[#64748B] hover:bg-gray-200'}`}>
+                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${newEmployeeIds.includes(emp.id) ? 'bg-brand-500 text-white shadow-sm' : 'bg-surface-100 text-ink-500 hover:bg-surface-200'}`}>
                     {emp.first_name} {emp.last_name}
                   </button>
                 ))}
-                {employeesForProperty.length === 0 && <span className="text-sm text-[#64748B]">Keine aktiven Mitarbeiter</span>}
+                {employeesForProperty.length === 0 && <span className="text-sm text-ink-300">Keine aktiven Mitarbeiter</span>}
               </div>
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-6">
-            <button onClick={() => setAddModal(false)} className="px-4 py-2 rounded-lg text-sm font-medium text-[#64748B] hover:bg-gray-100 transition-colors">Abbrechen</button>
-            <button onClick={handleAddAssignment} disabled={saving || !newPropertyId || !newDate || newEmployeeIds.length === 0}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#22C55E] text-white hover:bg-green-600 transition-colors disabled:bg-gray-200 disabled:text-gray-400 disabled:cursor-not-allowed">
+          <div className="flex justify-end gap-3 mt-8">
+            <button onClick={() => setAddModal(false)} className="btn-ghost">Abbrechen</button>
+            <button onClick={handleAddAssignment} disabled={saving || !newPropertyId || !newDate || newEmployeeIds.length === 0} className="btn-primary">
               {saving ? 'Wird erstellt...' : 'Einsatz erstellen'}
             </button>
           </div>

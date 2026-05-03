@@ -61,7 +61,6 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
       if (!emp) return;
       setEmployee(emp);
 
-      // Load today's assignment
       const { data: todayAssign } = await supabase
         .from('assignments')
         .select('*, property:properties(*)')
@@ -76,7 +75,6 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
         setTodayAssignment(null);
       }
 
-      // Load all upcoming assignments (today and future)
       const { data: upcoming } = await supabase
         .from('assignments')
         .select('*, property:properties(*)')
@@ -87,7 +85,6 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
 
       setUpcomingAssignments((upcoming as unknown as AssignmentWithProperty[]) || []);
 
-      // Load replacement requests
       const { data: requests } = await supabase
         .from('replacement_requests')
         .select('*, property:properties(*)')
@@ -113,7 +110,6 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
         setReplacementRequest(null);
       }
 
-      // Load notifications
       const { data: notifs } = await supabase
         .from('notifications')
         .select('*')
@@ -124,7 +120,6 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
 
       setNotifications(notifs || []);
 
-      // Load sick reports for this employee
       const { data: sickRes } = await supabase
         .from('sick_reports')
         .select('*')
@@ -188,8 +183,8 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
 
   if (!employee) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-surface-50 flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-brand-500 border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -198,25 +193,25 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
   const isSick = employee.status === 'sick';
 
   return (
-    <div className={`min-h-screen bg-white px-4 sm:px-6 py-6 sm:py-8 max-w-md mx-auto ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
+    <div className={`min-h-screen bg-surface-50 px-5 sm:px-6 py-6 sm:py-8 max-w-md mx-auto ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 sm:mb-8">
+      <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A]">
+          <h1 className="text-2xl font-bold text-ink-900 tracking-tight">
             {getGreeting()}, {employee.first_name}
           </h1>
-          <p className="text-[#64748B] text-sm mt-1">{formatDateLong(today)}</p>
+          <p className="text-ink-500 text-sm mt-1.5">{formatDateLong(today)}</p>
         </div>
         <div className="flex items-center gap-1">
           <div className="relative" ref={langRef}>
-            <button onClick={() => setShowLangPicker(!showLangPicker)} className="p-2 rounded-lg hover:bg-gray-100 transition-colors">
-              <Globe size={20} className="text-[#64748B]" />
+            <button onClick={() => setShowLangPicker(!showLangPicker)} className="p-2.5 rounded-xl hover:bg-surface-100 transition-colors">
+              <Globe size={20} className="text-ink-500" />
             </button>
             {showLangPicker && (
-              <div className={`absolute top-12 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-30 w-44 ${rtl ? 'left-0' : 'right-0'}`}>
+              <div className={`absolute top-12 bg-surface-0 rounded-xl shadow-elevated border border-surface-200/60 py-1.5 z-30 w-44 animate-scale-in ${rtl ? 'left-0' : 'right-0'}`}>
                 {availableLangs.map(l => (
                   <button key={l} onClick={() => { setLang(l); setShowLangPicker(false); }}
-                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors ${lang === l ? 'bg-green-50 text-[#22C55E] font-semibold' : 'text-[#0F172A] hover:bg-gray-50'}`}>
+                    className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors ${lang === l ? 'bg-brand-50 text-brand-600 font-semibold' : 'text-ink-900 hover:bg-surface-50'}`}>
                     <span className="text-base">{langFlags[l]}</span><span>{langNames[l]}</span>
                   </button>
                 ))}
@@ -224,26 +219,26 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
             )}
           </div>
           <div className="relative" ref={notifRef}>
-            <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
-              <Bell size={20} className="text-[#64748B]" />
-              {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#EF4444] rounded-full text-white text-[10px] flex items-center justify-center font-bold">{unreadCount}</span>}
+            <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2.5 rounded-xl hover:bg-surface-100 transition-colors">
+              <Bell size={20} className="text-ink-500" />
+              {unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-danger-500 rounded-full text-white text-[10px] flex items-center justify-center font-bold px-1">{unreadCount}</span>}
             </button>
             {showNotifications && (
-              <div className={`absolute top-12 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-30 w-72 max-h-80 overflow-y-auto ${rtl ? 'left-0' : 'right-0'}`}>
-                <div className="px-4 py-2 border-b border-gray-100 flex items-center justify-between">
-                  <p className="text-sm font-semibold text-[#0F172A]">{t('notifications')}</p>
-                  {unreadCount > 0 && <button onClick={handleMarkAllRead} className="text-xs text-[#22C55E] font-medium">{t('markAllRead')}</button>}
+              <div className={`absolute top-12 bg-surface-0 rounded-xl shadow-elevated border border-surface-200/60 py-1.5 z-30 w-72 max-h-80 overflow-y-auto animate-scale-in ${rtl ? 'left-0' : 'right-0'}`}>
+                <div className="px-4 py-3 border-b border-surface-100 flex items-center justify-between">
+                  <p className="text-sm font-semibold text-ink-900">{t('notifications')}</p>
+                  {unreadCount > 0 && <button onClick={handleMarkAllRead} className="text-xs text-brand-600 font-semibold">{t('markAllRead')}</button>}
                 </div>
                 {notifications.length === 0 ? (
-                  <div className="px-4 py-6 text-center"><p className="text-sm text-[#64748B]">{t('noNotifications')}</p></div>
+                  <div className="px-4 py-8 text-center"><p className="text-sm text-ink-300">{t('noNotifications')}</p></div>
                 ) : (
                   notifications.map(n => (
-                    <div key={n.id} className="px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => handleMarkNotificationRead(n.id)}>
-                      <div className="flex items-start gap-2">
-                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.type === 'new_assignment' ? 'bg-[#22C55E]' : 'bg-blue-500'}`} />
+                    <div key={n.id} className="px-4 py-3 hover:bg-surface-50 transition-colors cursor-pointer" onClick={() => handleMarkNotificationRead(n.id)}>
+                      <div className="flex items-start gap-2.5">
+                        <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${n.type === 'new_assignment' ? 'bg-brand-500' : 'bg-info-500'}`} />
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#0F172A]">{n.title}</p>
-                          <p className="text-xs text-[#64748B] mt-0.5">{n.message}</p>
+                          <p className="text-sm font-medium text-ink-900">{n.title}</p>
+                          <p className="text-xs text-ink-300 mt-0.5">{n.message}</p>
                         </div>
                       </div>
                     </div>
@@ -257,12 +252,12 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
 
       {/* SICK STATUS PINNED BANNER */}
       {isSick && sickReports.length > 0 && (
-        <div className="bg-[#FEF2F2] border-2 border-[#FECACA] rounded-xl p-4 mb-6">
-          <div className="flex items-start gap-3">
-            <AlertTriangle size={22} className="text-[#EF4444] shrink-0 mt-0.5" />
+        <div className="bg-danger-50 border border-danger-200/60 rounded-2xl p-5 mb-6">
+          <div className="flex items-start gap-3.5">
+            <AlertTriangle size={22} className="text-danger-500 shrink-0 mt-0.5" />
             <div className="flex-1">
-              <p className="text-base font-bold text-[#EF4444]">{t('youAreSick')}</p>
-              <p className="text-sm text-[#64748B] mt-1">
+              <p className="text-base font-bold text-danger-500">{t('youAreSick')}</p>
+              <p className="text-sm text-ink-500 mt-1">
                 {t('sickSince')}: {sickReports.map(sr => new Date(sr.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })).join(', ')}
               </p>
             </div>
@@ -272,16 +267,16 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
 
       {/* Notifications Banner */}
       {notifications.length > 0 && (
-        <div className="mb-6 space-y-2">
+        <div className="mb-6 space-y-2.5">
           {notifications.slice(0, 3).map(n => (
-            <div key={n.id} className={`rounded-xl p-4 border ${n.type === 'new_assignment' ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'}`}>
+            <div key={n.id} className={`rounded-2xl p-4 border ${n.type === 'new_assignment' ? 'bg-brand-50 border-brand-200/60' : 'bg-info-50 border-info-100'}`}>
               <div className="flex items-start gap-3">
-                {n.type === 'new_assignment' ? <CalendarDays size={18} className="text-[#22C55E] shrink-0 mt-0.5" /> : <Mail size={18} className="text-blue-600 shrink-0 mt-0.5" />}
+                {n.type === 'new_assignment' ? <CalendarDays size={18} className="text-brand-500 shrink-0 mt-0.5" /> : <Mail size={18} className="text-info-500 shrink-0 mt-0.5" />}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-[#0F172A]">{n.title}</p>
-                  <p className="text-sm text-[#64748B] mt-0.5">{n.message}</p>
+                  <p className="text-sm font-semibold text-ink-900">{n.title}</p>
+                  <p className="text-sm text-ink-500 mt-0.5">{n.message}</p>
                 </div>
-                <button onClick={() => handleMarkNotificationRead(n.id)} className="text-[#64748B] hover:text-[#0F172A] transition-colors shrink-0"><CheckCircle size={18} /></button>
+                <button onClick={() => handleMarkNotificationRead(n.id)} className="text-ink-300 hover:text-ink-700 transition-colors shrink-0"><CheckCircle size={18} /></button>
               </div>
             </div>
           ))}
@@ -290,74 +285,74 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
 
       {/* Replacement Request Banner */}
       {replacementRequest && !requestResponded && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <div className="bg-info-50 border border-info-100 rounded-2xl p-5 mb-6">
           <div className="flex items-center gap-2 mb-2">
-            <Mail size={18} className="text-blue-600" />
-            <span className="text-sm font-semibold text-blue-800">{t('replacementRequest')}</span>
+            <Mail size={18} className="text-info-500" />
+            <span className="text-sm font-semibold text-info-600">{t('replacementRequest')}</span>
           </div>
-          <p className="text-sm text-blue-700 mb-1">{replacementRequest.sickEmployee?.first_name} {t('canYouCover')}</p>
-          <p className="text-sm text-blue-600">{replacementRequest.property?.name} · {formatTime(replacementRequest.property?.time_from || '')}–{formatTime(replacementRequest.property?.time_to || '')} Uhr</p>
-          <div className="flex gap-3 mt-3">
-            <button onClick={handleAcceptReplacement} className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-[#22C55E] text-white hover:bg-green-600 transition-colors">{t('yesICan')}</button>
-            <button onClick={handleDeclineReplacement} className="flex-1 py-2.5 rounded-lg text-sm font-semibold bg-gray-100 text-[#64748B] hover:bg-gray-200 transition-colors">{t('no')}</button>
+          <p className="text-sm text-ink-700 mb-1">{replacementRequest.sickEmployee?.first_name} {t('canYouCover')}</p>
+          <p className="text-sm text-ink-500">{replacementRequest.property?.name} · {formatTime(replacementRequest.property?.time_from || '')}–{formatTime(replacementRequest.property?.time_to || '')} Uhr</p>
+          <div className="flex gap-3 mt-4">
+            <button onClick={handleAcceptReplacement} className="flex-1 py-3 rounded-xl text-sm font-semibold bg-brand-500 text-white hover:bg-brand-600 transition-colors">{t('yesICan')}</button>
+            <button onClick={handleDeclineReplacement} className="flex-1 py-3 rounded-xl text-sm font-semibold bg-surface-100 text-ink-500 hover:bg-surface-200 transition-colors">{t('no')}</button>
           </div>
         </div>
       )}
 
       {replacementRequest && requestResponded && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6 text-center">
-          <p className="text-sm font-semibold text-green-800">{t('bossInformed')}</p>
+        <div className="bg-brand-50 border border-brand-200/60 rounded-2xl p-5 mb-6 text-center">
+          <p className="text-sm font-semibold text-brand-700">{t('bossInformed')}</p>
           {replacementRequest.property?.address && (
-            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(replacementRequest.property.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-[#22C55E] hover:underline">{t('showRoute')}</a>
+            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(replacementRequest.property.address)}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 mt-2 text-sm font-medium text-brand-600 hover:underline">{t('showRoute')}</a>
           )}
         </div>
       )}
 
       {/* Today's Assignment */}
-      <div className="bg-[#F8FAFC] rounded-xl p-4 sm:p-5 mb-6">
-        <p className="text-[11px] text-[#64748B] uppercase tracking-wider font-medium mb-3">{t('todaysAssignment')}</p>
+      <div className="card p-5 sm:p-6 mb-6">
+        <p className="section-label mb-3">{t('todaysAssignment')}</p>
         {todayAssignment ? (
           <>
-            <p className="text-lg font-bold text-[#0F172A]">{todayAssignment.property?.name}</p>
-            <p className="text-sm text-[#64748B] mt-1.5 flex items-center gap-1.5"><MapPin size={14} /> {todayAssignment.property?.address}</p>
-            <p className="text-sm text-[#64748B] mt-1 flex items-center gap-1.5"><Clock size={14} /> {formatTime(todayAssignment.property?.time_from || '')} – {formatTime(todayAssignment.property?.time_to || '')} {t('clock')}</p>
+            <p className="text-lg font-bold text-ink-900">{todayAssignment.property?.name}</p>
+            <p className="text-sm text-ink-500 mt-2 flex items-center gap-1.5"><MapPin size={14} className="text-ink-300" /> {todayAssignment.property?.address}</p>
+            <p className="text-sm text-ink-500 mt-1 flex items-center gap-1.5"><Clock size={14} className="text-ink-300" /> {formatTime(todayAssignment.property?.time_from || '')} – {formatTime(todayAssignment.property?.time_to || '')} {t('clock')}</p>
           </>
         ) : (
-          <p className="text-sm text-[#64748B]">{t('noAssignmentToday')}</p>
+          <p className="text-sm text-ink-300">{t('noAssignmentToday')}</p>
         )}
       </div>
 
       {/* Check-in Button */}
       {todayAssignment && !checkedIn && !isSick && (
-        <button onClick={handleCheckIn} className="w-full py-3.5 rounded-xl text-base font-semibold bg-[#22C55E] text-white hover:bg-green-600 transition-colors flex items-center justify-center gap-2 mb-6">
+        <button onClick={handleCheckIn} className="w-full py-3.5 rounded-2xl text-base font-semibold bg-brand-500 text-white hover:bg-brand-600 transition-colors flex items-center justify-center gap-2.5 mb-6 shadow-sm">
           <LogIn size={20} /> {t('checkIn')}
         </button>
       )}
 
       {checkedIn && (
-        <div className="w-full py-3.5 rounded-xl text-base font-semibold bg-green-50 text-[#22C55E] text-center mb-6">{t('checkedIn')}</div>
+        <div className="w-full py-3.5 rounded-2xl text-base font-semibold bg-brand-50 text-brand-600 text-center mb-6">{t('checkedIn')}</div>
       )}
 
       {/* Upcoming Assignments */}
       {upcomingAssignments.length > 0 && (
         <div className="mb-6">
-          <p className="text-[11px] text-[#64748B] uppercase tracking-wider font-medium mb-3">{t('upcomingAssignments')}</p>
-          <div className="space-y-2">
+          <p className="section-label mb-3">{t('upcomingAssignments')}</p>
+          <div className="space-y-2.5">
             {upcomingAssignments.map(a => {
               const isToday = a.date === todayStr;
               return (
-                <div key={a.id} className={`rounded-xl p-3.5 ${isToday ? 'bg-green-50 border border-green-200' : 'bg-[#F8FAFC] border border-gray-100'}`}>
+                <div key={a.id} className={`rounded-2xl p-4 ${isToday ? 'bg-brand-50 border border-brand-200/60' : 'card'}`}>
                   <div className="flex items-center justify-between">
-                    <p className="text-sm font-semibold text-[#0F172A]">{a.property?.name}</p>
-                    <span className={`text-xs font-medium ${isToday ? 'text-[#22C55E]' : 'text-[#64748B]'}`}>
+                    <p className="text-sm font-semibold text-ink-900">{a.property?.name}</p>
+                    <span className={`text-xs font-semibold ${isToday ? 'text-brand-600' : 'text-ink-300'}`}>
                       {isToday ? t('today') : formatDate(a.date)}
                     </span>
                   </div>
-                  <p className="text-[13px] text-[#64748B] mt-0.5 flex items-center gap-1.5">
-                    <MapPin size={12} /> {a.property?.address}
+                  <p className="text-[13px] text-ink-500 mt-1 flex items-center gap-1.5">
+                    <MapPin size={12} className="text-ink-300" /> {a.property?.address}
                   </p>
-                  <p className="text-[13px] text-[#64748B] mt-0.5 flex items-center gap-1.5">
-                    <Clock size={12} /> {formatTime(a.property?.time_from || '')} – {formatTime(a.property?.time_to || '')} {t('clock')}
+                  <p className="text-[13px] text-ink-500 mt-0.5 flex items-center gap-1.5">
+                    <Clock size={12} className="text-ink-300" /> {formatTime(a.property?.time_from || '')} – {formatTime(a.property?.time_to || '')} {t('clock')}
                   </p>
                 </div>
               );
@@ -367,13 +362,13 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
       )}
 
       {/* Bottom Actions */}
-      <div className="border-t border-gray-100 pt-4 mt-2 space-y-1">
+      <div className="border-t border-surface-200 pt-5 mt-2 space-y-1.5">
         {!isSick && (
-          <button onClick={onSickLeave} className="w-full flex items-center justify-center gap-2 text-sm text-[#EF4444] hover:bg-red-50 transition-colors py-3 rounded-lg font-medium">
+          <button onClick={onSickLeave} className="w-full flex items-center justify-center gap-2 text-sm text-danger-500 hover:bg-danger-50 transition-colors py-3.5 rounded-xl font-semibold">
             <Heart size={16} /> {t('sickLeave')}
           </button>
         )}
-        <button onClick={signOut} className="w-full flex items-center justify-center gap-2 text-sm text-[#64748B] hover:bg-gray-50 transition-colors py-3 rounded-lg">
+        <button onClick={signOut} className="w-full flex items-center justify-center gap-2 text-sm text-ink-500 hover:bg-surface-100 transition-colors py-3.5 rounded-xl font-medium">
           <LogOut size={16} /> {t('logOut')}
         </button>
       </div>

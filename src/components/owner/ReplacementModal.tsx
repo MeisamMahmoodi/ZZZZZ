@@ -122,28 +122,28 @@ export function ReplacementModal({
   };
 
   const getStatusDot = (status: string) => {
-    if (status === 'free') return 'bg-[#22C55E]';
-    if (status === 'partial') return 'bg-[#F97316]';
-    return 'bg-gray-300';
+    if (status === 'free') return 'bg-brand-500';
+    if (status === 'partial') return 'bg-warning-400';
+    return 'bg-ink-100';
   };
 
   return (
     <Modal open onClose={onClose} width="max-w-xl">
       {step === 'select' && (
-        <div className="p-6">
-          <div className="flex items-start gap-3 mb-1">
-            <AlertTriangle size={20} className="text-[#EF4444] shrink-0 mt-0.5" />
+        <div className="p-8">
+          <div className="flex items-start gap-3.5 mb-1">
+            <AlertTriangle size={20} className="text-danger-500 shrink-0 mt-0.5" />
             <div>
-              <h2 className="text-lg font-bold text-[#0F172A]">Krankmeldung — Ersatz finden</h2>
-              <p className="text-sm text-[#64748B] mt-1">
+              <h2 className="text-lg font-bold text-ink-900">Krankmeldung — Ersatz finden</h2>
+              <p className="text-sm text-ink-500 mt-1">
                 {sickReport.employee.first_name} {sickReport.employee.last_name} · {property.name} · {formatTime(property.time_from)}–{formatTime(property.time_to)} Uhr
               </p>
             </div>
           </div>
 
-          <hr className="my-4 border-gray-100" />
+          <div className="h-px bg-surface-100 my-5" />
 
-          <p className="text-[11px] text-[#64748B] uppercase tracking-wider font-medium mb-3">
+          <p className="section-label mb-3">
             Verfügbare Mitarbeiter
           </p>
 
@@ -153,26 +153,26 @@ export function ReplacementModal({
               return (
                 <div
                   key={emp.id}
-                  className="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-gray-200 transition-colors"
+                  className="flex items-center gap-3.5 p-3.5 rounded-xl border border-surface-200/60 hover:border-surface-200 hover:bg-surface-50/50 transition-all duration-200"
                 >
                   <Avatar firstName={emp.first_name} lastName={emp.last_name} id={emp.id} size="md" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <div className={`w-2.5 h-2.5 rounded-full shrink-0 ${getStatusDot(emp.availStatus)}`} />
-                      <p className="text-sm font-semibold text-[#0F172A]">
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${getStatusDot(emp.availStatus)}`} />
+                      <p className="text-sm font-semibold text-ink-900">
                         {emp.first_name} {emp.last_name}
                       </p>
                       {isBest && (
-                        <span className="inline-flex items-center gap-1 bg-[#22C55E]/10 text-[#22C55E] text-[11px] font-semibold px-2 py-0.5 rounded-full">
+                        <span className="inline-flex items-center gap-1 bg-brand-50 text-brand-600 text-[11px] font-semibold px-2 py-0.5 rounded-full">
                           <Star size={10} /> Beste Wahl
                         </span>
                       )}
                     </div>
-                    <p className="text-[13px] text-[#64748B] mt-0.5">{getStatusLabel(emp)}</p>
+                    <p className="text-[13px] text-ink-500 mt-0.5">{getStatusLabel(emp)}</p>
                   </div>
                   <button
                     onClick={() => handleSelect(emp)}
-                    className="px-3 py-1.5 rounded-lg text-sm font-medium border border-[#22C55E] text-[#22C55E] hover:bg-[#22C55E] hover:text-white transition-colors shrink-0"
+                    className="px-3.5 py-2 rounded-xl text-sm font-semibold border border-brand-500 text-brand-500 hover:bg-brand-500 hover:text-white transition-colors shrink-0"
                   >
                     Zuweisen
                   </button>
@@ -180,42 +180,42 @@ export function ReplacementModal({
               );
             })}
             {availableEmployees.length === 0 && (
-              <p className="text-sm text-[#64748B] text-center py-4">Keine verfügbaren Mitarbeiter</p>
+              <p className="text-sm text-ink-300 text-center py-6">Keine verfügbaren Mitarbeiter</p>
             )}
           </div>
         </div>
       )}
 
       {step === 'confirm' && selectedEmployee && (
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="w-6 h-6 rounded-full bg-[#22C55E] flex items-center justify-center">
-              <span className="text-white text-xs">✓</span>
+        <div className="p-8">
+          <div className="flex items-center gap-2.5 mb-5">
+            <div className="w-7 h-7 rounded-full bg-brand-500 flex items-center justify-center">
+              <span className="text-white text-xs font-bold">&#10003;</span>
             </div>
-            <h2 className="text-lg font-bold text-[#0F172A]">
+            <h2 className="text-lg font-bold text-ink-900">
               {selectedEmployee.first_name} {selectedEmployee.last_name} zuweisen
             </h2>
           </div>
 
-          <p className="text-sm text-[#64748B] mb-3">Nachricht an {selectedEmployee.first_name}:</p>
+          <p className="text-sm text-ink-500 mb-2">Nachricht an {selectedEmployee.first_name}:</p>
           <textarea
             value={message}
             onChange={e => setMessage(e.target.value)}
             rows={4}
-            className="w-full px-3 py-2 rounded-lg border border-gray-200 bg-gray-50 text-sm text-[#0F172A] resize-none focus:outline-none focus:ring-2 focus:ring-[#22C55E]/30 focus:border-[#22C55E]"
+            className="input-field resize-none bg-surface-50"
           />
 
-          <p className="text-sm text-[#64748B] mt-4 mb-2">Senden via:</p>
-          <div className="flex gap-4">
+          <p className="text-sm text-ink-500 mt-5 mb-2.5">Senden via:</p>
+          <div className="flex gap-5">
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="radio"
                 name="channel"
                 checked={channel === 'whatsapp'}
                 onChange={() => setChannel('whatsapp')}
-                className="accent-[#22C55E]"
+                className="accent-brand-500"
               />
-              <span className="text-sm text-[#0F172A]">WhatsApp</span>
+              <span className="text-sm text-ink-900 font-medium">WhatsApp</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -223,9 +223,9 @@ export function ReplacementModal({
                 name="channel"
                 checked={channel === 'sms'}
                 onChange={() => setChannel('sms')}
-                className="accent-[#22C55E]"
+                className="accent-brand-500"
               />
-              <span className="text-sm text-[#0F172A]">SMS</span>
+              <span className="text-sm text-ink-900 font-medium">SMS</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -233,25 +233,25 @@ export function ReplacementModal({
                 name="channel"
                 checked={channel === 'app'}
                 onChange={() => setChannel('app')}
-                className="accent-[#22C55E]"
+                className="accent-brand-500"
               />
-              <span className="text-sm text-[#0F172A]">Nur speichern</span>
+              <span className="text-sm text-ink-900 font-medium">Nur speichern</span>
             </label>
           </div>
 
-          <div className="flex justify-end gap-3 mt-6">
+          <div className="flex justify-end gap-3 mt-8">
             <button
               onClick={() => setStep('select')}
-              className="px-4 py-2 rounded-lg text-sm font-medium text-[#64748B] hover:bg-gray-100 transition-colors"
+              className="btn-ghost"
             >
               Abbrechen
             </button>
             <button
               onClick={handleSend}
               disabled={sending}
-              className="px-4 py-2 rounded-lg text-sm font-medium bg-[#22C55E] text-white hover:bg-green-600 transition-colors disabled:opacity-50"
+              className="btn-primary"
             >
-              {sending ? 'Wird gesendet...' : 'Jetzt senden →'}
+              {sending ? 'Wird gesendet...' : 'Jetzt senden'}
             </button>
           </div>
         </div>

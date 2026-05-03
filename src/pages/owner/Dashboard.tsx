@@ -74,7 +74,6 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const todayAssignments = useMemo(() => assignments.filter(a => a.property?.company_id === company.id), [assignments, company.id]);
   const sickReportsForCompany = useMemo(() => sickReports.filter(sr => sr.employee?.company_id === company.id), [sickReports, company.id]);
 
-  // Deduplicate sick reports by employee_id (one card per employee, showing all assignments)
   const sickReportsByEmployee = useMemo(() => {
     const map = new Map<string, SickReportWithEmployee>();
     sickReportsForCompany.forEach(sr => {
@@ -124,15 +123,13 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   };
 
   const sickCount = sickEmployees.length;
-  // Count sick employees who still need replacement (no replacement assigned)
   const openSickCount = sickReportsByEmployee.filter(sr => {
     const empAssignments = todayAssignments.filter(a => a.employee_id === sr.employee_id);
-    if (empAssignments.length === 0) return false; // no assignments = not "open"
+    if (empAssignments.length === 0) return false;
     const hasReplacement = empAssignments.some(a => todayAssignments.some(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id));
     return !hasReplacement;
   }).length;
 
-  // Count sick employees with replacement found
   const coveredSickCount = sickReportsByEmployee.filter(sr => {
     const empAssignments = todayAssignments.filter(a => a.employee_id === sr.employee_id);
     if (empAssignments.length === 0) return false;
@@ -140,7 +137,6 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
     return hasReplacement;
   }).length;
 
-  // Sick employees who have assignments today (most critical) - deduplicated by employee
   const sickWithAssignments = useMemo(() => {
     return sickReportsByEmployee
       .map(sr => {
@@ -151,14 +147,12 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       .filter(item => item.assignments.length > 0);
   }, [sickReportsByEmployee, todayAssignments]);
 
-  // Sick employees without assignments
   const sickWithoutAssignments = useMemo(() => {
     return sickReportsByEmployee
       .filter(sr => !todayAssignments.some(a => a.employee_id === sr.employee_id))
       .map(sr => ({ sickReport: sr }));
   }, [sickReportsByEmployee, todayAssignments]);
 
-  // Properties with assignments today (from actual assignments, not just cleaning_days)
   const propertiesWithAssignments = useMemo(() => {
     const propIds = new Set(todayAssignments.map(a => a.property_id));
     return properties.filter(p => propIds.has(p.id));
@@ -167,36 +161,36 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   return (
     <div>
       {/* Header */}
-      <div className="flex items-start justify-between mb-6 sm:mb-8">
+      <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#0F172A]">
+          <h1 className="text-2xl sm:text-[28px] font-bold text-ink-900 tracking-tight">
             {getGreeting()}, {company.owner_name.split(' ')[0]}
           </h1>
-          <p className="text-[#64748B] text-sm mt-1">{formatDateLong(today)}</p>
+          <p className="text-ink-500 text-sm mt-1.5">{formatDateLong(today)}</p>
           {isWeekend && (
-            <p className="text-xs text-[#F97316] mt-1 flex items-center gap-1">
-              <AlertCircle size={12} /> Wochenende — ggf. keine regulären Einsätze
+            <p className="text-xs text-warning-500 mt-1.5 flex items-center gap-1.5 font-medium">
+              <AlertCircle size={13} /> Wochenende — ggf. keine regulären Einsätze
             </p>
           )}
         </div>
         <div className="relative" ref={notifRef}>
-          <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <Bell size={20} className="text-[#64748B]" />
-            {sickCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-[#EF4444] rounded-full text-white text-[10px] flex items-center justify-center font-bold">{sickCount}</span>}
+          <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2.5 rounded-xl hover:bg-surface-100 transition-colors">
+            <Bell size={20} className="text-ink-500" />
+            {sickCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-danger-500 rounded-full text-white text-[10px] flex items-center justify-center font-bold px-1">{sickCount}</span>}
           </button>
           {showNotifications && (
-            <div className="absolute right-0 top-12 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-30 w-72 sm:w-80 max-h-80 overflow-y-auto">
-              <div className="px-4 py-2 border-b border-gray-100"><p className="text-sm font-semibold text-[#0F172A]">Benachrichtigungen</p></div>
+            <div className="absolute right-0 top-12 bg-surface-0 rounded-xl shadow-elevated border border-surface-200/60 py-1 z-30 w-80 max-h-80 overflow-y-auto animate-scale-in">
+              <div className="px-4 py-3 border-b border-surface-100"><p className="text-sm font-semibold text-ink-900">Benachrichtigungen</p></div>
               {sickReportsForCompany.length === 0 ? (
-                <div className="px-4 py-6 text-center"><p className="text-sm text-[#64748B]">Keine Benachrichtigungen</p></div>
+                <div className="px-4 py-8 text-center"><p className="text-sm text-ink-300">Keine Benachrichtigungen</p></div>
               ) : (
                 sickReportsForCompany.map(sr => (
-                  <div key={sr.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start gap-2">
-                      <AlertTriangle size={16} className="text-[#EF4444] shrink-0 mt-0.5" />
+                  <div key={sr.id} className="px-4 py-3 hover:bg-surface-50 transition-colors">
+                    <div className="flex items-start gap-2.5">
+                      <AlertTriangle size={15} className="text-danger-400 shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[#0F172A]">{sr.employee?.first_name} {sr.employee?.last_name} ist krank</p>
-                        <p className="text-xs text-[#64748B] mt-0.5">{new Date(sr.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}{sr.reason ? ` — ${sr.reason}` : ''}</p>
+                        <p className="text-sm font-medium text-ink-900">{sr.employee?.first_name} {sr.employee?.last_name} ist krank</p>
+                        <p className="text-xs text-ink-300 mt-0.5">{new Date(sr.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}{sr.reason ? ` — ${sr.reason}` : ''}</p>
                       </div>
                     </div>
                   </div>
@@ -210,35 +204,35 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       {/* CRITICAL: Sick employees WITH assignments */}
       {sickWithAssignments.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-base sm:text-lg font-bold text-[#EF4444] mb-4 flex items-center gap-2">
-            <AlertTriangle size={22} /> KRANKMELDUNGEN MIT EINSATZ
+          <h2 className="section-label text-danger-500 mb-4 flex items-center gap-2">
+            <AlertTriangle size={14} /> Krankmeldungen mit Einsatz
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {sickWithAssignments.map(({ sickReport: sr, assignments: empAssignments, hasReplacement }) => (
-              <div key={sr.employee_id} className="bg-[#FEF2F2] border-2 border-[#EF4444] rounded-2xl p-5 sm:p-6">
+              <div key={sr.employee_id} className="bg-danger-50 border border-danger-200/60 rounded-2xl p-6">
                 <div className="flex items-start gap-4">
                   <div className="shrink-0">
                     <Avatar firstName={sr.employee?.first_name || ''} lastName={sr.employee?.last_name || ''} id={sr.employee_id} size="lg" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-lg font-bold text-[#0F172A]">{sr.employee?.first_name} {sr.employee?.last_name}</p>
-                    <p className="text-sm text-[#EF4444] font-bold mt-0.5">KRANKGEMELDET</p>
-                    {sr.reason && <p className="text-sm text-[#64748B] mt-1">Grund: {sr.reason}</p>}
+                    <p className="text-lg font-bold text-ink-900">{sr.employee?.first_name} {sr.employee?.last_name}</p>
+                    <span className="badge-danger mt-1.5">Krankgemeldet</span>
+                    {sr.reason && <p className="text-sm text-ink-500 mt-2">Grund: {sr.reason}</p>}
                     {empAssignments.map(a => (
-                      <div key={a.id} className="mt-3 bg-white/60 rounded-lg p-3">
-                        <p className="text-sm font-semibold text-[#0F172A] flex items-center gap-1.5"><MapPin size={14} /> {a.property?.name}</p>
-                        <p className="text-[13px] text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={13} /> {formatTime(a.property?.time_from || '')} – {formatTime(a.property?.time_to || '')} Uhr</p>
+                      <div key={a.id} className="mt-3 bg-white/70 rounded-xl p-3">
+                        <p className="text-sm font-semibold text-ink-900 flex items-center gap-1.5"><MapPin size={14} className="text-ink-300" /> {a.property?.name}</p>
+                        <p className="text-[13px] text-ink-500 mt-0.5 flex items-center gap-1.5"><Clock size={13} className="text-ink-300" /> {formatTime(a.property?.time_from || '')} – {formatTime(a.property?.time_to || '')} Uhr</p>
                       </div>
                     ))}
                   </div>
                 </div>
                 {!hasReplacement && (
-                  <button onClick={() => handleFindReplacement(sr)} className="w-full mt-4 py-3 rounded-xl text-sm font-bold bg-[#EF4444] text-white hover:bg-red-600 transition-colors flex items-center justify-center gap-2">
-                    <Search size={16} /> ERSATZ FINDEN
+                  <button onClick={() => handleFindReplacement(sr)} className="w-full mt-5 py-3 rounded-xl text-sm font-semibold bg-danger-500 text-white hover:bg-danger-600 transition-colors flex items-center justify-center gap-2">
+                    <Search size={16} /> Ersatz finden
                   </button>
                 )}
                 {hasReplacement && (
-                  <div className="mt-4 py-2.5 rounded-xl text-sm font-semibold bg-green-50 text-[#22C55E] text-center flex items-center justify-center gap-2">
+                  <div className="mt-5 py-2.5 rounded-xl text-sm font-semibold bg-brand-50 text-brand-600 text-center flex items-center justify-center gap-2">
                     <UserCheck size={16} /> Ersatz gefunden
                   </div>
                 )}
@@ -251,21 +245,21 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       {/* Sick employees WITHOUT assignments */}
       {sickWithoutAssignments.length > 0 && (
         <div className="mb-8">
-          <h2 className="text-base sm:text-lg font-bold text-[#F97316] mb-4 flex items-center gap-2">
-            <AlertTriangle size={20} /> Krankmeldungen
+          <h2 className="section-label text-warning-500 mb-4 flex items-center gap-2">
+            <AlertTriangle size={14} /> Krankmeldungen
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {sickWithoutAssignments.map(({ sickReport: sr }) => (
-              <div key={sr.employee_id} className="bg-[#FEF2F2] border-2 border-[#FECACA] rounded-2xl p-5">
+              <div key={sr.employee_id} className="bg-warning-50 border border-warning-100 rounded-2xl p-5">
                 <div className="flex items-start gap-4">
                   <div className="shrink-0">
-                    <Avatar firstName={sr.employee?.first_name || ''} lastName={sr.employee?.last_name || ''} id={sr.employee_id} size="lg" />
+                    <Avatar firstName={sr.employee?.first_name || ''} lastName={sr.employee?.last_name || ''} id={sr.employee_id} size="md" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-lg font-bold text-[#0F172A]">{sr.employee?.first_name} {sr.employee?.last_name}</p>
-                    <p className="text-sm text-[#F97316] font-medium mt-0.5">Krankgemeldet</p>
-                    {sr.reason && <p className="text-sm text-[#64748B] mt-1">Grund: {sr.reason}</p>}
-                    <p className="text-sm text-[#64748B] mt-2">Kein Einsatz heute</p>
+                    <p className="text-base font-bold text-ink-900">{sr.employee?.first_name} {sr.employee?.last_name}</p>
+                    <span className="badge-warning mt-1.5">Krankgemeldet</span>
+                    {sr.reason && <p className="text-sm text-ink-500 mt-1.5">Grund: {sr.reason}</p>}
+                    <p className="text-sm text-ink-300 mt-2">Kein Einsatz heute</p>
                   </div>
                 </div>
               </div>
@@ -275,106 +269,113 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       )}
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8">
-        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
-          <p className="text-[11px] text-[#64748B] uppercase tracking-wider font-medium mb-2 sm:mb-3">Mitarbeiter</p>
-          <p className="text-2xl sm:text-3xl font-bold text-[#0F172A]">{activeEmployees.length}<span className="text-base font-normal text-[#64748B]"> / {companyEmployees.length}</span></p>
-          {sickCount > 0 ? <p className="text-xs sm:text-sm text-[#F97316] mt-1 sm:mt-2 font-medium">{sickCount} krank</p> : <p className="text-xs sm:text-sm text-[#22C55E] mt-1 sm:mt-2">Alle verfügbar</p>}
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+        <div className="card p-5 sm:p-6">
+          <p className="section-label mb-3">Mitarbeiter</p>
+          <div className="flex items-baseline gap-1">
+            <p className="text-3xl font-bold text-ink-900">{activeEmployees.length}</p>
+            <span className="text-lg text-ink-300 font-normal">/</span>
+            <span className="text-lg text-ink-300 font-normal">{companyEmployees.length}</span>
+          </div>
+          <p className="text-sm text-ink-300 mt-2">verfügbar</p>
+          {sickCount > 0 && <p className="text-xs text-warning-500 font-semibold mt-1">{sickCount} krank</p>}
         </div>
-        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
-          <p className="text-[11px] text-[#64748B] uppercase tracking-wider font-medium mb-2 sm:mb-3">Einsätze heute</p>
-          <p className="text-2xl sm:text-3xl font-bold text-[#0F172A]">{todayAssignments.length}</p>
-          {todayAssignments.length > 0 ? <p className="text-xs sm:text-sm text-[#22C55E] mt-1 sm:mt-2">{propertiesWithAssignments.length} Objekte</p> : <p className="text-xs sm:text-sm text-[#64748B] mt-1 sm:mt-2">Keine Einsätze</p>}
-        </div>
-        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.08)] col-span-2 lg:col-span-1">
-          <p className="text-[11px] text-[#64748B] uppercase tracking-wider font-medium mb-2 sm:mb-3">Krankmeldungen</p>
-          <p className="text-2xl sm:text-3xl font-bold text-[#0F172A]">{sickCount}</p>
-          {openSickCount > 0 ? (
-            <p className="text-xs sm:text-sm text-[#EF4444] mt-1 sm:mt-2 font-medium">{openSickCount} Ersatz fehlt</p>
-          ) : coveredSickCount > 0 ? (
-            <p className="text-xs sm:text-sm text-[#22C55E] mt-1 sm:mt-2">{coveredSickCount} mit Ersatz</p>
+        <div className="card p-5 sm:p-6">
+          <p className="section-label mb-3">Einsätze heute</p>
+          <p className="text-3xl font-bold text-ink-900">{todayAssignments.length}</p>
+          {todayAssignments.length > 0 ? (
+            <p className="text-sm text-brand-600 font-medium mt-2">{propertiesWithAssignments.length} Objekte</p>
           ) : (
-            <p className="text-xs sm:text-sm text-[#22C55E] mt-1 sm:mt-2">Alles erledigt</p>
+            <p className="text-sm text-ink-300 mt-2">Keine Einsätze</p>
+          )}
+        </div>
+        <div className="card p-5 sm:p-6 col-span-2 lg:col-span-1">
+          <p className="section-label mb-3">Krankmeldungen</p>
+          <p className="text-3xl font-bold text-ink-900">{sickCount}</p>
+          {openSickCount > 0 ? (
+            <p className="text-sm text-danger-500 font-semibold mt-2">{openSickCount} Ersatz fehlt</p>
+          ) : coveredSickCount > 0 ? (
+            <p className="text-sm text-brand-600 font-medium mt-2">{coveredSickCount} mit Ersatz</p>
+          ) : (
+            <p className="text-sm text-brand-600 font-medium mt-2">Alles erledigt</p>
           )}
         </div>
       </div>
 
-      {/* Today's Assignments - from actual assignments data */}
+      {/* Today's Assignments */}
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-bold text-[#0F172A]">Heutige Einsätze</h2>
-          <span className="text-sm text-[#64748B]">{today.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+        <div className="flex items-center justify-between mb-5">
+          <h2 className="text-lg font-bold text-ink-900">Heutige Einsätze</h2>
+          <span className="text-sm text-ink-300 font-medium">{today.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
         </div>
 
         {todayAssignments.length === 0 ? (
-          <div className="bg-white rounded-xl p-8 text-center shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
-            <CalendarDays size={40} className="text-gray-300 mx-auto mb-3" />
-            <p className="text-[#64748B]">Keine Einsätze für heute</p>
+          <div className="card p-10 text-center">
+            <CalendarDays size={36} className="text-ink-100 mx-auto mb-3" />
+            <p className="text-ink-300 text-sm">Keine Einsätze für heute</p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div className="space-y-4">
             {propertiesWithAssignments.map(prop => {
               const propAssignments = getPropertyAssignments(prop.id);
               const hasSick = hasSickEmployeeForProperty(prop.id);
               const sickForProp = sickReportsForCompany.filter(sr => propAssignments.some(a => a.employee_id === sr.employee_id));
               const activeAssignments = propAssignments.filter(a => !sickReportsForCompany.some(sr => sr.employee_id === a.employee_id));
 
-              let statusColor = 'bg-gray-300';
-              if (hasSick && activeAssignments.length === 0) statusColor = 'bg-[#EF4444]';
-              else if (propAssignments.length > 0 && !hasSick) statusColor = 'bg-[#22C55E]';
-              else if (hasSick) statusColor = 'bg-[#F97316]';
+              let statusColor = 'bg-ink-100';
+              if (hasSick && activeAssignments.length === 0) statusColor = 'bg-danger-400';
+              else if (propAssignments.length > 0 && !hasSick) statusColor = 'bg-brand-500';
+              else if (hasSick) statusColor = 'bg-warning-400';
 
               return (
-                <div key={prop.id} className="bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.08)] overflow-hidden">
-                  <div className="p-4 sm:p-5 flex items-start gap-3 sm:gap-4">
-                    <div className={`w-3 h-3 rounded-full mt-1.5 shrink-0 ${statusColor}`} />
+                <div key={prop.id} className="card overflow-hidden">
+                  <div className="p-5 sm:p-6 flex items-start gap-4">
+                    <div className={`w-2.5 h-2.5 rounded-full mt-2 shrink-0 ${statusColor}`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm sm:text-base font-bold text-[#0F172A]">{prop.name}</p>
-                      <p className="text-[13px] text-[#64748B] mt-1 flex items-center gap-1.5"><MapPin size={13} /> {prop.address}</p>
-                      <p className="text-[13px] text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={13} /> {formatTime(prop.time_from)} – {formatTime(prop.time_to)} Uhr</p>
-                      <div className="mt-2 flex items-center gap-1.5 flex-wrap">
+                      <p className="text-base font-bold text-ink-900">{prop.name}</p>
+                      <p className="text-[13px] text-ink-500 mt-1 flex items-center gap-1.5"><MapPin size={13} className="text-ink-300" /> {prop.address}</p>
+                      <p className="text-[13px] text-ink-500 mt-0.5 flex items-center gap-1.5"><Clock size={13} className="text-ink-300" /> {formatTime(prop.time_from)} – {formatTime(prop.time_to)} Uhr</p>
+                      <div className="mt-3 flex items-center gap-2 flex-wrap">
                         {activeAssignments.map(a => (
-                          <span key={a.id} className="text-[13px] text-[#64748B] flex items-center gap-1"><User size={13} /> {a.employee?.first_name} {a.employee?.last_name?.charAt(0)}.</span>
+                          <span key={a.id} className="badge-neutral"><User size={12} /> {a.employee?.first_name} {a.employee?.last_name?.charAt(0)}.</span>
                         ))}
                         {sickForProp.map(sr => (
-                          <span key={sr.id} className="text-[13px] text-[#EF4444] font-medium flex items-center gap-1"><User size={13} /> {sr.employee?.first_name} {sr.employee?.last_name?.charAt(0)}. (krank)</span>
+                          <span key={sr.id} className="badge-danger"><User size={12} /> {sr.employee?.first_name} {sr.employee?.last_name?.charAt(0)}. (krank)</span>
                         ))}
-                        {activeAssignments.length === 0 && !hasSick && <span className="text-[13px] text-[#64748B]">Kein Personal zugewiesen</span>}
-                        {hasSick && activeAssignments.length === 0 && <span className="text-[13px] text-[#EF4444] font-medium">Ersatz fehlt noch</span>}
+                        {activeAssignments.length === 0 && !hasSick && <span className="text-[13px] text-ink-300">Kein Personal zugewiesen</span>}
+                        {hasSick && activeAssignments.length === 0 && <span className="text-[13px] text-danger-500 font-semibold">Ersatz fehlt noch</span>}
                       </div>
                     </div>
                     {hasSick && activeAssignments.length === 0 && sickForProp.length > 0 && (
-                      <button onClick={() => handleFindReplacement(sickForProp[0])} className="bg-[#EF4444] text-white px-3 sm:px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-600 transition-colors shrink-0">
+                      <button onClick={() => handleFindReplacement(sickForProp[0])} className="bg-danger-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-danger-600 transition-colors shrink-0">
                         <span className="hidden sm:inline">Ersatz finden</span><span className="sm:hidden">Ersatz</span>
                       </button>
                     )}
                   </div>
                   {propAssignments.length > 0 && (
-                    <div className="border-t border-gray-50 divide-y divide-gray-50">
+                    <div className="border-t border-surface-100 divide-y divide-surface-100">
                       {propAssignments.map(a => {
                         const isSick = sickReportsForCompany.some(sr => sr.employee_id === a.employee_id);
                         return (
-                          <div key={a.id} className={`px-4 sm:px-5 py-2.5 flex items-center gap-3 ${isSick ? 'bg-red-50/50' : ''}`}>
+                          <div key={a.id} className={`px-5 sm:px-6 py-3.5 flex items-center gap-3 ${isSick ? 'bg-danger-50/40' : ''}`}>
                             <Avatar firstName={a.employee?.first_name || ''} lastName={a.employee?.last_name || ''} id={a.employee_id} size="sm" />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-[#0F172A]">{a.employee?.first_name} {a.employee?.last_name}</p>
+                              <p className="text-sm font-medium text-ink-900">{a.employee?.first_name} {a.employee?.last_name}</p>
                             </div>
-                            {isSick && (
-                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-[#EF4444]">Krank</span>
-                            )}
+                            {isSick && <span className="badge-danger">Krank</span>}
                             {!isSick && (
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                                a.status === 'checked_in' ? 'bg-green-50 text-[#22C55E]' :
-                                a.status === 'completed' ? 'bg-gray-100 text-[#64748B]' :
-                                'bg-blue-50 text-blue-600'
-                              }`}>
+                              <span className={
+                                a.status === 'checked_in' ? 'badge-success' :
+                                a.status === 'completed' ? 'badge-neutral' :
+                                'badge-info'
+                              }>
                                 {a.status === 'checked_in' ? 'Eingecheckt' : a.status === 'completed' ? 'Fertig' : 'Zugewiesen'}
                               </span>
                             )}
                             {a.status === 'assigned' && !isSick && (
                               <div className="flex items-center gap-1">
-                                <button onClick={() => handleCheckIn(a.id)} className="p-1 rounded hover:bg-green-50 transition-colors text-[#22C55E]" title="Einchecken"><Check size={14} /></button>
-                                <button onClick={() => handleRemoveAssignment(a.id)} className="p-1 rounded hover:bg-red-50 transition-colors text-[#EF4444]" title="Entfernen"><X size={14} /></button>
+                                <button onClick={() => handleCheckIn(a.id)} className="p-1.5 rounded-lg hover:bg-brand-50 transition-colors text-brand-500" title="Einchecken"><Check size={15} /></button>
+                                <button onClick={() => handleRemoveAssignment(a.id)} className="p-1.5 rounded-lg hover:bg-danger-50 transition-colors text-danger-400" title="Entfernen"><X size={15} /></button>
                               </div>
                             )}
                           </div>

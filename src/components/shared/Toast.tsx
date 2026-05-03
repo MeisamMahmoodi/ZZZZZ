@@ -1,5 +1,5 @@
 import { useState, useEffect, createContext, useContext, type ReactNode } from 'react';
-import { CheckCircle, X } from 'lucide-react';
+import { CheckCircle, X, AlertCircle } from 'lucide-react';
 
 interface Toast {
   id: number;
@@ -36,7 +36,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={{ addToast }}>
       {children}
-      <div className="fixed top-4 right-4 z-[100] flex flex-col gap-2">
+      <div className="fixed top-5 right-5 z-[100] flex flex-col gap-2.5">
         {toasts.map(toast => (
           <ToastItem key={toast.id} toast={toast} onRemove={removeToast} />
         ))}
@@ -52,12 +52,15 @@ function ToastItem({ toast, onRemove }: { toast: Toast; onRemove: (id: number) =
   }, [toast.id, onRemove]);
 
   return (
-    <div className={`flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg text-sm font-medium animate-slide-in ${
-      toast.type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' : 'bg-red-50 text-red-800 border border-red-200'
+    <div className={`flex items-center gap-3 pl-4 pr-3 py-3 rounded-xl shadow-elevated text-sm font-medium animate-slide-in backdrop-blur-sm ${
+      toast.type === 'success'
+        ? 'bg-brand-50/95 text-brand-700 border border-brand-200/60'
+        : 'bg-danger-50/95 text-danger-600 border border-danger-200/60'
     }`}>
-      {toast.type === 'success' && <CheckCircle size={18} className="text-green-500" />}
-      <span>{toast.message}</span>
-      <button onClick={() => onRemove(toast.id)} className="ml-2 opacity-50 hover:opacity-100">
+      {toast.type === 'success' && <CheckCircle size={16} className="text-brand-500 shrink-0" />}
+      {toast.type === 'error' && <AlertCircle size={16} className="text-danger-500 shrink-0" />}
+      <span className="flex-1">{toast.message}</span>
+      <button onClick={() => onRemove(toast.id)} className="p-1 rounded-lg opacity-40 hover:opacity-100 transition-opacity shrink-0">
         <X size={14} />
       </button>
     </div>
