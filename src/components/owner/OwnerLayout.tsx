@@ -5,7 +5,7 @@ import { useAuth } from '../../hooks/useAuth';
 import type { Company } from '../../lib/types';
 
 interface OwnerLayoutProps {
-  children: (props: { company: Company; refreshKey: number; onRefresh: () => void }) => React.ReactNode;
+  children: (props: { company: Company; refreshKey: number; onRefresh: () => void; onNavigate: (page: string) => void }) => React.ReactNode;
   activePage: string;
   onNavigate: (page: string) => void;
 }
@@ -71,7 +71,7 @@ export function OwnerLayout({ children, activePage, onNavigate }: OwnerLayoutPro
     <div className="min-h-screen bg-[#F8FAFC]">
       <Sidebar active={activePage} onNavigate={onNavigate} ownerName={company.owner_name} />
       <main className="lg:ml-60 pt-14 lg:pt-0 p-4 sm:p-6 lg:p-8">
-        {children({ company, refreshKey, onRefresh })}
+        {children({ company, refreshKey, onRefresh, onNavigate })}
       </main>
     </div>
   );

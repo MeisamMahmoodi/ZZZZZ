@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays } from 'lucide-react';
+import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDateLong, formatTime, getTodayDayAbbrev } from '../../lib/utils';
 import type { Employee, Property, Assignment, SickReport, EmployeeProperty } from '../../lib/types';
@@ -45,6 +45,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const today = new Date();
   const todayStr = today.toISOString().split('T')[0];
   const todayDay = getTodayDayAbbrev();
+  const isWeekend = todayDay === 'Sa' || todayDay === 'So';
 
   useEffect(() => { loadData(); }, [company.id, refreshKey]);
 
@@ -70,9 +71,17 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const companyEmployees = useMemo(() => employees.filter(e => e.company_id === company.id), [employees, company.id]);
   const sickEmployees = useMemo(() => companyEmployees.filter(e => e.status === 'sick'), [companyEmployees]);
   const activeEmployees = useMemo(() => companyEmployees.filter(e => e.status === 'active'), [companyEmployees]);
-  const todayProperties = useMemo(() => properties.filter(p => p.company_id === company.id && p.cleaning_days?.includes(todayDay)), [properties, company.id, todayDay]);
   const todayAssignments = useMemo(() => assignments.filter(a => a.property?.company_id === company.id), [assignments, company.id]);
   const sickReportsForCompany = useMemo(() => sickReports.filter(sr => sr.employee?.company_id === company.id), [sickReports, company.id]);
+
+  // Deduplicate sick reports by employee_id (one card per employee, showing all assignments)
+  const sickReportsByEmployee = useMemo(() => {
+    const map = new Map<string, SickReportWithEmployee>();
+    sickReportsForCompany.forEach(sr => {
+      if (!map.has(sr.employee_id)) map.set(sr.employee_id, sr);
+    });
+    return Array.from(map.values());
+  }, [sickReportsForCompany]);
 
   const getGreeting = () => {
     const hour = today.getHours();
@@ -102,6 +111,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   };
 
   const handleRemoveAssignment = async (id: string) => {
+    if (!confirm('Zuweisung wirklich entfernen?')) return;
     const { error } = await supabase.from('assignments').delete().eq('id', id);
     if (error) { addToast('Fehler beim Entfernen', 'error'); return; }
     onRefresh();
@@ -114,29 +124,45 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   };
 
   const sickCount = sickEmployees.length;
-  const openSickCount = sickReportsForCompany.filter(sr => {
+  // Count sick employees who still need replacement (no replacement assigned)
+  const openSickCount = sickReportsByEmployee.filter(sr => {
     const empAssignments = todayAssignments.filter(a => a.employee_id === sr.employee_id);
+    if (empAssignments.length === 0) return false; // no assignments = not "open"
     const hasReplacement = empAssignments.some(a => todayAssignments.some(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id));
     return !hasReplacement;
   }).length;
 
-  // Sick employees who have assignments today (most critical)
+  // Count sick employees with replacement found
+  const coveredSickCount = sickReportsByEmployee.filter(sr => {
+    const empAssignments = todayAssignments.filter(a => a.employee_id === sr.employee_id);
+    if (empAssignments.length === 0) return false;
+    const hasReplacement = empAssignments.some(a => todayAssignments.some(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id));
+    return hasReplacement;
+  }).length;
+
+  // Sick employees who have assignments today (most critical) - deduplicated by employee
   const sickWithAssignments = useMemo(() => {
-    return sickReportsForCompany
+    return sickReportsByEmployee
       .map(sr => {
         const empAssignments = todayAssignments.filter(a => a.employee_id === sr.employee_id);
         const hasReplacement = empAssignments.some(a => todayAssignments.some(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id));
         return { sickReport: sr, assignments: empAssignments, hasReplacement };
       })
       .filter(item => item.assignments.length > 0);
-  }, [sickReportsForCompany, todayAssignments]);
+  }, [sickReportsByEmployee, todayAssignments]);
 
   // Sick employees without assignments
   const sickWithoutAssignments = useMemo(() => {
-    return sickReportsForCompany
+    return sickReportsByEmployee
       .filter(sr => !todayAssignments.some(a => a.employee_id === sr.employee_id))
       .map(sr => ({ sickReport: sr }));
-  }, [sickReportsForCompany, todayAssignments]);
+  }, [sickReportsByEmployee, todayAssignments]);
+
+  // Properties with assignments today (from actual assignments, not just cleaning_days)
+  const propertiesWithAssignments = useMemo(() => {
+    const propIds = new Set(todayAssignments.map(a => a.property_id));
+    return properties.filter(p => propIds.has(p.id));
+  }, [todayAssignments, properties]);
 
   return (
     <div>
@@ -147,6 +173,11 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
             {getGreeting()}, {company.owner_name.split(' ')[0]}
           </h1>
           <p className="text-[#64748B] text-sm mt-1">{formatDateLong(today)}</p>
+          {isWeekend && (
+            <p className="text-xs text-[#F97316] mt-1 flex items-center gap-1">
+              <AlertCircle size={12} /> Wochenende — ggf. keine regulären Einsätze
+            </p>
+          )}
         </div>
         <div className="relative" ref={notifRef}>
           <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors">
@@ -176,7 +207,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
         </div>
       </div>
 
-      {/* CRITICAL: Sick employees WITH assignments - unmissable */}
+      {/* CRITICAL: Sick employees WITH assignments */}
       {sickWithAssignments.length > 0 && (
         <div className="mb-8">
           <h2 className="text-base sm:text-lg font-bold text-[#EF4444] mb-4 flex items-center gap-2">
@@ -184,7 +215,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {sickWithAssignments.map(({ sickReport: sr, assignments: empAssignments, hasReplacement }) => (
-              <div key={sr.id} className="bg-[#FEF2F2] border-2 border-[#EF4444] rounded-2xl p-5 sm:p-6 shadow-[0_0_0_1px_rgba(239,68,68,0.1)]">
+              <div key={sr.employee_id} className="bg-[#FEF2F2] border-2 border-[#EF4444] rounded-2xl p-5 sm:p-6">
                 <div className="flex items-start gap-4">
                   <div className="shrink-0">
                     <Avatar firstName={sr.employee?.first_name || ''} lastName={sr.employee?.last_name || ''} id={sr.employee_id} size="lg" />
@@ -225,7 +256,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {sickWithoutAssignments.map(({ sickReport: sr }) => (
-              <div key={sr.id} className="bg-[#FEF2F2] border-2 border-[#FECACA] rounded-2xl p-5">
+              <div key={sr.employee_id} className="bg-[#FEF2F2] border-2 border-[#FECACA] rounded-2xl p-5">
                 <div className="flex items-start gap-4">
                   <div className="shrink-0">
                     <Avatar firstName={sr.employee?.first_name || ''} lastName={sr.employee?.last_name || ''} id={sr.employee_id} size="lg" />
@@ -247,22 +278,28 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 mb-8">
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
           <p className="text-[11px] text-[#64748B] uppercase tracking-wider font-medium mb-2 sm:mb-3">Mitarbeiter</p>
-          <p className="text-2xl sm:text-3xl font-bold text-[#0F172A]">{activeEmployees.length}/{companyEmployees.length}</p>
+          <p className="text-2xl sm:text-3xl font-bold text-[#0F172A]">{activeEmployees.length}<span className="text-base font-normal text-[#64748B]"> / {companyEmployees.length}</span></p>
           {sickCount > 0 ? <p className="text-xs sm:text-sm text-[#F97316] mt-1 sm:mt-2 font-medium">{sickCount} krank</p> : <p className="text-xs sm:text-sm text-[#22C55E] mt-1 sm:mt-2">Alle verfügbar</p>}
         </div>
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.08)]">
-          <p className="text-[11px] text-[#64748B] uppercase tracking-wider font-medium mb-2 sm:mb-3">Objekte heute</p>
-          <p className="text-2xl sm:text-3xl font-bold text-[#0F172A]">{todayProperties.length}</p>
-          {todayProperties.length > 0 ? <p className="text-xs sm:text-sm text-[#22C55E] mt-1 sm:mt-2">Alle besetzt</p> : <p className="text-xs sm:text-sm text-[#64748B] mt-1 sm:mt-2">Keine Einsätze</p>}
+          <p className="text-[11px] text-[#64748B] uppercase tracking-wider font-medium mb-2 sm:mb-3">Einsätze heute</p>
+          <p className="text-2xl sm:text-3xl font-bold text-[#0F172A]">{todayAssignments.length}</p>
+          {todayAssignments.length > 0 ? <p className="text-xs sm:text-sm text-[#22C55E] mt-1 sm:mt-2">{propertiesWithAssignments.length} Objekte</p> : <p className="text-xs sm:text-sm text-[#64748B] mt-1 sm:mt-2">Keine Einsätze</p>}
         </div>
         <div className="bg-white rounded-xl p-4 sm:p-6 shadow-[0_1px_3px_rgba(0,0,0,0.08)] col-span-2 lg:col-span-1">
-          <p className="text-[11px] text-[#64748B] uppercase tracking-wider font-medium mb-2 sm:mb-3">Offene Krankmeldungen</p>
-          <p className="text-2xl sm:text-3xl font-bold text-[#0F172A]">{openSickCount}</p>
-          {openSickCount > 0 ? <p className="text-xs sm:text-sm text-[#F97316] mt-1 sm:mt-2 font-medium">Ersatz fehlt</p> : <p className="text-xs sm:text-sm text-[#22C55E] mt-1 sm:mt-2">Alles erledigt</p>}
+          <p className="text-[11px] text-[#64748B] uppercase tracking-wider font-medium mb-2 sm:mb-3">Krankmeldungen</p>
+          <p className="text-2xl sm:text-3xl font-bold text-[#0F172A]">{sickCount}</p>
+          {openSickCount > 0 ? (
+            <p className="text-xs sm:text-sm text-[#EF4444] mt-1 sm:mt-2 font-medium">{openSickCount} Ersatz fehlt</p>
+          ) : coveredSickCount > 0 ? (
+            <p className="text-xs sm:text-sm text-[#22C55E] mt-1 sm:mt-2">{coveredSickCount} mit Ersatz</p>
+          ) : (
+            <p className="text-xs sm:text-sm text-[#22C55E] mt-1 sm:mt-2">Alles erledigt</p>
+          )}
         </div>
       </div>
 
-      {/* Today's Assignments - with edit/delete */}
+      {/* Today's Assignments - from actual assignments data */}
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-bold text-[#0F172A]">Heutige Einsätze</h2>
@@ -276,16 +313,15 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
           </div>
         ) : (
           <div className="space-y-3">
-            {todayProperties.map(prop => {
+            {propertiesWithAssignments.map(prop => {
               const propAssignments = getPropertyAssignments(prop.id);
-              const isFullyStaffed = propAssignments.length > 0;
               const hasSick = hasSickEmployeeForProperty(prop.id);
               const sickForProp = sickReportsForCompany.filter(sr => propAssignments.some(a => a.employee_id === sr.employee_id));
               const activeAssignments = propAssignments.filter(a => !sickReportsForCompany.some(sr => sr.employee_id === a.employee_id));
 
               let statusColor = 'bg-gray-300';
               if (hasSick && activeAssignments.length === 0) statusColor = 'bg-[#EF4444]';
-              else if (isFullyStaffed && !hasSick) statusColor = 'bg-[#22C55E]';
+              else if (propAssignments.length > 0 && !hasSick) statusColor = 'bg-[#22C55E]';
               else if (hasSick) statusColor = 'bg-[#F97316]';
 
               return (
@@ -313,30 +349,37 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                       </button>
                     )}
                   </div>
-                  {/* Assignment details with edit/delete */}
                   {propAssignments.length > 0 && (
                     <div className="border-t border-gray-50 divide-y divide-gray-50">
-                      {propAssignments.map(a => (
-                        <div key={a.id} className="px-4 sm:px-5 py-2.5 flex items-center gap-3">
-                          <Avatar firstName={a.employee?.first_name || ''} lastName={a.employee?.last_name || ''} id={a.employee_id} size="sm" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-[#0F172A]">{a.employee?.first_name} {a.employee?.last_name}</p>
-                          </div>
-                          <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
-                            a.status === 'checked_in' ? 'bg-green-50 text-[#22C55E]' :
-                            a.status === 'completed' ? 'bg-gray-100 text-[#64748B]' :
-                            'bg-blue-50 text-blue-600'
-                          }`}>
-                            {a.status === 'checked_in' ? 'Eingecheckt' : a.status === 'completed' ? 'Fertig' : 'Zugewiesen'}
-                          </span>
-                          {a.status === 'assigned' && (
-                            <div className="flex items-center gap-1">
-                              <button onClick={() => handleCheckIn(a.id)} className="p-1 rounded hover:bg-green-50 transition-colors text-[#22C55E]" title="Einchecken"><Check size={14} /></button>
-                              <button onClick={() => handleRemoveAssignment(a.id)} className="p-1 rounded hover:bg-red-50 transition-colors text-[#EF4444]" title="Entfernen"><X size={14} /></button>
+                      {propAssignments.map(a => {
+                        const isSick = sickReportsForCompany.some(sr => sr.employee_id === a.employee_id);
+                        return (
+                          <div key={a.id} className={`px-4 sm:px-5 py-2.5 flex items-center gap-3 ${isSick ? 'bg-red-50/50' : ''}`}>
+                            <Avatar firstName={a.employee?.first_name || ''} lastName={a.employee?.last_name || ''} id={a.employee_id} size="sm" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-[#0F172A]">{a.employee?.first_name} {a.employee?.last_name}</p>
                             </div>
-                          )}
-                        </div>
-                      ))}
+                            {isSick && (
+                              <span className="px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-[#EF4444]">Krank</span>
+                            )}
+                            {!isSick && (
+                              <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                                a.status === 'checked_in' ? 'bg-green-50 text-[#22C55E]' :
+                                a.status === 'completed' ? 'bg-gray-100 text-[#64748B]' :
+                                'bg-blue-50 text-blue-600'
+                              }`}>
+                                {a.status === 'checked_in' ? 'Eingecheckt' : a.status === 'completed' ? 'Fertig' : 'Zugewiesen'}
+                              </span>
+                            )}
+                            {a.status === 'assigned' && !isSick && (
+                              <div className="flex items-center gap-1">
+                                <button onClick={() => handleCheckIn(a.id)} className="p-1 rounded hover:bg-green-50 transition-colors text-[#22C55E]" title="Einchecken"><Check size={14} /></button>
+                                <button onClick={() => handleRemoveAssignment(a.id)} className="p-1 rounded hover:bg-red-50 transition-colors text-[#EF4444]" title="Entfernen"><X size={14} /></button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -346,7 +389,6 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
         )}
       </div>
 
-      {/* Replacement Modal */}
       {replacementModal && (
         <ReplacementModal
           sickReport={replacementModal.sickReport}
