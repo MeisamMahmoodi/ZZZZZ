@@ -167,11 +167,11 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
     <div className="flex flex-wrap gap-2">
       {properties.map(p => (
         <button key={p.id} onClick={() => toggleProperty(p.id, setter)}
-          className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${selectedIds.includes(p.id) ? 'bg-brand-500 text-white shadow-sm' : 'bg-surface-100 text-ink-500 hover:bg-surface-200'}`}>
+          className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${selectedIds.includes(p.id) ? 'bg-[#22C55E] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
           {p.name}
         </button>
       ))}
-      {properties.length === 0 && <span className="text-sm text-ink-300">Keine Objekte vorhanden</span>}
+      {properties.length === 0 && <span className="text-sm text-[#94A3B8]">Keine Objekte vorhanden</span>}
     </div>
   );
 
@@ -181,9 +181,9 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
     const extra = props.length - max;
     return (
       <div className="flex gap-1.5 flex-wrap">
-        {visible.map(p => <span key={p.id} className="px-2.5 py-1 bg-surface-100 rounded-lg text-xs font-medium text-ink-500">{p.name}</span>)}
-        {extra > 0 && <span className="px-2.5 py-1 bg-surface-100 rounded-lg text-xs font-medium text-ink-300">+{extra} weitere</span>}
-        {props.length === 0 && <span className="text-xs text-ink-300">—</span>}
+        {visible.map(p => <span key={p.id} className="chip">{p.name}</span>)}
+        {extra > 0 && <span className="chip !text-[#94A3B8]">+{extra} weitere</span>}
+        {props.length === 0 && <span className="text-xs text-[#94A3B8]">—</span>}
       </div>
     );
   };
@@ -191,37 +191,37 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const renderEmployeeCard = (emp: Employee) => {
     const knownProps = getKnownProperties(emp.id);
     return (
-      <div key={emp.id} className={`card-interactive p-5 relative ${menuOpen === emp.id ? 'ring-2 ring-brand-500/20 border-brand-200' : ''}`}>
+      <div key={emp.id} className={`card-interactive p-5 relative ${menuOpen === emp.id ? 'ring-2 ring-[#22C55E]/20 border-[#BBF7D0]' : ''}`}>
         <div className="flex items-start gap-3.5">
           <Avatar firstName={emp.first_name} lastName={emp.last_name} id={emp.id} size="md" />
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-ink-900">{emp.first_name} {emp.last_name}</p>
-            <p className="text-[13px] text-ink-500 flex items-center gap-1.5 mt-1"><Phone size={12} className="text-ink-300" /> {emp.phone}</p>
-            {emp.email && <p className="text-[13px] text-ink-500 flex items-center gap-1.5 mt-0.5"><Mail size={12} className="text-ink-300" /> {emp.email}</p>}
+            <p className="text-sm font-semibold text-[#0F172A]">{emp.first_name} {emp.last_name}</p>
+            <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-1"><Phone size={12} className="text-[#94A3B8]" /> {emp.phone}</p>
+            {emp.email && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Mail size={12} className="text-[#94A3B8]" /> {emp.email}</p>}
           </div>
           <div className="flex items-center gap-2">
             {emp.status === 'sick' ? <span className="badge-danger">Krank</span> : <span className="badge-success">Aktiv</span>}
-            {emp.user_id ? <Shield size={14} className="text-info-500" /> : <ShieldOff size={14} className="text-ink-100" />}
+            {emp.user_id ? <Shield size={14} className="text-[#3B82F6]" /> : <ShieldOff size={14} className="text-[#CBD5E1]" />}
           </div>
         </div>
         {knownProps.length > 0 && <div className="mt-3">{renderPropertyChipsOverflow(knownProps)}</div>}
         {!emp.user_id && knownProps.length > 0 && (
-          <p className="text-[11px] text-warning-500 mt-2 flex items-center gap-1 font-medium"><AlertCircle size={10} /> Kein App-Zugang — kann Einsätze nicht bestätigen</p>
+          <p className="text-[11px] text-[#F97316] mt-2 flex items-center gap-1 font-medium"><AlertCircle size={10} /> Kein App-Zugang — kann Einsätze nicht bestätigen</p>
         )}
         <div className="absolute top-4 right-4" ref={menuOpen === emp.id ? menuRef : null}>
-          <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1.5 rounded-lg hover:bg-surface-100 transition-colors">
-            <MoreVertical size={16} className="text-ink-300" />
+          <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors">
+            <MoreVertical size={16} className="text-[#94A3B8]" />
           </button>
           {menuOpen === emp.id && (
-            <div className="absolute right-0 top-9 bg-surface-0 rounded-xl shadow-elevated border border-surface-200/60 py-1.5 z-20 min-w-[180px] animate-scale-in">
-              <button onClick={() => openEditModal(emp)} className="w-full text-left px-4 py-2.5 text-sm text-ink-900 hover:bg-surface-50 transition-colors flex items-center gap-2.5"><Pencil size={14} className="text-ink-300" /> Bearbeiten</button>
+            <div className="absolute right-0 top-9 bg-white rounded-xl shadow-[0_10px_15px_-3px_rgba(0,0,0,0.08),0_4px_6px_-4px_rgba(0,0,0,0.04)] border border-[#E2E8F0]/60 py-1.5 z-20 min-w-[180px] animate-scale-in">
+              <button onClick={() => openEditModal(emp)} className="w-full text-left px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F8FAFC] transition-colors flex items-center gap-2.5"><Pencil size={14} className="text-[#94A3B8]" /> Bearbeiten</button>
               {emp.status === 'active' ? (
-                <button onClick={() => handleMarkSick(emp)} className="w-full text-left px-4 py-2.5 text-sm text-danger-500 hover:bg-danger-50 transition-colors">Als krank melden</button>
+                <button onClick={() => handleMarkSick(emp)} className="w-full text-left px-4 py-2.5 text-sm text-[#EF4444] hover:bg-[#FEF2F2] transition-colors">Als krank melden</button>
               ) : (
-                <button onClick={() => handleMarkActive(emp)} className="w-full text-left px-4 py-2.5 text-sm text-brand-600 hover:bg-brand-50 transition-colors">Krankmeldung beenden</button>
+                <button onClick={() => handleMarkActive(emp)} className="w-full text-left px-4 py-2.5 text-sm text-[#16A34A] hover:bg-[#F0FDF4] transition-colors">Krankmeldung beenden</button>
               )}
-              <div className="mx-3 my-1 h-px bg-surface-100" />
-              <button onClick={() => { setDeleteConfirm(emp); setMenuOpen(null); }} className="w-full text-left px-4 py-2.5 text-sm text-danger-500 hover:bg-danger-50 transition-colors flex items-center gap-2.5"><Trash2 size={14} /> Löschen</button>
+              <div className="mx-3 my-1 h-px bg-[#F1F5F9]" />
+              <button onClick={() => { setDeleteConfirm(emp); setMenuOpen(null); }} className="w-full text-left px-4 py-2.5 text-sm text-[#EF4444] hover:bg-[#FEF2F2] transition-colors flex items-center gap-2.5"><Trash2 size={14} /> Löschen</button>
             </div>
           )}
         </div>
@@ -232,17 +232,17 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const renderEmployeeRow = (emp: Employee) => {
     const knownProps = getKnownProperties(emp.id);
     return (
-      <tr key={emp.id} className={`border-b border-surface-100 ${menuOpen === emp.id ? 'bg-brand-50/20' : 'hover:bg-surface-50/50'} transition-colors`}>
+      <tr key={emp.id} className={`border-b border-[#F1F5F9] ${menuOpen === emp.id ? 'bg-[#F0FDF4]/30' : 'hover:bg-[#F8FAFC]/50'} transition-colors`}>
         <td className="px-5 py-4">
           <div className="flex items-center gap-3">
             <Avatar firstName={emp.first_name} lastName={emp.last_name} id={emp.id} size="sm" />
-            <span className="text-sm font-medium text-ink-900">{emp.first_name} {emp.last_name}</span>
+            <span className="text-sm font-medium text-[#0F172A]">{emp.first_name} {emp.last_name}</span>
           </div>
         </td>
         <td className="px-5 py-4">
           <div className="space-y-1">
-            <span className="text-sm text-ink-500 flex items-center gap-1.5"><Phone size={13} className="text-ink-300" /> {emp.phone}</span>
-            <span className="text-sm text-ink-500 flex items-center gap-1.5"><Mail size={13} className="text-ink-300" /> {emp.email || '—'}</span>
+            <span className="text-xs text-[#64748B] flex items-center gap-1.5"><Phone size={13} className="text-[#94A3B8]" /> {emp.phone}</span>
+            <span className="text-xs text-[#64748B] flex items-center gap-1.5"><Mail size={13} className="text-[#94A3B8]" /> {emp.email || '—'}</span>
           </div>
         </td>
         <td className="px-5 py-4">
@@ -258,19 +258,19 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
         <td className="px-5 py-4">{renderPropertyChipsOverflow(knownProps)}</td>
         <td className="px-5 py-4">
           <div className="relative" ref={menuOpen === emp.id ? menuRef : null}>
-            <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1.5 rounded-lg hover:bg-surface-100 transition-colors">
-              <MoreVertical size={16} className="text-ink-300" />
+            <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors">
+              <MoreVertical size={16} className="text-[#94A3B8]" />
             </button>
             {menuOpen === emp.id && (
-              <div className="absolute right-5 top-10 bg-surface-0 rounded-xl shadow-elevated border border-surface-200/60 py-1.5 z-20 min-w-[180px] animate-scale-in">
-                <button onClick={() => openEditModal(emp)} className="w-full text-left px-4 py-2.5 text-sm text-ink-900 hover:bg-surface-50 transition-colors flex items-center gap-2.5"><Pencil size={14} className="text-ink-300" /> Bearbeiten</button>
+              <div className="absolute right-5 top-10 bg-white rounded-xl shadow-[0_10px_15px_-3px_rgba(0,0,0,0.08),0_4px_6px_-4px_rgba(0,0,0,0.04)] border border-[#E2E8F0]/60 py-1.5 z-20 min-w-[180px] animate-scale-in">
+                <button onClick={() => openEditModal(emp)} className="w-full text-left px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F8FAFC] transition-colors flex items-center gap-2.5"><Pencil size={14} className="text-[#94A3B8]" /> Bearbeiten</button>
                 {emp.status === 'active' ? (
-                  <button onClick={() => handleMarkSick(emp)} className="w-full text-left px-4 py-2.5 text-sm text-danger-500 hover:bg-danger-50 transition-colors">Als krank melden</button>
+                  <button onClick={() => handleMarkSick(emp)} className="w-full text-left px-4 py-2.5 text-sm text-[#EF4444] hover:bg-[#FEF2F2] transition-colors">Als krank melden</button>
                 ) : (
-                  <button onClick={() => handleMarkActive(emp)} className="w-full text-left px-4 py-2.5 text-sm text-brand-600 hover:bg-brand-50 transition-colors">Krankmeldung beenden</button>
+                  <button onClick={() => handleMarkActive(emp)} className="w-full text-left px-4 py-2.5 text-sm text-[#16A34A] hover:bg-[#F0FDF4] transition-colors">Krankmeldung beenden</button>
                 )}
-                <div className="mx-3 my-1 h-px bg-surface-100" />
-                <button onClick={() => { setDeleteConfirm(emp); setMenuOpen(null); }} className="w-full text-left px-4 py-2.5 text-sm text-danger-500 hover:bg-danger-50 transition-colors flex items-center gap-2.5"><Trash2 size={14} /> Löschen</button>
+                <div className="mx-3 my-1 h-px bg-[#F1F5F9]" />
+                <button onClick={() => { setDeleteConfirm(emp); setMenuOpen(null); }} className="w-full text-left px-4 py-2.5 text-sm text-[#EF4444] hover:bg-[#FEF2F2] transition-colors flex items-center gap-2.5"><Trash2 size={14} /> Löschen</button>
               </div>
             )}
           </div>
@@ -282,14 +282,14 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-2xl sm:text-[28px] font-bold text-ink-900 tracking-tight">Mitarbeiter</h1>
+        <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Mitarbeiter</h1>
         <button onClick={() => setAddModal(true)} className="btn-primary flex items-center justify-center gap-2">
           <Plus size={16} /> Mitarbeiter hinzufügen
         </button>
       </div>
 
       <div className="relative mb-5">
-        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-ink-300" />
+        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
         <input type="text" placeholder="Name, Telefon oder E-Mail..." value={search} onChange={e => setSearch(e.target.value)}
           className="input-field pl-10" />
       </div>
@@ -301,7 +301,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
           { key: 'sick', label: `Krank ${counts.sick}` },
         ].map(f => (
           <button key={f.key} onClick={() => setFilter(f.key as typeof filter)}
-            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${filter === f.key ? 'bg-ink-900 text-white shadow-sm' : 'bg-surface-100 text-ink-500 hover:bg-surface-200'}`}>
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 whitespace-nowrap ${filter === f.key ? 'bg-[#0F172A] text-white shadow-sm' : 'bg-white text-[#64748B] hover:bg-[#F8FAFC] border border-[#E2E8F0]/60'}`}>
             {f.label}
           </button>
         ))}
@@ -309,13 +309,13 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
 
       <div className="lg:hidden space-y-3">
         {filteredEmployees.map(renderEmployeeCard)}
-        {filteredEmployees.length === 0 && <div className="card p-10 text-center"><p className="text-ink-300 text-sm">Keine Mitarbeiter gefunden</p></div>}
+        {filteredEmployees.length === 0 && <div className="card p-10 text-center"><p className="text-sm text-[#94A3B8]">Keine Mitarbeiter gefunden</p></div>}
       </div>
 
       <div className="hidden lg:block card overflow-hidden">
         <table className="w-full">
           <thead>
-            <tr className="border-b border-surface-100">
+            <tr className="border-b border-[#F1F5F9]">
               <th className="text-left px-5 py-3.5 section-label">Mitarbeiter</th>
               <th className="text-left px-5 py-3.5 section-label">Kontakt</th>
               <th className="text-left px-5 py-3.5 section-label">Status</th>
@@ -326,7 +326,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
           </thead>
           <tbody>
             {filteredEmployees.map(renderEmployeeRow)}
-            {filteredEmployees.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-ink-300">Keine Mitarbeiter gefunden</td></tr>}
+            {filteredEmployees.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-[#94A3B8]">Keine Mitarbeiter gefunden</td></tr>}
           </tbody>
         </table>
       </div>
@@ -334,41 +334,41 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
       {/* Add Employee Modal */}
       <Modal open={addModal} onClose={() => { setAddModal(false); setLoginEnabled(false); }} width="max-w-md">
         <div className="p-8">
-          <h2 className="text-lg font-bold text-ink-900 mb-6">Mitarbeiter hinzufügen</h2>
+          <h2 className="text-lg font-bold text-[#0F172A] mb-6">Mitarbeiter hinzufügen</h2>
           <div className="space-y-4">
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-ink-900 mb-1.5">Vorname <span className="text-danger-500">*</span></label>
+                <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Vorname <span className="text-[#EF4444]">*</span></label>
                 <input type="text" value={newFirst} onChange={e => setNewFirst(e.target.value)} className="input-field" />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-ink-900 mb-1.5">Nachname <span className="text-danger-500">*</span></label>
+                <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Nachname <span className="text-[#EF4444]">*</span></label>
                 <input type="text" value={newLast} onChange={e => setNewLast(e.target.value)} className="input-field" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-900 mb-1.5">Telefon <span className="text-danger-500">*</span></label>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Telefon <span className="text-[#EF4444]">*</span></label>
               <input type="text" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+49 171..." className="input-field" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-900 mb-1.5">Bekannte Objekte</label>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Bekannte Objekte</label>
               {renderPropertyChips(newPropertyIds, setNewPropertyIds)}
             </div>
-            <div className="h-px bg-surface-100 my-1" />
+            <div className="h-px bg-[#F1F5F9] my-1" />
             <div>
               <label className="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={loginEnabled} onChange={e => setLoginEnabled(e.target.checked)} className="w-4 h-4 rounded accent-brand-500" />
-                <span className="text-sm font-medium text-ink-900">Login-Daten (optional)</span>
+                <input type="checkbox" checked={loginEnabled} onChange={e => setLoginEnabled(e.target.checked)} className="w-4 h-4 rounded accent-[#22C55E]" />
+                <span className="text-sm font-medium text-[#0F172A]">Login-Daten (optional)</span>
               </label>
-              <p className="text-xs text-ink-300 mt-1 ml-6.5">Mitarbeiter kann sich in der App anmelden und muss beim ersten Login ein Passwort setzen.</p>
+              <p className="text-xs text-[#94A3B8] mt-1 ml-6.5">Mitarbeiter kann sich in der App anmelden und muss beim ersten Login ein Passwort setzen.</p>
               {loginEnabled && (
                 <div className="space-y-4 mt-4 ml-6.5">
                   <div>
-                    <label className="block text-sm font-medium text-ink-900 mb-1.5">E-Mail</label>
+                    <label className="block text-sm font-medium text-[#0F172A] mb-1.5">E-Mail</label>
                     <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="max@beispiel.de" className="input-field" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-ink-900 mb-1.5">Initiales Passwort</label>
+                    <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Initiales Passwort</label>
                     <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mind. 6 Zeichen" className="input-field" />
                   </div>
                 </div>
@@ -387,29 +387,29 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
       {/* Edit Employee Modal */}
       <Modal open={!!editModal} onClose={() => setEditModal(null)} width="max-w-md">
         <div className="p-8">
-          <h2 className="text-lg font-bold text-ink-900 mb-6">Mitarbeiter bearbeiten</h2>
+          <h2 className="text-lg font-bold text-[#0F172A] mb-6">Mitarbeiter bearbeiten</h2>
           <div className="space-y-4">
             <div className="flex gap-3">
               <div className="flex-1">
-                <label className="block text-sm font-medium text-ink-900 mb-1.5">Vorname</label>
+                <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Vorname</label>
                 <input type="text" value={editFirst} onChange={e => setEditFirst(e.target.value)} className="input-field" />
               </div>
               <div className="flex-1">
-                <label className="block text-sm font-medium text-ink-900 mb-1.5">Nachname</label>
+                <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Nachname</label>
                 <input type="text" value={editLast} onChange={e => setEditLast(e.target.value)} className="input-field" />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-900 mb-1.5">Telefon</label>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Telefon</label>
               <input type="text" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="+49 171..." className="input-field" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-900 mb-1.5">Bekannte Objekte</label>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Bekannte Objekte</label>
               {renderPropertyChips(editPropertyIds, setEditPropertyIds)}
             </div>
             {editModal?.email && (
-              <div className="bg-surface-50 rounded-xl p-3.5">
-                <p className="text-xs text-ink-300">Login: <span className="font-medium text-ink-900">{editModal.email}</span></p>
+              <div className="bg-[#F8FAFC] rounded-xl p-3.5">
+                <p className="text-xs text-[#94A3B8]">Login: <span className="font-medium text-[#0F172A]">{editModal.email}</span></p>
               </div>
             )}
           </div>
@@ -423,11 +423,11 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
       {/* Delete Confirmation */}
       <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} width="max-w-sm">
         <div className="p-8">
-          <div className="w-12 h-12 rounded-2xl bg-danger-50 flex items-center justify-center mb-5">
-            <Trash2 size={22} className="text-danger-500" />
+          <div className="w-12 h-12 rounded-2xl bg-[#FEF2F2] flex items-center justify-center mb-5">
+            <Trash2 size={22} className="text-[#EF4444]" />
           </div>
-          <h2 className="text-lg font-bold text-ink-900 mb-2">Mitarbeiter löschen?</h2>
-          <p className="text-sm text-ink-500 leading-relaxed mb-8">
+          <h2 className="text-lg font-bold text-[#0F172A] mb-2">Mitarbeiter löschen?</h2>
+          <p className="text-sm text-[#64748B] leading-relaxed mb-8">
             {deleteConfirm?.first_name} {deleteConfirm?.last_name} wird unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.
           </p>
           <div className="flex justify-end gap-3">

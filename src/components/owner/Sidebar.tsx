@@ -65,7 +65,7 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
       <div className="mx-5 h-px bg-white/[0.06]" />
 
       {/* User */}
-      <div className="px-4 py-5">
+      <div className="px-4 pt-6 pb-5">
         <div className="flex items-center gap-3 px-2 py-2">
           <Avatar firstName={ownerName?.split(' ')[0] || 'O'} lastName={ownerName?.split(' ')[1] || ''} id="owner" size="sm" />
           <div className="flex-1 min-w-0">

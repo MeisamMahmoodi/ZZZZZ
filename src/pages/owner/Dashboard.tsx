@@ -163,34 +163,34 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
-          <h1 className="text-2xl sm:text-[28px] font-bold text-ink-900 tracking-tight">
+          <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">
             {getGreeting()}, {company.owner_name.split(' ')[0]}
           </h1>
-          <p className="text-ink-500 text-sm mt-1.5">{formatDateLong(today)}</p>
+          <p className="text-[#64748B] text-sm mt-1.5">{formatDateLong(today)}</p>
           {isWeekend && (
-            <p className="text-xs text-warning-500 mt-1.5 flex items-center gap-1.5 font-medium">
+            <p className="text-xs text-[#F97316] mt-1.5 flex items-center gap-1.5 font-medium">
               <AlertCircle size={13} /> Wochenende — ggf. keine regulären Einsätze
             </p>
           )}
         </div>
         <div className="relative" ref={notifRef}>
-          <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2.5 rounded-xl hover:bg-surface-100 transition-colors">
-            <Bell size={20} className="text-ink-500" />
-            {sickCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-danger-500 rounded-full text-white text-[10px] flex items-center justify-center font-bold px-1">{sickCount}</span>}
+          <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2.5 rounded-xl hover:bg-white/60 transition-colors">
+            <Bell size={20} className="text-[#64748B]" />
+            {sickCount > 0 && <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-[#EF4444] rounded-full text-white text-[10px] flex items-center justify-center font-bold px-1">{sickCount}</span>}
           </button>
           {showNotifications && (
-            <div className="absolute right-0 top-12 bg-surface-0 rounded-xl shadow-elevated border border-surface-200/60 py-1 z-30 w-80 max-h-80 overflow-y-auto animate-scale-in">
-              <div className="px-4 py-3 border-b border-surface-100"><p className="text-sm font-semibold text-ink-900">Benachrichtigungen</p></div>
+            <div className="absolute right-0 top-12 bg-white rounded-xl shadow-[0_10px_15px_-3px_rgba(0,0,0,0.08),0_4px_6px_-4px_rgba(0,0,0,0.04)] border border-[#E2E8F0]/60 py-1 z-30 w-80 max-h-80 overflow-y-auto animate-scale-in">
+              <div className="px-4 py-3 border-b border-[#F1F5F9]"><p className="text-sm font-semibold text-[#0F172A]">Benachrichtigungen</p></div>
               {sickReportsForCompany.length === 0 ? (
-                <div className="px-4 py-8 text-center"><p className="text-sm text-ink-300">Keine Benachrichtigungen</p></div>
+                <div className="px-4 py-8 text-center"><p className="text-sm text-[#94A3B8]">Keine Benachrichtigungen</p></div>
               ) : (
                 sickReportsForCompany.map(sr => (
-                  <div key={sr.id} className="px-4 py-3 hover:bg-surface-50 transition-colors">
+                  <div key={sr.id} className="px-4 py-3 hover:bg-[#F8FAFC] transition-colors">
                     <div className="flex items-start gap-2.5">
-                      <AlertTriangle size={15} className="text-danger-400 shrink-0 mt-0.5" />
+                      <AlertTriangle size={15} className="text-[#F87171] shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-ink-900">{sr.employee?.first_name} {sr.employee?.last_name} ist krank</p>
-                        <p className="text-xs text-ink-300 mt-0.5">{new Date(sr.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}{sr.reason ? ` — ${sr.reason}` : ''}</p>
+                        <p className="text-sm font-medium text-[#0F172A]">{sr.employee?.first_name} {sr.employee?.last_name} ist krank</p>
+                        <p className="text-xs text-[#94A3B8] mt-0.5">{new Date(sr.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}{sr.reason ? ` — ${sr.reason}` : ''}</p>
                       </div>
                     </div>
                   </div>
@@ -204,35 +204,35 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       {/* CRITICAL: Sick employees WITH assignments */}
       {sickWithAssignments.length > 0 && (
         <div className="mb-8">
-          <h2 className="section-label text-danger-500 mb-4 flex items-center gap-2">
+          <h2 className="section-label text-[#EF4444] mb-4 flex items-center gap-2">
             <AlertTriangle size={14} /> Krankmeldungen mit Einsatz
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {sickWithAssignments.map(({ sickReport: sr, assignments: empAssignments, hasReplacement }) => (
-              <div key={sr.employee_id} className="bg-danger-50 border border-danger-200/60 rounded-2xl p-6">
+              <div key={sr.employee_id} className="bg-[#FEF2F2] border border-[#FECACA]/60 rounded-2xl p-6">
                 <div className="flex items-start gap-4">
                   <div className="shrink-0">
                     <Avatar firstName={sr.employee?.first_name || ''} lastName={sr.employee?.last_name || ''} id={sr.employee_id} size="lg" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-lg font-bold text-ink-900">{sr.employee?.first_name} {sr.employee?.last_name}</p>
+                    <p className="text-lg font-bold text-[#0F172A]">{sr.employee?.first_name} {sr.employee?.last_name}</p>
                     <span className="badge-danger mt-1.5">Krankgemeldet</span>
-                    {sr.reason && <p className="text-sm text-ink-500 mt-2">Grund: {sr.reason}</p>}
+                    {sr.reason && <p className="text-sm text-[#64748B] mt-2">Grund: {sr.reason}</p>}
                     {empAssignments.map(a => (
                       <div key={a.id} className="mt-3 bg-white/70 rounded-xl p-3">
-                        <p className="text-sm font-semibold text-ink-900 flex items-center gap-1.5"><MapPin size={14} className="text-ink-300" /> {a.property?.name}</p>
-                        <p className="text-[13px] text-ink-500 mt-0.5 flex items-center gap-1.5"><Clock size={13} className="text-ink-300" /> {formatTime(a.property?.time_from || '')} – {formatTime(a.property?.time_to || '')} Uhr</p>
+                        <p className="text-sm font-semibold text-[#0F172A] flex items-center gap-1.5"><MapPin size={14} className="text-[#94A3B8]" /> {a.property?.name}</p>
+                        <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(a.property?.time_from || '')} – {formatTime(a.property?.time_to || '')} Uhr</p>
                       </div>
                     ))}
                   </div>
                 </div>
                 {!hasReplacement && (
-                  <button onClick={() => handleFindReplacement(sr)} className="w-full mt-5 py-3 rounded-xl text-sm font-semibold bg-danger-500 text-white hover:bg-danger-600 transition-colors flex items-center justify-center gap-2">
+                  <button onClick={() => handleFindReplacement(sr)} className="w-full mt-5 py-3 rounded-xl text-sm font-semibold bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors flex items-center justify-center gap-2">
                     <Search size={16} /> Ersatz finden
                   </button>
                 )}
                 {hasReplacement && (
-                  <div className="mt-5 py-2.5 rounded-xl text-sm font-semibold bg-brand-50 text-brand-600 text-center flex items-center justify-center gap-2">
+                  <div className="mt-5 py-2.5 rounded-xl text-sm font-semibold bg-[#F0FDF4] text-[#16A34A] text-center flex items-center justify-center gap-2">
                     <UserCheck size={16} /> Ersatz gefunden
                   </div>
                 )}
@@ -245,21 +245,21 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       {/* Sick employees WITHOUT assignments */}
       {sickWithoutAssignments.length > 0 && (
         <div className="mb-8">
-          <h2 className="section-label text-warning-500 mb-4 flex items-center gap-2">
+          <h2 className="section-label text-[#F97316] mb-4 flex items-center gap-2">
             <AlertTriangle size={14} /> Krankmeldungen
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {sickWithoutAssignments.map(({ sickReport: sr }) => (
-              <div key={sr.employee_id} className="bg-warning-50 border border-warning-100 rounded-2xl p-5">
+              <div key={sr.employee_id} className="bg-[#FFF7ED] border border-[#FFEDD5]/60 rounded-2xl p-5">
                 <div className="flex items-start gap-4">
                   <div className="shrink-0">
                     <Avatar firstName={sr.employee?.first_name || ''} lastName={sr.employee?.last_name || ''} id={sr.employee_id} size="md" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-base font-bold text-ink-900">{sr.employee?.first_name} {sr.employee?.last_name}</p>
+                    <p className="text-base font-bold text-[#0F172A]">{sr.employee?.first_name} {sr.employee?.last_name}</p>
                     <span className="badge-warning mt-1.5">Krankgemeldet</span>
-                    {sr.reason && <p className="text-sm text-ink-500 mt-1.5">Grund: {sr.reason}</p>}
-                    <p className="text-sm text-ink-300 mt-2">Kein Einsatz heute</p>
+                    {sr.reason && <p className="text-sm text-[#64748B] mt-1.5">Grund: {sr.reason}</p>}
+                    <p className="text-xs text-[#94A3B8] mt-2">Kein Einsatz heute</p>
                   </div>
                 </div>
               </div>
@@ -272,32 +272,32 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <div className="card p-5 sm:p-6">
           <p className="section-label mb-3">Mitarbeiter</p>
-          <div className="flex items-baseline gap-1">
-            <p className="text-3xl font-bold text-ink-900">{activeEmployees.length}</p>
-            <span className="text-lg text-ink-300 font-normal">/</span>
-            <span className="text-lg text-ink-300 font-normal">{companyEmployees.length}</span>
+          <div className="flex items-baseline gap-1.5">
+            <p className="text-2xl font-bold text-[#0F172A]">{activeEmployees.length}</p>
+            <span className="text-sm text-[#94A3B8]">/</span>
+            <span className="text-sm text-[#94A3B8]">{companyEmployees.length}</span>
           </div>
-          <p className="text-sm text-ink-300 mt-2">verfügbar</p>
-          {sickCount > 0 && <p className="text-xs text-warning-500 font-semibold mt-1">{sickCount} krank</p>}
+          <p className="text-xs text-[#94A3B8] mt-2">verfügbar</p>
+          {sickCount > 0 && <p className="text-xs text-[#F97316] font-semibold mt-1">{sickCount} krank</p>}
         </div>
         <div className="card p-5 sm:p-6">
           <p className="section-label mb-3">Einsätze heute</p>
-          <p className="text-3xl font-bold text-ink-900">{todayAssignments.length}</p>
+          <p className="text-2xl font-bold text-[#0F172A]">{todayAssignments.length}</p>
           {todayAssignments.length > 0 ? (
-            <p className="text-sm text-brand-600 font-medium mt-2">{propertiesWithAssignments.length} Objekte</p>
+            <p className="text-xs text-[#16A34A] font-medium mt-2">{propertiesWithAssignments.length} Objekte</p>
           ) : (
-            <p className="text-sm text-ink-300 mt-2">Keine Einsätze</p>
+            <p className="text-xs text-[#94A3B8] mt-2">Keine Einsätze</p>
           )}
         </div>
         <div className="card p-5 sm:p-6 col-span-2 lg:col-span-1">
           <p className="section-label mb-3">Krankmeldungen</p>
-          <p className="text-3xl font-bold text-ink-900">{sickCount}</p>
+          <p className="text-2xl font-bold text-[#0F172A]">{sickCount}</p>
           {openSickCount > 0 ? (
-            <p className="text-sm text-danger-500 font-semibold mt-2">{openSickCount} Ersatz fehlt</p>
+            <p className="text-xs text-[#EF4444] font-semibold mt-2">{openSickCount} Ersatz fehlt</p>
           ) : coveredSickCount > 0 ? (
-            <p className="text-sm text-brand-600 font-medium mt-2">{coveredSickCount} mit Ersatz</p>
+            <p className="text-xs text-[#16A34A] font-medium mt-2">{coveredSickCount} mit Ersatz</p>
           ) : (
-            <p className="text-sm text-brand-600 font-medium mt-2">Alles erledigt</p>
+            <p className="text-xs text-[#16A34A] font-medium mt-2">Alles erledigt</p>
           )}
         </div>
       </div>
@@ -305,14 +305,14 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       {/* Today's Assignments */}
       <div>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-lg font-bold text-ink-900">Heutige Einsätze</h2>
-          <span className="text-sm text-ink-300 font-medium">{today.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
+          <h2 className="text-sm font-semibold text-[#0F172A]">Heutige Einsätze</h2>
+          <span className="text-xs text-[#94A3B8] font-medium">{today.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</span>
         </div>
 
         {todayAssignments.length === 0 ? (
           <div className="card p-10 text-center">
-            <CalendarDays size={36} className="text-ink-100 mx-auto mb-3" />
-            <p className="text-ink-300 text-sm">Keine Einsätze für heute</p>
+            <CalendarDays size={36} className="text-[#CBD5E1] mx-auto mb-3" />
+            <p className="text-sm text-[#94A3B8]">Keine Einsätze für heute</p>
           </div>
         ) : (
           <div className="space-y-4">
@@ -322,45 +322,45 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
               const sickForProp = sickReportsForCompany.filter(sr => propAssignments.some(a => a.employee_id === sr.employee_id));
               const activeAssignments = propAssignments.filter(a => !sickReportsForCompany.some(sr => sr.employee_id === a.employee_id));
 
-              let statusColor = 'bg-ink-100';
-              if (hasSick && activeAssignments.length === 0) statusColor = 'bg-danger-400';
-              else if (propAssignments.length > 0 && !hasSick) statusColor = 'bg-brand-500';
-              else if (hasSick) statusColor = 'bg-warning-400';
+              let statusColor = 'bg-[#CBD5E1]';
+              if (hasSick && activeAssignments.length === 0) statusColor = 'bg-[#F87171]';
+              else if (propAssignments.length > 0 && !hasSick) statusColor = 'bg-[#22C55E]';
+              else if (hasSick) statusColor = 'bg-[#FB923C]';
 
               return (
                 <div key={prop.id} className="card overflow-hidden">
                   <div className="p-5 sm:p-6 flex items-start gap-4">
-                    <div className={`w-2.5 h-2.5 rounded-full mt-2 shrink-0 ${statusColor}`} />
+                    <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${statusColor}`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-base font-bold text-ink-900">{prop.name}</p>
-                      <p className="text-[13px] text-ink-500 mt-1 flex items-center gap-1.5"><MapPin size={13} className="text-ink-300" /> {prop.address}</p>
-                      <p className="text-[13px] text-ink-500 mt-0.5 flex items-center gap-1.5"><Clock size={13} className="text-ink-300" /> {formatTime(prop.time_from)} – {formatTime(prop.time_to)} Uhr</p>
-                      <div className="mt-3 flex items-center gap-2 flex-wrap">
+                      <p className="text-sm font-semibold text-[#0F172A]">{prop.name}</p>
+                      <p className="text-xs text-[#64748B] mt-1 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {prop.address}</p>
+                      <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(prop.time_from)} – {formatTime(prop.time_to)} Uhr</p>
+                      <div className="mt-3 flex items-center gap-1.5 flex-wrap">
                         {activeAssignments.map(a => (
-                          <span key={a.id} className="badge-neutral"><User size={12} /> {a.employee?.first_name} {a.employee?.last_name?.charAt(0)}.</span>
+                          <span key={a.id} className="chip"><User size={11} /> {a.employee?.first_name} {a.employee?.last_name?.charAt(0)}.</span>
                         ))}
                         {sickForProp.map(sr => (
-                          <span key={sr.id} className="badge-danger"><User size={12} /> {sr.employee?.first_name} {sr.employee?.last_name?.charAt(0)}. (krank)</span>
+                          <span key={sr.id} className="chip !bg-[#FEF2F2] !text-[#EF4444]"><User size={11} /> {sr.employee?.first_name} {sr.employee?.last_name?.charAt(0)}. (krank)</span>
                         ))}
-                        {activeAssignments.length === 0 && !hasSick && <span className="text-[13px] text-ink-300">Kein Personal zugewiesen</span>}
-                        {hasSick && activeAssignments.length === 0 && <span className="text-[13px] text-danger-500 font-semibold">Ersatz fehlt noch</span>}
+                        {activeAssignments.length === 0 && !hasSick && <span className="text-xs text-[#94A3B8]">Kein Personal zugewiesen</span>}
+                        {hasSick && activeAssignments.length === 0 && <span className="text-xs text-[#EF4444] font-semibold">Ersatz fehlt noch</span>}
                       </div>
                     </div>
                     {hasSick && activeAssignments.length === 0 && sickForProp.length > 0 && (
-                      <button onClick={() => handleFindReplacement(sickForProp[0])} className="bg-danger-500 text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-danger-600 transition-colors shrink-0">
+                      <button onClick={() => handleFindReplacement(sickForProp[0])} className="bg-[#EF4444] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#DC2626] transition-colors shrink-0">
                         <span className="hidden sm:inline">Ersatz finden</span><span className="sm:hidden">Ersatz</span>
                       </button>
                     )}
                   </div>
                   {propAssignments.length > 0 && (
-                    <div className="border-t border-surface-100 divide-y divide-surface-100">
+                    <div className="border-t border-[#F1F5F9] divide-y divide-[#F1F5F9]">
                       {propAssignments.map(a => {
                         const isSick = sickReportsForCompany.some(sr => sr.employee_id === a.employee_id);
                         return (
-                          <div key={a.id} className={`px-5 sm:px-6 py-3.5 flex items-center gap-3 ${isSick ? 'bg-danger-50/40' : ''}`}>
+                          <div key={a.id} className={`px-5 sm:px-6 py-3.5 flex items-center gap-3 ${isSick ? 'bg-[#FEF2F2]/40' : ''}`}>
                             <Avatar firstName={a.employee?.first_name || ''} lastName={a.employee?.last_name || ''} id={a.employee_id} size="sm" />
                             <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-ink-900">{a.employee?.first_name} {a.employee?.last_name}</p>
+                              <p className="text-sm font-medium text-[#0F172A]">{a.employee?.first_name} {a.employee?.last_name}</p>
                             </div>
                             {isSick && <span className="badge-danger">Krank</span>}
                             {!isSick && (
@@ -374,8 +374,8 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                             )}
                             {a.status === 'assigned' && !isSick && (
                               <div className="flex items-center gap-1">
-                                <button onClick={() => handleCheckIn(a.id)} className="p-1.5 rounded-lg hover:bg-brand-50 transition-colors text-brand-500" title="Einchecken"><Check size={15} /></button>
-                                <button onClick={() => handleRemoveAssignment(a.id)} className="p-1.5 rounded-lg hover:bg-danger-50 transition-colors text-danger-400" title="Entfernen"><X size={15} /></button>
+                                <button onClick={() => handleCheckIn(a.id)} className="p-1.5 rounded-lg hover:bg-[#F0FDF4] transition-colors text-[#22C55E]" title="Einchecken"><Check size={15} /></button>
+                                <button onClick={() => handleRemoveAssignment(a.id)} className="p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors text-[#F87171]" title="Entfernen"><X size={15} /></button>
                               </div>
                             )}
                           </div>

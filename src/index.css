@@ -9,12 +9,12 @@
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #F8FAFC;
+    background-color: #F1F5F9;
     color: #0F172A;
   }
 
   * {
-    border-color: #F1F5F9;
+    border-color: #E2E8F0;
   }
 }
 
@@ -40,11 +40,12 @@
     box-shadow: 0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04);
     border: 1px solid rgba(226,232,240,0.6);
     transition: all 0.2s;
+    cursor: pointer;
   }
 
   .card-interactive:hover {
     box-shadow: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
-    border-color: #E2E8F0;
+    border-color: #CBD5E1;
   }
 
   .btn-primary {
@@ -110,7 +111,7 @@
   }
 
   .btn-ghost:hover {
-    background-color: #F8FAFC;
+    background-color: #F1F5F9;
   }
 
   .input-field {
@@ -201,6 +202,17 @@
     font-weight: 600;
     background-color: #F1F5F9;
     color: #64748B;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #64748B;
+    background-color: #F1F5F9;
   }
 }
 

@@ -146,18 +146,18 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   const TypeIcon = ({ type }: { type: string }) => {
     const opt = typeOptions.find(o => o.value === type) || typeOptions[4];
     const Icon = opt.icon;
-    return <Icon size={20} className="text-ink-700" />;
+    return <Icon size={20} className="text-[#334155]" />;
   };
 
   const renderEmployeeChips = (selectedIds: string[], setter: typeof setNewEmployeeIds) => (
     <div className="flex flex-wrap gap-2">
       {employees.filter(e => e.status === 'active').map(emp => (
         <button key={emp.id} onClick={() => toggleEmployee(emp.id, setter)}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${selectedIds.includes(emp.id) ? 'bg-brand-500 text-white shadow-sm' : 'bg-surface-100 text-ink-500 hover:bg-surface-200'}`}>
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${selectedIds.includes(emp.id) ? 'bg-[#22C55E] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
           {emp.first_name} {emp.last_name}
         </button>
       ))}
-      {employees.filter(e => e.status === 'active').length === 0 && <span className="text-sm text-ink-300">Keine aktiven Mitarbeiter</span>}
+      {employees.filter(e => e.status === 'active').length === 0 && <span className="text-sm text-[#94A3B8]">Keine aktiven Mitarbeiter</span>}
     </div>
   );
 
@@ -165,7 +165,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
     <div className="flex gap-2">
       {dayOptions.map(day => (
         <button key={day} onClick={() => toggleDay(day, setter)}
-          className={`w-10 h-10 rounded-xl text-sm font-medium transition-all duration-200 ${selectedDays.includes(day) ? 'bg-brand-500 text-white shadow-sm' : 'bg-surface-100 text-ink-500 hover:bg-surface-200'}`}>
+          className={`w-10 h-10 rounded-xl text-sm font-medium transition-all duration-200 ${selectedDays.includes(day) ? 'bg-[#22C55E] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
           {day}
         </button>
       ))}
@@ -176,7 +176,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
     <div className="flex flex-wrap gap-2">
       {typeOptions.map(opt => (
         <button key={opt.value} onClick={() => setter(opt.value)}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${selectedType === opt.value ? 'bg-ink-900 text-white shadow-sm' : 'bg-surface-100 text-ink-500 hover:bg-surface-200'}`}>
+          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${selectedType === opt.value ? 'bg-[#0F172A] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
           <opt.icon size={14} /> {opt.label}
         </button>
       ))}
@@ -186,7 +186,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-2xl sm:text-[28px] font-bold text-ink-900 tracking-tight">Objekte</h1>
+        <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Objekte</h1>
         <button onClick={() => setAddModal(true)} className="btn-primary flex items-center gap-2">
           <Plus size={16} /> Objekt hinzufügen
         </button>
@@ -199,42 +199,42 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
           const noStaff = propEmployees.length === 0;
 
           return (
-            <div key={prop.id} className={`card-interactive p-5 relative ${noStaff ? 'border-warning-200/60' : ''}`}>
+            <div key={prop.id} className={`card-interactive p-5 relative ${noStaff ? 'border-[#FFEDD5]/60' : ''}`}>
               <div className="flex items-start gap-3.5">
-                <div className="w-11 h-11 rounded-xl bg-surface-50 flex items-center justify-center shrink-0">
+                <div className="w-11 h-11 rounded-xl bg-[#F8FAFC] flex items-center justify-center shrink-0">
                   <TypeIcon type={prop.type} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-base font-bold text-ink-900">{prop.name}</p>
-                  <p className={`text-[13px] mt-1 font-medium ${isToday ? 'text-brand-600' : 'text-ink-500'}`}>
+                  <p className="text-sm font-semibold text-[#0F172A]">{prop.name}</p>
+                  <p className={`text-xs mt-1 font-medium ${isToday ? 'text-[#16A34A]' : 'text-[#64748B]'}`}>
                     {prop.cleaning_days?.join(' · ')} · {formatTime(prop.time_from)}–{formatTime(prop.time_to)} Uhr
                   </p>
-                  <p className="text-[13px] text-ink-500 mt-0.5 flex items-center gap-1.5"><MapPin size={13} className="text-ink-300" /> {prop.address}</p>
-                  <div className="flex items-center gap-2 mt-3 flex-wrap">
-                    <Users size={13} className="text-ink-300" />
+                  <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {prop.address}</p>
+                  <div className="flex items-center gap-1.5 mt-3 flex-wrap">
+                    <Users size={12} className="text-[#94A3B8]" />
                     {propEmployees.map(e => (
-                      <span key={e.id} className="px-2.5 py-1 bg-surface-100 rounded-lg text-xs font-medium text-ink-500">{e.first_name} {e.last_name.charAt(0)}.</span>
+                      <span key={e.id} className="chip">{e.first_name} {e.last_name.charAt(0)}.</span>
                     ))}
                     {noStaff && (
                       <span className="badge-warning">
-                        <AlertCircle size={12} /> Kein Personal
+                        <AlertCircle size={11} /> Kein Personal
                       </span>
                     )}
                   </div>
                   {noStaff && (
-                    <p className="text-[11px] text-warning-500 mt-1.5 font-medium">Objekt ohne Personal — Einsatz nicht möglich</p>
+                    <p className="text-[11px] text-[#F97316] mt-1.5 font-medium">Objekt ohne Personal — Einsatz nicht möglich</p>
                   )}
                 </div>
                 <div className="relative" ref={menuOpen === prop.id ? menuRef : null}>
-                  <button onClick={() => setMenuOpen(menuOpen === prop.id ? null : prop.id)} className="p-1.5 rounded-lg hover:bg-surface-100 transition-colors">
-                    <MoreVertical size={16} className="text-ink-300" />
+                  <button onClick={() => setMenuOpen(menuOpen === prop.id ? null : prop.id)} className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors">
+                    <MoreVertical size={16} className="text-[#94A3B8]" />
                   </button>
                   {menuOpen === prop.id && (
-                    <div className="absolute right-0 top-9 bg-surface-0 rounded-xl shadow-elevated border border-surface-200/60 py-1.5 z-20 min-w-[180px] animate-scale-in">
-                      <button onClick={() => openEditModal(prop)} className="w-full text-left px-4 py-2.5 text-sm text-ink-900 hover:bg-surface-50 transition-colors flex items-center gap-2.5"><Pencil size={14} className="text-ink-300" /> Bearbeiten</button>
-                      <button onClick={() => { setMenuOpen(null); onNavigate?.('assignments'); }} className="w-full text-left px-4 py-2.5 text-sm text-brand-600 hover:bg-brand-50 transition-colors flex items-center gap-2.5"><CalendarPlus size={14} /> Einsatz erstellen</button>
-                      <div className="mx-3 my-1 h-px bg-surface-100" />
-                      <button onClick={() => { setDeleteConfirm(prop); setMenuOpen(null); }} className="w-full text-left px-4 py-2.5 text-sm text-danger-500 hover:bg-danger-50 transition-colors flex items-center gap-2.5"><Trash2 size={14} /> Löschen</button>
+                    <div className="absolute right-0 top-9 bg-white rounded-xl shadow-[0_10px_15px_-3px_rgba(0,0,0,0.08),0_4px_6px_-4px_rgba(0,0,0,0.04)] border border-[#E2E8F0]/60 py-1.5 z-20 min-w-[180px] animate-scale-in">
+                      <button onClick={() => openEditModal(prop)} className="w-full text-left px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F8FAFC] transition-colors flex items-center gap-2.5"><Pencil size={14} className="text-[#94A3B8]" /> Bearbeiten</button>
+                      <button onClick={() => { setMenuOpen(null); onNavigate?.('assignments'); }} className="w-full text-left px-4 py-2.5 text-sm text-[#16A34A] hover:bg-[#F0FDF4] transition-colors flex items-center gap-2.5"><CalendarPlus size={14} /> Einsatz erstellen</button>
+                      <div className="mx-3 my-1 h-px bg-[#F1F5F9]" />
+                      <button onClick={() => { setDeleteConfirm(prop); setMenuOpen(null); }} className="w-full text-left px-4 py-2.5 text-sm text-[#EF4444] hover:bg-[#FEF2F2] transition-colors flex items-center gap-2.5"><Trash2 size={14} /> Löschen</button>
                     </div>
                   )}
                 </div>
@@ -243,30 +243,30 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
           );
         })}
         {properties.length === 0 && (
-          <div className="col-span-2 card p-10 text-center"><p className="text-ink-300 text-sm">Keine Objekte vorhanden</p></div>
+          <div className="col-span-2 card p-10 text-center"><p className="text-sm text-[#94A3B8]">Keine Objekte vorhanden</p></div>
         )}
       </div>
 
       {/* Add Property Modal */}
       <Modal open={addModal} onClose={() => { setAddModal(false); resetForm(); }} width="max-w-md">
         <div className="p-8">
-          <h2 className="text-lg font-bold text-ink-900 mb-6">Objekt hinzufügen</h2>
+          <h2 className="text-lg font-bold text-[#0F172A] mb-6">Objekt hinzufügen</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-ink-900 mb-1.5">Objektname <span className="text-danger-500">*</span></label>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Objektname <span className="text-[#EF4444]">*</span></label>
               <input type="text" value={newName} onChange={e => setNewName(e.target.value)} className="input-field" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-ink-900 mb-1.5">Adresse</label>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Adresse</label>
               <input type="text" value={newAddress} onChange={e => setNewAddress(e.target.value)} className="input-field" />
             </div>
-            <div><label className="block text-sm font-medium text-ink-900 mb-1.5">Typ</label>{renderTypePicker(newType, setNewType)}</div>
-            <div><label className="block text-sm font-medium text-ink-900 mb-1.5">Reinigungstage</label>{renderDayPicker(newDays, setNewDays)}</div>
+            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Typ</label>{renderTypePicker(newType, setNewType)}</div>
+            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Reinigungstage</label>{renderDayPicker(newDays, setNewDays)}</div>
             <div className="flex gap-3">
-              <div className="flex-1"><label className="block text-sm font-medium text-ink-900 mb-1.5">Uhrzeit von</label><input type="time" value={newTimeFrom} onChange={e => setNewTimeFrom(e.target.value)} className="input-field" /></div>
-              <div className="flex-1"><label className="block text-sm font-medium text-ink-900 mb-1.5">Uhrzeit bis</label><input type="time" value={newTimeTo} onChange={e => setNewTimeTo(e.target.value)} className="input-field" /></div>
+              <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit von</label><input type="time" value={newTimeFrom} onChange={e => setNewTimeFrom(e.target.value)} className="input-field" /></div>
+              <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit bis</label><input type="time" value={newTimeTo} onChange={e => setNewTimeTo(e.target.value)} className="input-field" /></div>
             </div>
-            <div><label className="block text-sm font-medium text-ink-900 mb-1.5">Zugewiesene Mitarbeiter</label>{renderEmployeeChips(newEmployeeIds, setNewEmployeeIds)}</div>
+            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Zugewiesene Mitarbeiter</label>{renderEmployeeChips(newEmployeeIds, setNewEmployeeIds)}</div>
           </div>
           <div className="flex justify-end gap-3 mt-8">
             <button onClick={() => { setAddModal(false); resetForm(); }} className="btn-ghost">Abbrechen</button>
@@ -278,17 +278,17 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
       {/* Edit Property Modal */}
       <Modal open={!!editModal} onClose={() => setEditModal(null)} width="max-w-md">
         <div className="p-8">
-          <h2 className="text-lg font-bold text-ink-900 mb-6">Objekt bearbeiten</h2>
+          <h2 className="text-lg font-bold text-[#0F172A] mb-6">Objekt bearbeiten</h2>
           <div className="space-y-4">
-            <div><label className="block text-sm font-medium text-ink-900 mb-1.5">Objektname</label><input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="input-field" /></div>
-            <div><label className="block text-sm font-medium text-ink-900 mb-1.5">Adresse</label><input type="text" value={editAddress} onChange={e => setEditAddress(e.target.value)} className="input-field" /></div>
-            <div><label className="block text-sm font-medium text-ink-900 mb-1.5">Typ</label>{renderTypePicker(editType, setEditType)}</div>
-            <div><label className="block text-sm font-medium text-ink-900 mb-1.5">Reinigungstage</label>{renderDayPicker(editDays, setEditDays)}</div>
+            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Objektname</label><input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="input-field" /></div>
+            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Adresse</label><input type="text" value={editAddress} onChange={e => setEditAddress(e.target.value)} className="input-field" /></div>
+            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Typ</label>{renderTypePicker(editType, setEditType)}</div>
+            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Reinigungstage</label>{renderDayPicker(editDays, setEditDays)}</div>
             <div className="flex gap-3">
-              <div className="flex-1"><label className="block text-sm font-medium text-ink-900 mb-1.5">Uhrzeit von</label><input type="time" value={editTimeFrom} onChange={e => setEditTimeFrom(e.target.value)} className="input-field" /></div>
-              <div className="flex-1"><label className="block text-sm font-medium text-ink-900 mb-1.5">Uhrzeit bis</label><input type="time" value={editTimeTo} onChange={e => setEditTimeTo(e.target.value)} className="input-field" /></div>
+              <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit von</label><input type="time" value={editTimeFrom} onChange={e => setEditTimeFrom(e.target.value)} className="input-field" /></div>
+              <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit bis</label><input type="time" value={editTimeTo} onChange={e => setEditTimeTo(e.target.value)} className="input-field" /></div>
             </div>
-            <div><label className="block text-sm font-medium text-ink-900 mb-1.5">Zugewiesene Mitarbeiter</label>{renderEmployeeChips(editEmployeeIds, setEditEmployeeIds)}</div>
+            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Zugewiesene Mitarbeiter</label>{renderEmployeeChips(editEmployeeIds, setEditEmployeeIds)}</div>
           </div>
           <div className="flex justify-end gap-3 mt-8">
             <button onClick={() => setEditModal(null)} className="btn-ghost">Abbrechen</button>
@@ -300,11 +300,11 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
       {/* Delete Confirmation */}
       <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} width="max-w-sm">
         <div className="p-8">
-          <div className="w-12 h-12 rounded-2xl bg-danger-50 flex items-center justify-center mb-5">
-            <Trash2 size={22} className="text-danger-500" />
+          <div className="w-12 h-12 rounded-2xl bg-[#FEF2F2] flex items-center justify-center mb-5">
+            <Trash2 size={22} className="text-[#EF4444]" />
           </div>
-          <h2 className="text-lg font-bold text-ink-900 mb-2">Objekt löschen?</h2>
-          <p className="text-sm text-ink-500 leading-relaxed mb-8">
+          <h2 className="text-lg font-bold text-[#0F172A] mb-2">Objekt löschen?</h2>
+          <p className="text-sm text-[#64748B] leading-relaxed mb-8">
             „{deleteConfirm?.name}" wird unwiderruflich gelöscht. Alle zugehörigen Einsätze und Zuweisungen werden ebenfalls entfernt. Diese Aktion kann nicht rückgängig gemacht werden.
           </p>
           <div className="flex justify-end gap-3">
