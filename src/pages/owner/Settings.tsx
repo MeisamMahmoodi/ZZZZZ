@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Lock, Eye, EyeOff } from 'lucide-react';
+import { Lock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { useAuth } from '../../hooks/useAuth';
 import { useToast } from '../../components/shared/Toast';
 import type { Company } from '../../lib/types';
 
@@ -16,7 +15,6 @@ export function Settings({ company, onRefresh }: SettingsProps) {
   const [email, setEmail] = useState(company.owner_email);
   const [saving, setSaving] = useState(false);
 
-  const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
@@ -57,7 +55,6 @@ export function Settings({ company, onRefresh }: SettingsProps) {
     if (error) {
       addToast('Fehler beim Ändern des Passworts', 'error');
     } else {
-      setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
       addToast('Passwort geändert');

@@ -49,18 +49,22 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   useEffect(() => { loadData(); }, [company.id, refreshKey]);
 
   async function loadData() {
-    const [empRes, propRes, assignRes, sickRes, epRes] = await Promise.all([
-      supabase.from('employees').select('*').eq('company_id', company.id),
-      supabase.from('properties').select('*').eq('company_id', company.id),
-      supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').eq('date', todayStr),
-      supabase.from('sick_reports').select('*, employee:employees(*)').eq('date', todayStr),
-      supabase.from('employee_properties').select('*'),
-    ]);
-    setEmployees(empRes.data || []);
-    setProperties(propRes.data || []);
-    setAssignments((assignRes.data as unknown as AssignmentWithDetails[]) || []);
-    setSickReports((sickRes.data as unknown as SickReportWithEmployee[]) || []);
-    setEmployeeProperties(epRes.data || []);
+    try {
+      const [empRes, propRes, assignRes, sickRes, epRes] = await Promise.all([
+        supabase.from('employees').select('*').eq('company_id', company.id),
+        supabase.from('properties').select('*').eq('company_id', company.id),
+        supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').eq('date', todayStr),
+        supabase.from('sick_reports').select('*, employee:employees(*)').eq('date', todayStr),
+        supabase.from('employee_properties').select('*'),
+      ]);
+      setEmployees(empRes.data || []);
+      setProperties(propRes.data || []);
+      setAssignments((assignRes.data as unknown as AssignmentWithDetails[]) || []);
+      setSickReports((sickRes.data as unknown as SickReportWithEmployee[]) || []);
+      setEmployeeProperties(epRes.data || []);
+    } catch {
+      // Component renders with existing state
+    }
   }
 
   const companyEmployees = useMemo(() => employees.filter(e => e.company_id === company.id), [employees, company.id]);
@@ -98,14 +102,15 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   };
 
   const handleRemoveAssignment = async (id: string) => {
-    await supabase.from('assignments').delete().eq('id', id);
+    const { error } = await supabase.from('assignments').delete().eq('id', id);
+    if (error) { addToast('Fehler beim Entfernen', 'error'); return; }
     onRefresh();
     addToast('Zuweisung entfernt');
   };
 
   const handleCheckIn = async (id: string) => {
-    await supabase.from('assignments').update({ status: 'checked_in' }).eq('id', id);
-    onRefresh();
+    const { error } = await supabase.from('assignments').update({ status: 'checked_in' }).eq('id', id);
+    if (!error) onRefresh();
   };
 
   const sickCount = sickEmployees.length;

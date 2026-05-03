@@ -50,14 +50,18 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   }, [menuOpen]);
 
   async function loadData() {
-    const [empRes, propRes, epRes] = await Promise.all([
-      supabase.from('employees').select('*').eq('company_id', company.id).order('last_name'),
-      supabase.from('properties').select('*').eq('company_id', company.id),
-      supabase.from('employee_properties').select('*'),
-    ]);
-    setEmployees(empRes.data || []);
-    setProperties(propRes.data || []);
-    setEmployeeProperties(epRes.data || []);
+    try {
+      const [empRes, propRes, epRes] = await Promise.all([
+        supabase.from('employees').select('*').eq('company_id', company.id).order('last_name'),
+        supabase.from('properties').select('*').eq('company_id', company.id),
+        supabase.from('employee_properties').select('*'),
+      ]);
+      setEmployees(empRes.data || []);
+      setProperties(propRes.data || []);
+      setEmployeeProperties(epRes.data || []);
+    } catch {
+      // Component renders with existing state
+    }
   }
 
   const getKnownProperties = (empId: string) =>
@@ -187,7 +191,8 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   };
 
   const handleMarkSick = async (emp: Employee) => {
-    await supabase.from('employees').update({ status: 'sick' }).eq('id', emp.id);
+    const { error: e1 } = await supabase.from('employees').update({ status: 'sick' }).eq('id', emp.id);
+    if (e1) { addToast('Fehler', 'error'); return; }
     await supabase.from('sick_reports').insert({ employee_id: emp.id, date: todayStr, reason: '' });
     setMenuOpen(null);
     onRefresh();
@@ -195,15 +200,17 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   };
 
   const handleMarkActive = async (emp: Employee) => {
-    await supabase.from('employees').update({ status: 'active' }).eq('id', emp.id);
+    const { error } = await supabase.from('employees').update({ status: 'active' }).eq('id', emp.id);
+    if (error) { addToast('Fehler', 'error'); return; }
     setMenuOpen(null);
     onRefresh();
     addToast(`${emp.first_name} ${emp.last_name} als aktiv markiert`);
   };
 
   const handleDelete = async (emp: Employee) => {
-    await supabase.from('employee_properties').delete().eq('employee_id', emp.id);
-    await supabase.from('employees').delete().eq('id', emp.id);
+    const { error: _e1 } = await supabase.from('employee_properties').delete().eq('employee_id', emp.id);
+    const { error: e2 } = await supabase.from('employees').delete().eq('id', emp.id);
+    if (e2) { addToast('Fehler beim Löschen', 'error'); return; }
     setMenuOpen(null);
     onRefresh();
     addToast('Mitarbeiter gelöscht');
@@ -346,25 +353,27 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             {knownProps.length === 0 && <span className="text-xs text-[#64748B]">—</span>}
           </div>
         </td>
-        <td className="px-5 py-3 relative" ref={menuOpen === emp.id ? menuRef : null}>
-          <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1 rounded hover:bg-gray-100 transition-colors">
-            <MoreVertical size={16} className="text-[#64748B]" />
-          </button>
-          {menuOpen === emp.id && (
-            <div className="absolute right-5 top-10 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20 min-w-[180px]">
-              <button onClick={() => openEditModal(emp)} className="w-full text-left px-4 py-2 text-sm text-[#0F172A] hover:bg-gray-50 transition-colors flex items-center gap-2">
-                <Pencil size={14} /> Bearbeiten
-              </button>
-              {emp.status === 'active' ? (
-                <button onClick={() => handleMarkSick(emp)} className="w-full text-left px-4 py-2 text-sm text-[#EF4444] hover:bg-red-50 transition-colors">Als krank melden</button>
-              ) : (
-                <button onClick={() => handleMarkActive(emp)} className="w-full text-left px-4 py-2 text-sm text-[#22C55E] hover:bg-green-50 transition-colors">Als aktiv markieren</button>
-              )}
-              <button onClick={() => handleDelete(emp)} className="w-full text-left px-4 py-2 text-sm text-[#EF4444] hover:bg-red-50 transition-colors flex items-center gap-2">
-                <Trash2 size={14} /> Löschen
-              </button>
-            </div>
-          )}
+        <td className="px-5 py-3">
+          <div className="relative" ref={menuOpen === emp.id ? menuRef : null}>
+            <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1 rounded hover:bg-gray-100 transition-colors">
+              <MoreVertical size={16} className="text-[#64748B]" />
+            </button>
+            {menuOpen === emp.id && (
+              <div className="absolute right-5 top-10 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20 min-w-[180px]">
+                <button onClick={() => openEditModal(emp)} className="w-full text-left px-4 py-2 text-sm text-[#0F172A] hover:bg-gray-50 transition-colors flex items-center gap-2">
+                  <Pencil size={14} /> Bearbeiten
+                </button>
+                {emp.status === 'active' ? (
+                  <button onClick={() => handleMarkSick(emp)} className="w-full text-left px-4 py-2 text-sm text-[#EF4444] hover:bg-red-50 transition-colors">Als krank melden</button>
+                ) : (
+                  <button onClick={() => handleMarkActive(emp)} className="w-full text-left px-4 py-2 text-sm text-[#22C55E] hover:bg-green-50 transition-colors">Als aktiv markieren</button>
+                )}
+                <button onClick={() => handleDelete(emp)} className="w-full text-left px-4 py-2 text-sm text-[#EF4444] hover:bg-red-50 transition-colors flex items-center gap-2">
+                  <Trash2 size={14} /> Löschen
+                </button>
+              </div>
+            )}
+          </div>
         </td>
       </tr>
     );

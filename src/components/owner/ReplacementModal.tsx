@@ -83,7 +83,7 @@ export function ReplacementModal({
     setSending(true);
 
     try {
-      await supabase.from('replacement_requests').insert({
+      const { error } = await supabase.from('replacement_requests').insert({
         sick_report_id: sickReport.id,
         property_id: property.id,
         replacement_employee_id: selectedEmployee.id,
@@ -91,6 +91,11 @@ export function ReplacementModal({
         message,
         channel,
       });
+
+      if (error) {
+        setSending(false);
+        return;
+      }
 
       if (channel === 'whatsapp' && selectedEmployee.phone) {
         const phone = selectedEmployee.phone.replace(/[^0-9]/g, '');

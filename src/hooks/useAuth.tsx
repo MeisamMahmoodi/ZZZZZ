@@ -29,6 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setMustChangePassword(true);
       }
       setLoading(false);
+    }).catch(() => {
+      setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {

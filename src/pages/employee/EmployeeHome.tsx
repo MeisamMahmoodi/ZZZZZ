@@ -51,98 +51,103 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
   }, [user]);
 
   async function loadData() {
-    const { data: emp } = await supabase
-      .from('employees')
-      .select('*')
-      .eq('user_id', user!.id)
-      .maybeSingle();
-
-    if (!emp) return;
-    setEmployee(emp);
-
-    // Load today's assignment
-    const { data: todayAssign } = await supabase
-      .from('assignments')
-      .select('*, property:properties(*)')
-      .eq('employee_id', emp.id)
-      .eq('date', todayStr)
-      .eq('status', 'assigned')
-      .limit(1);
-
-    if (todayAssign && todayAssign.length > 0) {
-      setTodayAssignment(todayAssign[0] as unknown as AssignmentWithProperty);
-    } else {
-      setTodayAssignment(null);
-    }
-
-    // Load all upcoming assignments (today and future)
-    const { data: upcoming } = await supabase
-      .from('assignments')
-      .select('*, property:properties(*)')
-      .eq('employee_id', emp.id)
-      .gte('date', todayStr)
-      .eq('status', 'assigned')
-      .order('date', { ascending: true });
-
-    setUpcomingAssignments((upcoming as unknown as AssignmentWithProperty[]) || []);
-
-    // Load replacement requests
-    const { data: requests } = await supabase
-      .from('replacement_requests')
-      .select('*, property:properties(*)')
-      .eq('replacement_employee_id', emp.id)
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false })
-      .limit(1);
-
-    if (requests && requests.length > 0) {
-      const req = requests[0];
-      const { data: sickEmp } = await supabase
-        .from('sick_reports')
-        .select('*, employee:employees(*)')
-        .eq('id', req.sick_report_id)
+    try {
+      const { data: emp } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('user_id', user!.id)
         .maybeSingle();
 
-      setReplacementRequest({
-        ...req,
-        property: req.property,
-        sickEmployee: sickEmp?.employee,
-      } as unknown as ReplacementRequest & { property: Property; sickEmployee: Employee });
-    } else {
-      setReplacementRequest(null);
+      if (!emp) return;
+      setEmployee(emp);
+
+      // Load today's assignment
+      const { data: todayAssign } = await supabase
+        .from('assignments')
+        .select('*, property:properties(*)')
+        .eq('employee_id', emp.id)
+        .eq('date', todayStr)
+        .eq('status', 'assigned')
+        .limit(1);
+
+      if (todayAssign && todayAssign.length > 0) {
+        setTodayAssignment(todayAssign[0] as unknown as AssignmentWithProperty);
+      } else {
+        setTodayAssignment(null);
+      }
+
+      // Load all upcoming assignments (today and future)
+      const { data: upcoming } = await supabase
+        .from('assignments')
+        .select('*, property:properties(*)')
+        .eq('employee_id', emp.id)
+        .gte('date', todayStr)
+        .eq('status', 'assigned')
+        .order('date', { ascending: true });
+
+      setUpcomingAssignments((upcoming as unknown as AssignmentWithProperty[]) || []);
+
+      // Load replacement requests
+      const { data: requests } = await supabase
+        .from('replacement_requests')
+        .select('*, property:properties(*)')
+        .eq('replacement_employee_id', emp.id)
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (requests && requests.length > 0) {
+        const req = requests[0];
+        const { data: sickEmp } = await supabase
+          .from('sick_reports')
+          .select('*, employee:employees(*)')
+          .eq('id', req.sick_report_id)
+          .maybeSingle();
+
+        setReplacementRequest({
+          ...req,
+          property: req.property,
+          sickEmployee: sickEmp?.employee,
+        } as unknown as ReplacementRequest & { property: Property; sickEmployee: Employee });
+      } else {
+        setReplacementRequest(null);
+      }
+
+      // Load notifications
+      const { data: notifs } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('employee_id', emp.id)
+        .eq('read', false)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      setNotifications(notifs || []);
+
+      // Load sick reports for this employee
+      const { data: sickRes } = await supabase
+        .from('sick_reports')
+        .select('*')
+        .eq('employee_id', emp.id)
+        .gte('date', todayStr)
+        .order('date', { ascending: false });
+
+      setSickReports(sickRes || []);
+    } catch {
+      // Silently handle - component shows existing state
     }
-
-    // Load notifications
-    const { data: notifs } = await supabase
-      .from('notifications')
-      .select('*')
-      .eq('employee_id', emp.id)
-      .eq('read', false)
-      .order('created_at', { ascending: false })
-      .limit(20);
-
-    setNotifications(notifs || []);
-
-    // Load sick reports for this employee
-    const { data: sickRes } = await supabase
-      .from('sick_reports')
-      .select('*')
-      .eq('employee_id', emp.id)
-      .gte('date', todayStr)
-      .order('date', { ascending: false });
-
-    setSickReports(sickRes || []);
   }
 
   const handleCheckIn = async () => {
     if (!todayAssignment) return;
-    await supabase.from('assignments').update({ status: 'checked_in' }).eq('id', todayAssignment.id);
-    setCheckedIn(true);
+    const { error } = await supabase.from('assignments').update({ status: 'checked_in' }).eq('id', todayAssignment.id);
+    if (!error) setCheckedIn(true);
   };
 
   const handleAcceptReplacement = async () => {
     if (!replacementRequest || !employee) return;
-    await supabase.from('replacement_requests').update({ status: 'accepted' }).eq('id', replacementRequest.id);
+    const { error: e1 } = await supabase.from('replacement_requests').update({ status: 'accepted' }).eq('id', replacementRequest.id);
+    if (e1) return;
     await supabase.from('assignments').insert({
       property_id: replacementRequest.property_id,
       employee_id: employee.id,

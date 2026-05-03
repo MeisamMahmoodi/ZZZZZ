@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { supabase } from '../lib/supabase';
 import type { Lang } from '../lib/i18n';
 import { t as translate, isRTL } from '../lib/i18n';
 

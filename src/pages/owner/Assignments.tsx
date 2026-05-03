@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Calendar, MapPin, Clock, Users, Check, X, UserPlus } from 'lucide-react';
+import { Plus, Calendar, MapPin, Clock, Check, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Modal } from '../../components/shared/Modal';
 import { Avatar } from '../../components/shared/Avatar';
 import { useToast } from '../../components/shared/Toast';
-import { formatTime, formatDateShort } from '../../lib/utils';
-import type { Employee, Property, Assignment, EmployeeProperty, Company } from '../../lib/types';
+import { formatTime } from '../../lib/utils';
+import type { Employee, Property, Assignment, Company } from '../../lib/types';
 
 interface AssignmentsProps {
   company: Company;
@@ -22,7 +22,6 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const [assignments, setAssignments] = useState<AssignmentWithDetails[]>([]);
   const [properties, setProperties] = useState<Property[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [employeeProperties, setEmployeeProperties] = useState<EmployeeProperty[]>([]);
   const [addModal, setAddModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const { addToast } = useToast();
@@ -37,16 +36,18 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   useEffect(() => { loadData(); }, [company.id, refreshKey, selectedDate]);
 
   async function loadData() {
-    const [assignRes, propRes, empRes, epRes] = await Promise.all([
-      supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').eq('date', selectedDate).order('created_at'),
-      supabase.from('properties').select('*').eq('company_id', company.id).order('name'),
-      supabase.from('employees').select('*').eq('company_id', company.id),
-      supabase.from('employee_properties').select('*'),
-    ]);
-    setAssignments((assignRes.data as unknown as AssignmentWithDetails[]) || []);
-    setProperties(propRes.data || []);
-    setEmployees(empRes.data || []);
-    setEmployeeProperties(epRes.data || []);
+    try {
+      const [assignRes, propRes, empRes] = await Promise.all([
+        supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').eq('date', selectedDate).order('created_at'),
+        supabase.from('properties').select('*').eq('company_id', company.id).order('name'),
+        supabase.from('employees').select('*').eq('company_id', company.id),
+      ]);
+      setAssignments((assignRes.data as unknown as AssignmentWithDetails[]) || []);
+      setProperties(propRes.data || []);
+      setEmployees(empRes.data || []);
+    } catch {
+      // Component renders with existing state
+    }
   }
 
   const companyAssignments = useMemo(() =>
@@ -107,14 +108,15 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   };
 
   const handleRemoveAssignment = async (assignment: AssignmentWithDetails) => {
-    await supabase.from('assignments').delete().eq('id', assignment.id);
+    const { error } = await supabase.from('assignments').delete().eq('id', assignment.id);
+    if (error) { addToast('Fehler beim Entfernen', 'error'); return; }
     onRefresh();
     addToast('Zuweisung entfernt');
   };
 
   const handleStatusChange = async (assignment: AssignmentWithDetails, status: string) => {
-    await supabase.from('assignments').update({ status }).eq('id', assignment.id);
-    onRefresh();
+    const { error } = await supabase.from('assignments').update({ status }).eq('id', assignment.id);
+    if (!error) onRefresh();
   };
 
   const toggleEmployee = (empId: string) => {

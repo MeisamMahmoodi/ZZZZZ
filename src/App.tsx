@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
-import { LangProvider } from './hooks/useLang';
+import { LangProvider, useLang } from './hooks/useLang';
 import { ToastProvider } from './components/shared/Toast';
 import { OwnerLayout } from './components/owner/OwnerLayout';
 import { Dashboard } from './pages/owner/Dashboard';
@@ -133,19 +133,25 @@ function AppRoutes() {
   useEffect(() => {
     if (!user) { setRole(null); setChecking(false); return; }
     setChecking(true);
-    supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', user.id)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.role === 'owner' || data?.role === 'employee') {
+    (async () => {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .maybeSingle();
+        if (error) {
+          setRole(null);
+        } else if (data?.role === 'owner' || data?.role === 'employee') {
           setRole(data.role);
         } else {
           setRole(null);
         }
-        setChecking(false);
-      });
+      } catch {
+        setRole(null);
+      }
+      setChecking(false);
+    })();
   }, [user]);
 
   if (loading || (user && checking)) {

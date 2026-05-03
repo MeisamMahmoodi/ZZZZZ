@@ -62,14 +62,18 @@ export function Properties({ company, refreshKey, onRefresh }: PropertiesProps) 
   }, [menuOpen]);
 
   async function loadData() {
-    const [propRes, empRes, epRes] = await Promise.all([
-      supabase.from('properties').select('*').eq('company_id', company.id).order('name'),
-      supabase.from('employees').select('*').eq('company_id', company.id),
-      supabase.from('employee_properties').select('*'),
-    ]);
-    setProperties(propRes.data || []);
-    setEmployees(empRes.data || []);
-    setEmployeeProperties(epRes.data || []);
+    try {
+      const [propRes, empRes, epRes] = await Promise.all([
+        supabase.from('properties').select('*').eq('company_id', company.id).order('name'),
+        supabase.from('employees').select('*').eq('company_id', company.id),
+        supabase.from('employee_properties').select('*'),
+      ]);
+      setProperties(propRes.data || []);
+      setEmployees(empRes.data || []);
+      setEmployeeProperties(epRes.data || []);
+    } catch {
+      // Component renders with existing state
+    }
   }
 
   const getPropertyEmployees = (propId: string) =>
@@ -188,7 +192,8 @@ export function Properties({ company, refreshKey, onRefresh }: PropertiesProps) 
   const handleDelete = async (prop: Property) => {
     await supabase.from('employee_properties').delete().eq('property_id', prop.id);
     await supabase.from('assignments').delete().eq('property_id', prop.id);
-    await supabase.from('properties').delete().eq('id', prop.id);
+    const { error } = await supabase.from('properties').delete().eq('id', prop.id);
+    if (error) { addToast('Fehler beim Löschen', 'error'); return; }
     setMenuOpen(null);
     onRefresh();
     addToast('Objekt gelöscht');

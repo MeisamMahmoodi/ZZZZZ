@@ -35,7 +35,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
 
   useEffect(() => {
     if (!user) return;
-    // Check if employee has assignments on the selected date
+    setHasAssignment(false);
     supabase
       .from('employees')
       .select('id')
@@ -64,27 +64,33 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
     if (!user) return;
     setLoading(true);
 
-    const { data: emp } = await supabase
-      .from('employees')
-      .select('*')
-      .eq('user_id', user.id)
-      .maybeSingle();
+    try {
+      const { data: emp } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
 
-    if (!emp) { setLoading(false); return; }
+      if (!emp) { setLoading(false); return; }
 
-    await supabase.from('sick_reports').insert({
-      employee_id: emp.id,
-      date: dateStr,
-      reason,
-    });
+      const { error: sickErr } = await supabase.from('sick_reports').insert({
+        employee_id: emp.id,
+        date: dateStr,
+        reason,
+      });
 
-    await supabase
-      .from('employees')
-      .update({ status: 'sick' })
-      .eq('id', emp.id);
+      if (sickErr) { setLoading(false); return; }
 
-    setLoading(false);
-    setSubmitted(true);
+      await supabase
+        .from('employees')
+        .update({ status: 'sick' })
+        .eq('id', emp.id);
+
+      setLoading(false);
+      setSubmitted(true);
+    } catch {
+      setLoading(false);
+    }
   };
 
   if (submitted) {
