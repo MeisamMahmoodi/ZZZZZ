@@ -22,6 +22,7 @@ export interface Employee {
   status: 'active' | 'sick';
   user_id: string | null;
   email: string | null;
+  hourly_wage: number | null;
   created_at: string;
 }
 

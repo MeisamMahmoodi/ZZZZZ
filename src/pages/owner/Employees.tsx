@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Search, MoreVertical, Phone, Pencil, Trash2, Mail, Shield, ShieldOff, AlertCircle } from 'lucide-react';
+import { Plus, Search, MoreVertical, Phone, Pencil, Trash2, Mail, Shield, ShieldOff, AlertCircle, Euro } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
@@ -32,11 +32,13 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const [newPhone, setNewPhone] = useState('');
   const [newEmail, setNewEmail] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [newWage, setNewWage] = useState('');
   const [newPropertyIds, setNewPropertyIds] = useState<string[]>([]);
 
   const [editFirst, setEditFirst] = useState('');
   const [editLast, setEditLast] = useState('');
   const [editPhone, setEditPhone] = useState('');
+  const [editWage, setEditWage] = useState('');
   const [editPropertyIds, setEditPropertyIds] = useState<string[]>([]);
 
   useEffect(() => { loadData(); }, [company.id, refreshKey]);
@@ -85,7 +87,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
     setCreatingAccount(true);
 
     const { data, error } = await supabase.from('employees').insert({
-      company_id: company.id, first_name: newFirst, last_name: newLast, phone: newPhone, email: loginEnabled ? (newEmail || null) : null, status: 'active',
+      company_id: company.id, first_name: newFirst, last_name: newLast, phone: newPhone, email: loginEnabled ? (newEmail || null) : null, status: 'active', hourly_wage: newWage ? parseFloat(newWage) : null,
     }).select().maybeSingle();
 
     if (error) { addToast('Fehler beim Speichern', 'error'); setCreatingAccount(false); return; }
@@ -107,7 +109,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
     }
 
     setAddModal(false);
-    setNewFirst(''); setNewLast(''); setNewPhone(''); setNewEmail(''); setNewPassword('');
+    setNewFirst(''); setNewLast(''); setNewPhone(''); setNewEmail(''); setNewPassword(''); setNewWage('');
     setNewPropertyIds([]); setLoginEnabled(false);
     setCreatingAccount(false);
     onRefresh();
@@ -115,13 +117,14 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
 
   const openEditModal = (emp: Employee) => {
     setEditFirst(emp.first_name); setEditLast(emp.last_name); setEditPhone(emp.phone);
+    setEditWage(emp.hourly_wage != null ? String(emp.hourly_wage) : '');
     setEditPropertyIds(employeeProperties.filter(ep => ep.employee_id === emp.id).map(ep => ep.property_id));
     setEditModal(emp); setMenuOpen(null);
   };
 
   const handleEditEmployee = async () => {
     if (!editModal || !editFirst || !editLast) return;
-    const { error } = await supabase.from('employees').update({ first_name: editFirst, last_name: editLast, phone: editPhone }).eq('id', editModal.id);
+    const { error } = await supabase.from('employees').update({ first_name: editFirst, last_name: editLast, phone: editPhone, hourly_wage: editWage ? parseFloat(editWage) : null }).eq('id', editModal.id);
     if (error) { addToast('Fehler beim Speichern', 'error'); return; }
 
     const currentPropIds = employeeProperties.filter(ep => ep.employee_id === editModal.id).map(ep => ep.property_id);
@@ -198,6 +201,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             <p className="text-sm font-semibold text-[#0F172A]">{emp.first_name} {emp.last_name}</p>
             <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-1"><Phone size={12} className="text-[#94A3B8]" /> {emp.phone}</p>
             {emp.email && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Mail size={12} className="text-[#94A3B8]" /> {emp.email}</p>}
+            {emp.hourly_wage != null && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Euro size={12} className="text-[#94A3B8]" /> {emp.hourly_wage.toFixed(2)} EUR/h</p>}
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {emp.status === 'sick' ? <span className="badge-danger">Krank</span> : <span className="badge-success">Aktiv</span>}
@@ -244,6 +248,13 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             <span className="text-xs text-[#64748B] flex items-center gap-1.5"><Phone size={13} className="text-[#94A3B8]" /> {emp.phone}</span>
             <span className="text-xs text-[#64748B] flex items-center gap-1.5"><Mail size={13} className="text-[#94A3B8]" /> {emp.email || '—'}</span>
           </div>
+        </td>
+        <td className="px-5 py-4">
+          {emp.hourly_wage != null ? (
+            <span className="text-sm font-medium text-[#0F172A]">{emp.hourly_wage.toFixed(2)} EUR</span>
+          ) : (
+            <span className="text-xs text-[#94A3B8]">—</span>
+          )}
         </td>
         <td className="px-5 py-4">
           {emp.status === 'sick' ? <span className="badge-danger">Krank</span> : <span className="badge-success">Aktiv</span>}
@@ -318,6 +329,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             <tr className="border-b border-[#F1F5F9]">
               <th className="text-left px-5 py-3.5 section-label">Mitarbeiter</th>
               <th className="text-left px-5 py-3.5 section-label">Kontakt</th>
+              <th className="text-left px-5 py-3.5 section-label">Stundenlohn</th>
               <th className="text-left px-5 py-3.5 section-label">Status</th>
               <th className="text-left px-5 py-3.5 section-label">Login</th>
               <th className="text-left px-5 py-3.5 section-label">Objekte</th>
@@ -326,7 +338,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
           </thead>
           <tbody>
             {filteredEmployees.map(renderEmployeeRow)}
-            {filteredEmployees.length === 0 && <tr><td colSpan={6} className="px-5 py-10 text-center text-sm text-[#94A3B8]">Keine Mitarbeiter gefunden</td></tr>}
+            {filteredEmployees.length === 0 && <tr><td colSpan={7} className="px-5 py-10 text-center text-sm text-[#94A3B8]">Keine Mitarbeiter gefunden</td></tr>}
           </tbody>
         </table>
       </div>
@@ -349,6 +361,10 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Telefon <span className="text-[#EF4444]">*</span></label>
               <input type="text" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+49 171..." className="input-field" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Stundenlohn (EUR)</label>
+              <input type="number" step="0.01" min="0" value={newWage} onChange={e => setNewWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Bekannte Objekte</label>
@@ -402,6 +418,10 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Telefon</label>
               <input type="text" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="+49 171..." className="input-field" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Stundenlohn (EUR)</label>
+              <input type="number" step="0.01" min="0" value={editWage} onChange={e => setEditWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Bekannte Objekte</label>
