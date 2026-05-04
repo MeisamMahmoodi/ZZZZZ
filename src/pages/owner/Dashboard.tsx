@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { formatDateLong, formatTime, getTodayDayAbbrev } from '../../lib/utils';
 import type { Employee, Property, Assignment, SickReport, EmployeeProperty } from '../../lib/types';
 import { ReplacementModal } from '../../components/owner/ReplacementModal';
+import { Modal } from '../../components/shared/Modal';
 import { Avatar } from '../../components/shared/Avatar';
 import { useToast } from '../../components/shared/Toast';
 import type { Company } from '../../lib/types';
@@ -30,6 +31,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const [sickReports, setSickReports] = useState<SickReportWithEmployee[]>([]);
   const [employeeProperties, setEmployeeProperties] = useState<EmployeeProperty[]>([]);
   const [replacementModal, setReplacementModal] = useState<{ sickReport: SickReportWithEmployee; property: Property; assignment: AssignmentWithDetails } | null>(null);
+  const [removeConfirm, setRemoveConfirm] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
@@ -110,9 +112,9 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   };
 
   const handleRemoveAssignment = async (id: string) => {
-    if (!confirm('Zuweisung wirklich entfernen?')) return;
     const { error } = await supabase.from('assignments').delete().eq('id', id);
     if (error) { addToast('Fehler beim Entfernen', 'error'); return; }
+    setRemoveConfirm(null);
     onRefresh();
     addToast('Zuweisung entfernt');
   };
@@ -375,7 +377,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                             {a.status === 'assigned' && !isSick && (
                               <div className="flex items-center gap-1">
                                 <button onClick={() => handleCheckIn(a.id)} className="p-1.5 rounded-lg hover:bg-[#F0FDF4] transition-colors text-[#22C55E]" title="Einchecken"><Check size={15} /></button>
-                                <button onClick={() => handleRemoveAssignment(a.id)} className="p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors text-[#F87171]" title="Entfernen"><X size={15} /></button>
+                                <button onClick={() => setRemoveConfirm(a.id)} className="p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors text-[#F87171]" title="Entfernen"><X size={15} /></button>
                               </div>
                             )}
                           </div>
@@ -401,6 +403,21 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
           onComplete={handleReplacementComplete}
         />
       )}
+
+      {/* Remove Confirmation */}
+      <Modal open={!!removeConfirm} onClose={() => setRemoveConfirm(null)} width="max-w-sm">
+        <div className="p-8">
+          <div className="w-12 h-12 rounded-2xl bg-[#FEF2F2] flex items-center justify-center mb-5">
+            <AlertTriangle size={22} className="text-[#EF4444]" />
+          </div>
+          <h2 className="text-lg font-bold text-[#0F172A] mb-2">Zuweisung entfernen?</h2>
+          <p className="text-sm text-[#64748B] leading-relaxed mb-8">Der Mitarbeiter wird von diesem Einsatz entfernt.</p>
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setRemoveConfirm(null)} className="btn-ghost">Abbrechen</button>
+            <button onClick={() => removeConfirm && handleRemoveAssignment(removeConfirm)} className="btn-danger">Entfernen</button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }

@@ -34,6 +34,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const [newTimeFrom, setNewTimeFrom] = useState('');
   const [newTimeTo, setNewTimeTo] = useState('');
   const [saving, setSaving] = useState(false);
+  const [removeConfirm, setRemoveConfirm] = useState<AssignmentWithDetails | null>(null);
 
   useEffect(() => { loadData(); }, [company.id, refreshKey, selectedDate]);
 
@@ -96,9 +97,9 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   };
 
   const handleRemoveAssignment = async (assignment: AssignmentWithDetails) => {
-    if (!confirm('Zuweisung wirklich entfernen?')) return;
     const { error } = await supabase.from('assignments').delete().eq('id', assignment.id);
     if (error) { addToast('Fehler beim Entfernen', 'error'); return; }
+    setRemoveConfirm(null);
     onRefresh(); addToast('Zuweisung entfernt');
   };
 
@@ -216,7 +217,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
                       {a.status === 'assigned' && !isSick && (
                         <div className="flex items-center gap-1">
                           <button onClick={() => handleStatusChange(a, 'checked_in')} className="p-1.5 rounded-lg hover:bg-[#F0FDF4] transition-colors text-[#22C55E]" title="Einchecken"><Check size={16} /></button>
-                          <button onClick={() => handleRemoveAssignment(a)} className="p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors text-[#F87171]" title="Entfernen"><X size={16} /></button>
+                          <button onClick={() => setRemoveConfirm(a)} className="p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors text-[#F87171]" title="Entfernen"><X size={16} /></button>
                         </div>
                       )}
                     </div>
@@ -277,6 +278,23 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
             <button onClick={handleAddAssignment} disabled={saving || !newPropertyId || !newDate || newEmployeeIds.length === 0} className="btn-primary">
               {saving ? 'Wird erstellt...' : 'Einsatz erstellen'}
             </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Remove Confirmation */}
+      <Modal open={!!removeConfirm} onClose={() => setRemoveConfirm(null)} width="max-w-sm">
+        <div className="p-8">
+          <div className="w-12 h-12 rounded-2xl bg-[#FEF2F2] flex items-center justify-center mb-5">
+            <AlertTriangle size={22} className="text-[#EF4444]" />
+          </div>
+          <h2 className="text-lg font-bold text-[#0F172A] mb-2">Zuweisung entfernen?</h2>
+          <p className="text-sm text-[#64748B] leading-relaxed mb-8">
+            {removeConfirm && `${removeConfirm.employee.first_name} ${removeConfirm.employee.last_name} wird von ${removeConfirm.property.name} am ${new Date(removeConfirm.date).toLocaleDateString('de-DE')} entfernt.`}
+          </p>
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setRemoveConfirm(null)} className="btn-ghost">Abbrechen</button>
+            <button onClick={() => removeConfirm && handleRemoveAssignment(removeConfirm)} className="btn-danger">Entfernen</button>
           </div>
         </div>
       </Modal>
