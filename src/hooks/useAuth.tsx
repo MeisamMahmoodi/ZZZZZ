@@ -22,16 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [mustChangePassword, setMustChangePassword] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user?.user_metadata?.must_change_password) {
-        setMustChangePassword(true);
-      }
-      setLoading(false);
-    }).catch(() => {
-      setLoading(false);
-    });
+    let initialized = false;
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
@@ -40,6 +31,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setMustChangePassword(true);
       } else {
         setMustChangePassword(false);
+      }
+      if (!initialized) {
+        initialized = true;
+        setLoading(false);
+      }
+    });
+
+    // Fallback: if onAuthStateChange never fires (e.g. no session), stop loading
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!initialized) {
+        initialized = true;
+        setSession(session);
+        setUser(session?.user ?? null);
+        if (session?.user?.user_metadata?.must_change_password) {
+          setMustChangePassword(true);
+        }
+        setLoading(false);
+      }
+    }).catch(() => {
+      if (!initialized) {
+        initialized = true;
+        setLoading(false);
       }
     });
 

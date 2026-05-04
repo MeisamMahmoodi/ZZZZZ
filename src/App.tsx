@@ -132,7 +132,7 @@ function ChangePasswordScreen() {
 function AppRoutes() {
   const { user, loading, mustChangePassword } = useAuth();
   const [role, setRole] = useState<'owner' | 'employee' | null>(null);
-  const [checking, setChecking] = useState(true);
+  const [checking, setChecking] = useState(false);
 
   useEffect(() => {
     if (!user) { setRole(null); setChecking(false); return; }
