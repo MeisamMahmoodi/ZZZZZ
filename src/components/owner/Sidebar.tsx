@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Building2, Settings, LogOut, Menu, X, CalendarDays, Wallet } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Settings, LogOut, Menu, X, CalendarDays, Wallet, Timer } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 import { useAuth } from '../../hooks/useAuth';
 import { Modal } from '../shared/Modal';
@@ -16,6 +16,7 @@ const navItems = [
   { id: 'properties', label: 'Objekte', icon: Building2 },
   { id: 'assignments', label: 'Einsätze', icon: CalendarDays },
   { id: 'payroll', label: 'Abrechnung', icon: Wallet },
+  { id: 'timestamps', label: 'Zeitstempel', icon: Timer },
   { id: 'settings', label: 'Einstellungen', icon: Settings },
 ];
 
