@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { LangProvider, useLang } from './hooks/useLang';
@@ -132,33 +132,38 @@ function ChangePasswordScreen() {
 function AppRoutes() {
   const { user, loading, mustChangePassword } = useAuth();
   const [role, setRole] = useState<'owner' | 'employee' | null>(null);
-  const [checking, setChecking] = useState(false);
+  const [roleLoading, setRoleLoading] = useState(false);
+  const prevUserId = React.useRef<string | null>(null);
 
   useEffect(() => {
-    if (!user) { setRole(null); setChecking(false); return; }
-    setChecking(true);
-    (async () => {
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .maybeSingle();
-        if (error) {
-          setRole(null);
-        } else if (data?.role === 'owner' || data?.role === 'employee') {
+    const uid = user?.id ?? null;
+    if (uid === prevUserId.current) return;
+    prevUserId.current = uid;
+
+    if (!uid) {
+      setRole(null);
+      setRoleLoading(false);
+      return;
+    }
+
+    setRoleLoading(true);
+    supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', uid)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data?.role === 'owner' || data?.role === 'employee') {
           setRole(data.role);
         } else {
           setRole(null);
         }
-      } catch {
-        setRole(null);
-      }
-      setChecking(false);
-    })();
+      })
+      .catch(() => setRole(null))
+      .finally(() => setRoleLoading(false));
   }, [user]);
 
-  if (loading || (user && checking)) {
+  if (loading || roleLoading) {
     return (
       <div className="min-h-screen bg-surface-50 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-ink-900 border-t-transparent rounded-full animate-spin" />
