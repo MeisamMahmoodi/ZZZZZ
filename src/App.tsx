@@ -145,6 +145,9 @@ function AppRoutes() {
     }
 
     setRoleLoading(true);
+
+    const timeout = setTimeout(() => setRoleLoading(false), 3000);
+
     supabase
       .from('profiles')
       .select('role')
@@ -158,7 +161,12 @@ function AppRoutes() {
         }
       })
       .catch(() => setRole(null))
-      .finally(() => setRoleLoading(false));
+      .finally(() => {
+        clearTimeout(timeout);
+        setRoleLoading(false);
+      });
+
+    return () => clearTimeout(timeout);
   }, [user]);
 
   if (loading || roleLoading) {
