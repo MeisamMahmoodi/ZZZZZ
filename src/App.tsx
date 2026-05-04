@@ -129,7 +129,7 @@ function ChangePasswordScreen() {
 }
 
 function AppRoutes() {
-  const { user, loading, mustChangePassword } = useAuth();
+  const { user, loading, mustChangePassword, signOut } = useAuth();
   const [role, setRole] = useState<'owner' | 'employee' | 'admin' | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
   const prevUserId = React.useRef<string | null>(null);
@@ -212,8 +212,14 @@ function AppRoutes() {
 
   return (
     <div className="min-h-screen bg-surface-50 flex items-center justify-center px-6">
-      <div className="text-center">
+      <div className="text-center space-y-4">
         <p className="text-ink-500 text-sm">Kein Profil gefunden. Bitte wenden Sie sich an den Administrator.</p>
+        <button
+          onClick={signOut}
+          className="btn-primary"
+        >
+          Abmelden
+        </button>
       </div>
     </div>
   );
