@@ -53,6 +53,12 @@ export interface Assignment {
   created_at: string;
   checked_in_at?: string | null;
   completed_at?: string | null;
+  checkin_photo_url?: string | null;
+  checkout_photo_url?: string | null;
+  checkin_lat?: number | null;
+  checkin_lng?: number | null;
+  checkout_lat?: number | null;
+  checkout_lng?: number | null;
 }
 
 export interface SickReport {

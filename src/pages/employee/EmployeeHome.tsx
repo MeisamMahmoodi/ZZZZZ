@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Clock, LogIn, Mail, LogOut, Heart, Bell, CheckCircle, CalendarDays, Globe, AlertTriangle } from 'lucide-react';
+import { MapPin, Clock, LogIn, Mail, LogOut, Heart, Bell, CheckCircle, CalendarDays, Globe, AlertTriangle, LogOut as CheckOutIcon } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useLang } from '../../hooks/useLang';
 import { formatDateLong, formatTime } from '../../lib/utils';
 import { langNames, langFlags, type Lang } from '../../lib/i18n';
+import { CheckInFlow } from '../../components/employee/CheckInFlow';
+import { CheckOutFlow } from '../../components/employee/CheckOutFlow';
 import type { Employee, Property, Assignment, ReplacementRequest, Notification, SickReport } from '../../lib/types';
 
 interface EmployeeHomeProps {
@@ -25,6 +27,9 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
   const [upcomingAssignments, setUpcomingAssignments] = useState<AssignmentWithProperty[]>([]);
   const [replacementRequest, setReplacementRequest] = useState<(ReplacementRequest & { property: Property; sickEmployee: Employee }) | null>(null);
   const [checkedIn, setCheckedIn] = useState(false);
+  const [checkedInAt, setCheckedInAt] = useState<string | null>(null);
+  const [showCheckInFlow, setShowCheckInFlow] = useState(false);
+  const [showCheckOutFlow, setShowCheckOutFlow] = useState(false);
   const [requestResponded, setRequestResponded] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -66,11 +71,16 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
         .select('*, property:properties(*)')
         .eq('employee_id', emp.id)
         .eq('date', todayStr)
-        .eq('status', 'assigned')
+        .in('status', ['assigned', 'checked_in'])
         .limit(1);
 
       if (todayAssign && todayAssign.length > 0) {
-        setTodayAssignment(todayAssign[0] as unknown as AssignmentWithProperty);
+        const a = todayAssign[0] as unknown as AssignmentWithProperty;
+        setTodayAssignment(a);
+        if (a.status === 'checked_in') {
+          setCheckedIn(true);
+          setCheckedInAt(a.checked_in_at || null);
+        }
       } else {
         setTodayAssignment(null);
       }
@@ -133,10 +143,17 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
     }
   }
 
-  const handleCheckIn = async () => {
-    if (!todayAssignment) return;
-    const { error } = await supabase.from('assignments').update({ status: 'checked_in', checked_in_at: new Date().toISOString() }).eq('id', todayAssignment.id);
-    if (!error) setCheckedIn(true);
+  const handleCheckInSuccess = () => {
+    setCheckedIn(true);
+    setCheckedInAt(new Date().toISOString());
+    setShowCheckInFlow(false);
+    loadData();
+  };
+
+  const handleCheckOutSuccess = () => {
+    setShowCheckOutFlow(false);
+    setTodayAssignment(null);
+    loadData();
   };
 
   const handleAcceptReplacement = async () => {
@@ -324,13 +341,21 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
 
       {/* Check-in Button */}
       {todayAssignment && !checkedIn && !isSick && (
-        <button onClick={handleCheckIn} className="w-full py-3.5 rounded-2xl text-base font-semibold bg-brand-500 text-white hover:bg-brand-600 transition-colors flex items-center justify-center gap-2.5 mb-6 shadow-sm">
+        <button onClick={() => setShowCheckInFlow(true)} className="w-full py-3.5 rounded-2xl text-base font-semibold bg-brand-500 text-white hover:bg-brand-600 transition-colors flex items-center justify-center gap-2.5 mb-6 shadow-sm">
           <LogIn size={20} /> {t('checkIn')}
         </button>
       )}
 
-      {checkedIn && (
-        <div className="w-full py-3.5 rounded-2xl text-base font-semibold bg-brand-50 text-brand-600 text-center mb-6">{t('checkedIn')}</div>
+      {/* Checked-in status + checkout */}
+      {checkedIn && todayAssignment && (
+        <div className="mb-6 space-y-3">
+          <div className="w-full py-3 rounded-2xl text-sm font-semibold bg-brand-50 text-brand-600 text-center border border-brand-200/50">
+            Eingecheckt {checkedInAt ? `um ${new Date(checkedInAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr` : ''}
+          </div>
+          <button onClick={() => setShowCheckOutFlow(true)} className="w-full py-3.5 rounded-2xl text-base font-semibold bg-[#F97316] text-white hover:bg-[#EA580C] transition-colors flex items-center justify-center gap-2.5 shadow-sm">
+            <CheckOutIcon size={20} /> Auschecken
+          </button>
+        </div>
       )}
 
       {/* Upcoming Assignments */}
@@ -372,6 +397,30 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
           <LogOut size={16} /> {t('logOut')}
         </button>
       </div>
+
+      {/* Check-in Flow Modal */}
+      {showCheckInFlow && todayAssignment && (
+        <CheckInFlow
+          assignmentId={todayAssignment.id}
+          propertyName={todayAssignment.property?.name || ''}
+          propertyAddress={todayAssignment.property?.address || ''}
+          onSuccess={handleCheckInSuccess}
+          onCancel={() => setShowCheckInFlow(false)}
+          rtl={rtl}
+        />
+      )}
+
+      {/* Check-out Flow Modal */}
+      {showCheckOutFlow && todayAssignment && checkedInAt && (
+        <CheckOutFlow
+          assignmentId={todayAssignment.id}
+          propertyName={todayAssignment.property?.name || ''}
+          checkedInAt={checkedInAt}
+          onSuccess={handleCheckOutSuccess}
+          onCancel={() => setShowCheckOutFlow(false)}
+          rtl={rtl}
+        />
+      )}
     </div>
   );
 }
