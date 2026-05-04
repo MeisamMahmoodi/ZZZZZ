@@ -120,7 +120,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   };
 
   const handleCheckIn = async (id: string) => {
-    const { error } = await supabase.from('assignments').update({ status: 'checked_in' }).eq('id', id);
+    const { error } = await supabase.from('assignments').update({ status: 'checked_in', checked_in_at: new Date().toISOString() }).eq('id', id);
     if (!error) onRefresh();
   };
 
@@ -304,6 +304,50 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
         </div>
       </div>
 
+      {/* Employee Timestamps */}
+      {todayAssignments.some(a => a.checked_in_at || a.completed_at) && (
+        <div className="mb-8">
+          <h2 className="text-sm font-semibold text-[#0F172A] mb-4">Zeitstempel heute</h2>
+          <div className="card divide-y divide-[#F1F5F9]">
+            {todayAssignments
+              .filter(a => a.checked_in_at || a.completed_at)
+              .sort((a, b) => {
+                const timeA = a.completed_at || a.checked_in_at || '';
+                const timeB = b.completed_at || b.checked_in_at || '';
+                return timeA.localeCompare(timeB);
+              })
+              .map(a => {
+                const isSick = sickReportsForCompany.some(sr => sr.employee_id === a.employee_id);
+                return (
+                  <div key={a.id} className={`px-5 sm:px-6 py-3.5 flex items-center gap-3 ${isSick ? 'opacity-50' : ''}`}>
+                    <Avatar firstName={a.employee?.first_name || ''} lastName={a.employee?.last_name || ''} id={a.employee_id} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-[#0F172A]">{a.employee?.first_name} {a.employee?.last_name}</p>
+                      <p className="text-xs text-[#64748B] mt-0.5">{a.property?.name}</p>
+                    </div>
+                    <div className="text-right shrink-0">
+                      {a.completed_at && (
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Check size={12} className="text-[#22C55E]" />
+                          <span className="text-xs font-semibold text-[#0F172A]">{new Date(a.completed_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span className="text-[10px] text-[#94A3B8] font-medium">Fertig</span>
+                        </div>
+                      )}
+                      {a.checked_in_at && !a.completed_at && (
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Clock size={12} className="text-[#3B82F6]" />
+                          <span className="text-xs font-semibold text-[#0F172A]">{new Date(a.checked_in_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
+                          <span className="text-[10px] text-[#94A3B8] font-medium">Check-in</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
       {/* Today's Assignments */}
       <div>
         <div className="flex items-center justify-between mb-5">
@@ -363,6 +407,16 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                             <Avatar firstName={a.employee?.first_name || ''} lastName={a.employee?.last_name || ''} id={a.employee_id} size="sm" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-[#0F172A]">{a.employee?.first_name} {a.employee?.last_name}</p>
+                              {a.checked_in_at && (
+                                <p className="text-[11px] text-[#94A3B8] mt-0.5 font-medium flex items-center gap-1">
+                                  <Clock size={10} /> Check-in {new Date(a.checked_in_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                                </p>
+                              )}
+                              {a.completed_at && (
+                                <p className="text-[11px] text-[#94A3B8] mt-0.5 font-medium flex items-center gap-1">
+                                  <Check size={10} /> Fertig {new Date(a.completed_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                                </p>
+                              )}
                             </div>
                             {isSick && <span className="badge-danger">Krank</span>}
                             {!isSick && (

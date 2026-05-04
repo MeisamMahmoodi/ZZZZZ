@@ -135,7 +135,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
 
   const handleCheckIn = async () => {
     if (!todayAssignment) return;
-    const { error } = await supabase.from('assignments').update({ status: 'checked_in' }).eq('id', todayAssignment.id);
+    const { error } = await supabase.from('assignments').update({ status: 'checked_in', checked_in_at: new Date().toISOString() }).eq('id', todayAssignment.id);
     if (!error) setCheckedIn(true);
   };
 

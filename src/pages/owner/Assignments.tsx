@@ -104,7 +104,10 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   };
 
   const handleStatusChange = async (assignment: AssignmentWithDetails, status: string) => {
-    const { error } = await supabase.from('assignments').update({ status }).eq('id', assignment.id);
+    const updates: Record<string, unknown> = { status };
+    if (status === 'checked_in') updates.checked_in_at = new Date().toISOString();
+    if (status === 'completed') updates.completed_at = new Date().toISOString();
+    const { error } = await supabase.from('assignments').update(updates).eq('id', assignment.id);
     if (!error) onRefresh();
   };
 
@@ -200,8 +203,11 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
                           {a.employee?.first_name} {a.employee?.last_name}
                           {isSick && <span className="ml-2 text-[#EF4444] text-xs font-semibold">(krank)</span>}
                         </p>
-                        {a.status === 'checked_in' && a.updated_at && (
-                          <p className="text-[11px] text-[#94A3B8] mt-0.5 font-medium">Eingecheckt {new Date(a.updated_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</p>
+                        {a.status === 'checked_in' && a.checked_in_at && (
+                          <p className="text-[11px] text-[#94A3B8] mt-0.5 font-medium">Eingecheckt {new Date(a.checked_in_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</p>
+                        )}
+                        {a.status === 'completed' && a.completed_at && (
+                          <p className="text-[11px] text-[#94A3B8] mt-0.5 font-medium">Fertiggestellt {new Date(a.completed_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</p>
                         )}
                       </div>
                       {isSick ? (

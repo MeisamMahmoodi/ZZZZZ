@@ -50,7 +50,8 @@ export interface Assignment {
   date: string;
   status: 'assigned' | 'checked_in' | 'completed' | 'cancelled';
   created_at: string;
-  updated_at?: string;
+  checked_in_at?: string | null;
+  completed_at?: string | null;
 }
 
 export interface SickReport {
