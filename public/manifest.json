@@ -1,6 +1,6 @@
 {
-  "name": "Blitz Reinigung",
-  "short_name": "Blitz",
+  "name": "meizo",
+  "short_name": "meizo",
   "description": "Reinigungsmanagement für Chef und Mitarbeiter",
   "start_url": "/",
   "display": "standalone",

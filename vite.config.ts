@@ -7,10 +7,10 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['PutzoLogo.png', 'apple-touch-icon.png'],
+      includeAssets: ['meizoLogo.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'Blitz Reinigung',
-        short_name: 'Blitz',
+        name: 'meizo',
+        short_name: 'meizo',
         description: 'Reinigungsmanagement für Chef und Mitarbeiter',
         start_url: '/',
         display: 'standalone',

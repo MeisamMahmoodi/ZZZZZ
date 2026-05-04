@@ -14,7 +14,7 @@ import { Settings } from './pages/owner/Settings';
 import { EmployeeHome } from './pages/employee/EmployeeHome';
 import { SickLeave } from './pages/employee/SickLeave';
 import { supabase } from './lib/supabase';
-import { Lock, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 
 function OwnerApp() {
   const [page, setPage] = useState('dashboard');
@@ -80,9 +80,7 @@ function ChangePasswordScreen() {
     <div className={`min-h-screen bg-surface-50 flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-brand-500 flex items-center justify-center mx-auto mb-5 shadow-sm">
-            <Lock size={28} className="text-white" />
-          </div>
+          <img src="/meizoLogo.png" alt="Meizo" className="h-16 w-auto mx-auto mb-5" />
           <h1 className="text-2xl font-bold text-ink-900 tracking-tight">{t('setPassword')}</h1>
           <p className="text-ink-500 text-sm mt-1.5">{t('chooseOwnPassword')}</p>
         </div>
@@ -230,10 +228,8 @@ function UnifiedLogin() {
     <div className={`min-h-screen bg-surface-50 flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="w-14 h-14 rounded-2xl bg-brand-500 flex items-center justify-center mx-auto mb-5 shadow-sm">
-            <span className="text-white text-2xl font-bold">P</span>
-          </div>
-          <h1 className="text-2xl font-bold text-ink-900 tracking-tight">Putzo</h1>
+          <img src="/meizoLogo.png" alt="Meizo" className="h-16 w-auto mx-auto mb-5" />
+          <h1 className="text-2xl font-bold text-ink-900 tracking-tight">meizo</h1>
           <p className="text-ink-500 text-sm mt-1.5">{t('login')}</p>
         </div>
 
