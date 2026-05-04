@@ -36,6 +36,9 @@ export interface Property {
   time_from: string;
   time_to: string;
   created_at: string;
+  lat?: number | null;
+  lng?: number | null;
+  gps_radius_m?: number | null;
 }
 
 export interface EmployeeProperty {

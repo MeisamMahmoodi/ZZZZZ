@@ -402,8 +402,12 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
       {showCheckInFlow && todayAssignment && (
         <CheckInFlow
           assignmentId={todayAssignment.id}
+          propertyId={todayAssignment.property_id}
           propertyName={todayAssignment.property?.name || ''}
           propertyAddress={todayAssignment.property?.address || ''}
+          propertyLat={todayAssignment.property?.lat}
+          propertyLng={todayAssignment.property?.lng}
+          propertyRadiusM={todayAssignment.property?.gps_radius_m}
           onSuccess={handleCheckInSuccess}
           onCancel={() => setShowCheckInFlow(false)}
           rtl={rtl}

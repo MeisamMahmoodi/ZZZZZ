@@ -1,22 +1,59 @@
-import { useState, useRef, useCallback } from 'react';
-import { Camera, MapPin, Check, X, RotateCcw, Loader2, AlertTriangle } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Camera, MapPin, Check, X, RotateCcw, Loader2, AlertTriangle, Navigation } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 
 interface CheckInFlowProps {
   assignmentId: string;
+  propertyId: string;
   propertyName: string;
   propertyAddress: string;
+  propertyLat?: number | null;
+  propertyLng?: number | null;
+  propertyRadiusM?: number | null;
   onSuccess: () => void;
   onCancel: () => void;
   rtl?: boolean;
 }
 
 type Step = 'gps' | 'camera' | 'preview' | 'uploading' | 'done';
+type GpsState = 'idle' | 'geocoding' | 'locating' | 'ok' | 'too_far' | 'error';
 
-export function CheckInFlow({ assignmentId, propertyName, propertyAddress, onSuccess, onCancel, rtl }: CheckInFlowProps) {
+// Haversine distance in meters
+function distanceMeters(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371000;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+// Geocode address via Nominatim (OSM, no key required)
+async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+  try {
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`;
+    const res = await fetch(url, { headers: { 'Accept-Language': 'de' } });
+    const data = await res.json();
+    if (data && data[0]) return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+export function CheckInFlow({
+  assignmentId, propertyId, propertyName, propertyAddress,
+  propertyLat, propertyLng, propertyRadiusM,
+  onSuccess, onCancel, rtl,
+}: CheckInFlowProps) {
   const [step, setStep] = useState<Step>('gps');
-  const [gpsStatus, setGpsStatus] = useState<'idle' | 'loading' | 'ok' | 'error'>('idle');
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [gpsState, setGpsState] = useState<GpsState>('idle');
+  const [employeeCoords, setEmployeeCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [targetCoords, setTargetCoords] = useState<{ lat: number; lng: number } | null>(
+    propertyLat && propertyLng ? { lat: propertyLat, lng: propertyLng } : null
+  );
+  const [distanceM, setDistanceM] = useState<number | null>(null);
   const [gpsError, setGpsError] = useState('');
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState('');
@@ -24,21 +61,61 @@ export function CheckInFlow({ assignmentId, propertyName, propertyAddress, onSuc
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const getGPS = useCallback(() => {
-    setGpsStatus('loading');
+  const radius = propertyRadiusM ?? 300;
+
+  // Auto-start GPS check on mount
+  useEffect(() => { checkProximity(); }, []);
+
+  const checkProximity = useCallback(async () => {
+    setGpsState('locating');
     setGpsError('');
-    navigator.geolocation.getCurrentPosition(
-      pos => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude });
-        setGpsStatus('ok');
-      },
-      err => {
-        setGpsError(err.code === 1 ? 'GPS-Zugriff verweigert. Bitte in den Browser-Einstellungen erlauben.' : 'GPS nicht verfügbar. Bitte versuche es erneut.');
-        setGpsStatus('error');
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  }, []);
+    setDistanceM(null);
+
+    // 1. Get employee location
+    const empCoords = await new Promise<{ lat: number; lng: number } | null>(resolve => {
+      navigator.geolocation.getCurrentPosition(
+        pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+        err => {
+          if (err.code === 1) setGpsError('GPS-Zugriff verweigert. Bitte in den Browser-Einstellungen erlauben.');
+          else setGpsError('GPS nicht verfuegbar. Bitte erneut versuchen.');
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 12000 }
+      );
+    });
+
+    if (!empCoords) { setGpsState('error'); return; }
+    setEmployeeCoords(empCoords);
+
+    // 2. Get or geocode property coords
+    let propCoords = targetCoords;
+    if (!propCoords) {
+      setGpsState('geocoding');
+      propCoords = await geocodeAddress(propertyAddress);
+      if (propCoords) {
+        setTargetCoords(propCoords);
+        // Cache coords in DB so next time is instant
+        await supabase.from('properties').update({ lat: propCoords.lat, lng: propCoords.lng }).eq('id', propertyId);
+      }
+    }
+
+    if (!propCoords) {
+      // Could not geocode — allow check-in but note it
+      setGpsState('ok');
+      setDistanceM(null);
+      return;
+    }
+
+    // 3. Compare distance
+    const dist = distanceMeters(empCoords.lat, empCoords.lng, propCoords.lat, propCoords.lng);
+    setDistanceM(Math.round(dist));
+
+    if (dist <= radius) {
+      setGpsState('ok');
+    } else {
+      setGpsState('too_far');
+    }
+  }, [targetCoords, propertyAddress, propertyId, radius]);
 
   const startCamera = useCallback(async () => {
     setStep('camera');
@@ -65,12 +142,12 @@ export function CheckInFlow({ assignmentId, propertyName, propertyAddress, onSuc
 
   const takePhoto = useCallback(() => {
     if (!videoRef.current || !canvasRef.current) return;
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    canvas.getContext('2d')?.drawImage(video, 0, 0);
-    setPhotoDataUrl(canvas.toDataURL('image/jpeg', 0.85));
+    const v = videoRef.current;
+    const c = canvasRef.current;
+    c.width = v.videoWidth;
+    c.height = v.videoHeight;
+    c.getContext('2d')?.drawImage(v, 0, 0);
+    setPhotoDataUrl(c.toDataURL('image/jpeg', 0.85));
     stopCamera();
     setStep('preview');
   }, [stopCamera]);
@@ -84,45 +161,38 @@ export function CheckInFlow({ assignmentId, propertyName, propertyAddress, onSuc
     if (!photoDataUrl) return;
     setStep('uploading');
     setUploadError('');
-
     try {
-      // Convert data URL to blob
-      const res = await fetch(photoDataUrl);
-      const blob = await res.blob();
+      const blob = await (await fetch(photoDataUrl)).blob();
       const filename = `checkin/${assignmentId}_${Date.now()}.jpg`;
-
-      const { error: storageError } = await supabase.storage
+      const { error: storageErr } = await supabase.storage
         .from('assignment-photos')
         .upload(filename, blob, { contentType: 'image/jpeg', upsert: true });
-
-      if (storageError) throw new Error(storageError.message);
+      if (storageErr) throw new Error(storageErr.message);
 
       const { data: urlData } = supabase.storage.from('assignment-photos').getPublicUrl(filename);
-      const photoUrl = urlData.publicUrl;
 
-      const { error: dbError } = await supabase.from('assignments').update({
+      const { error: dbErr } = await supabase.from('assignments').update({
         status: 'checked_in',
         checked_in_at: new Date().toISOString(),
-        checkin_photo_url: photoUrl,
-        checkin_lat: coords?.lat ?? null,
-        checkin_lng: coords?.lng ?? null,
+        checkin_photo_url: urlData.publicUrl,
+        checkin_lat: employeeCoords?.lat ?? null,
+        checkin_lng: employeeCoords?.lng ?? null,
       }).eq('id', assignmentId);
-
-      if (dbError) throw new Error(dbError.message);
+      if (dbErr) throw new Error(dbErr.message);
 
       setStep('done');
       setTimeout(onSuccess, 1200);
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Fehler beim Hochladen');
+      setUploadError(err instanceof Error ? err.message : 'Fehler beim Einchecken');
       setStep('preview');
     }
-  }, [photoDataUrl, assignmentId, coords, onSuccess]);
+  }, [photoDataUrl, assignmentId, employeeCoords, onSuccess]);
 
-  // Cleanup on unmount
-  const handleCancel = () => {
-    stopCamera();
-    onCancel();
-  };
+  const handleCancel = () => { stopCamera(); onCancel(); };
+
+  const distLabel = distanceM != null
+    ? distanceM >= 1000 ? `${(distanceM / 1000).toFixed(1)} km` : `${distanceM} m`
+    : null;
 
   return (
     <div className={`fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 ${rtl ? 'text-right' : 'text-left'}`}>
@@ -133,58 +203,91 @@ export function CheckInFlow({ assignmentId, propertyName, propertyAddress, onSuc
           <div className="p-7">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-bold text-[#0F172A]">Einchecken</h2>
-              <button onClick={handleCancel} className="p-2 rounded-xl hover:bg-[#F1F5F9] transition-colors"><X size={18} className="text-[#94A3B8]" /></button>
+              <button onClick={handleCancel} className="p-2 rounded-xl hover:bg-[#F1F5F9] transition-colors">
+                <X size={18} className="text-[#94A3B8]" />
+              </button>
             </div>
 
+            {/* Property card */}
             <div className="bg-[#F8FAFC] rounded-2xl p-4 mb-6">
               <p className="text-sm font-semibold text-[#0F172A]">{propertyName}</p>
-              <p className="text-xs text-[#64748B] mt-1 flex items-center gap-1.5"><MapPin size={11} />{propertyAddress}</p>
+              <p className="text-xs text-[#64748B] mt-1 flex items-center gap-1.5">
+                <MapPin size={11} className="shrink-0" />{propertyAddress}
+              </p>
             </div>
 
-            <div className="flex flex-col items-center py-6">
-              <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-5 transition-all ${gpsStatus === 'ok' ? 'bg-[#DCFCE7]' : gpsStatus === 'error' ? 'bg-[#FEF2F2]' : 'bg-[#EFF6FF]'}`}>
-                {gpsStatus === 'loading' ? (
+            {/* GPS Status */}
+            <div className="flex flex-col items-center py-5">
+              <div className={`w-20 h-20 rounded-3xl flex items-center justify-center mb-4 transition-all ${
+                gpsState === 'ok' ? 'bg-[#DCFCE7]' :
+                gpsState === 'too_far' ? 'bg-[#FEF2F2]' :
+                gpsState === 'error' ? 'bg-[#FFF7ED]' : 'bg-[#EFF6FF]'
+              }`}>
+                {(gpsState === 'locating' || gpsState === 'geocoding') ? (
                   <Loader2 size={36} className="text-[#3B82F6] animate-spin" />
-                ) : gpsStatus === 'ok' ? (
+                ) : gpsState === 'ok' ? (
                   <Check size={36} className="text-[#22C55E]" />
-                ) : gpsStatus === 'error' ? (
-                  <AlertTriangle size={36} className="text-[#EF4444]" />
+                ) : gpsState === 'too_far' ? (
+                  <Navigation size={36} className="text-[#EF4444]" />
+                ) : gpsState === 'error' ? (
+                  <AlertTriangle size={36} className="text-[#F97316]" />
                 ) : (
                   <MapPin size={36} className="text-[#3B82F6]" />
                 )}
               </div>
-              {gpsStatus === 'idle' && <p className="text-sm text-[#64748B] text-center">Standort wird zur Verifikation benötigt</p>}
-              {gpsStatus === 'loading' && <p className="text-sm text-[#64748B] text-center">GPS wird ermittelt...</p>}
-              {gpsStatus === 'ok' && (
+
+              {gpsState === 'idle' && (
+                <p className="text-sm text-[#64748B] text-center">Standort wird geprueft...</p>
+              )}
+              {gpsState === 'locating' && (
+                <p className="text-sm text-[#64748B] text-center">GPS wird ermittelt...</p>
+              )}
+              {gpsState === 'geocoding' && (
+                <p className="text-sm text-[#64748B] text-center">Objektadresse wird geolocated...</p>
+              )}
+              {gpsState === 'ok' && (
                 <div className="text-center">
-                  <p className="text-sm font-semibold text-[#22C55E]">Standort bestätigt</p>
-                  <p className="text-xs text-[#94A3B8] mt-1">{coords?.lat.toFixed(5)}, {coords?.lng.toFixed(5)}</p>
+                  <p className="text-sm font-bold text-[#22C55E]">Standort bestätigt</p>
+                  {distLabel && (
+                    <p className="text-xs text-[#64748B] mt-1">{distLabel} vom Objekt entfernt</p>
+                  )}
+                  {!distLabel && (
+                    <p className="text-xs text-[#94A3B8] mt-1">Adresse konnte nicht verifiziert werden</p>
+                  )}
                 </div>
               )}
-              {gpsStatus === 'error' && <p className="text-xs text-[#EF4444] text-center max-w-[260px]">{gpsError}</p>}
+              {gpsState === 'too_far' && (
+                <div className="text-center">
+                  <p className="text-sm font-bold text-[#EF4444]">Zu weit entfernt</p>
+                  <p className="text-xs text-[#64748B] mt-1">
+                    Du bist {distLabel} vom Objekt entfernt.<br />
+                    Erlaubt: bis {radius} m
+                  </p>
+                </div>
+              )}
+              {gpsState === 'error' && (
+                <p className="text-xs text-[#F97316] text-center max-w-[260px]">{gpsError}</p>
+              )}
             </div>
 
-            {uploadError && <p className="text-xs text-[#EF4444] text-center mb-4">{uploadError}</p>}
-
-            <div className="space-y-3 mt-2">
-              {gpsStatus !== 'ok' && (
-                <button onClick={getGPS} disabled={gpsStatus === 'loading'}
-                  className="w-full py-3.5 rounded-2xl text-sm font-semibold bg-[#0F172A] text-white hover:bg-[#1E293B] disabled:opacity-50 transition-colors flex items-center justify-center gap-2">
-                  {gpsStatus === 'loading' ? <Loader2 size={16} className="animate-spin" /> : <MapPin size={16} />}
-                  GPS bestimmen
+            {/* Actions */}
+            <div className="space-y-3">
+              {(gpsState === 'too_far' || gpsState === 'error') && (
+                <button onClick={checkProximity}
+                  className="w-full py-3.5 rounded-2xl text-sm font-semibold bg-[#F1F5F9] text-[#0F172A] hover:bg-[#E2E8F0] transition-colors flex items-center justify-center gap-2">
+                  <RotateCcw size={15} /> Erneut versuchen
                 </button>
               )}
-              {gpsStatus === 'ok' && (
+              {gpsState === 'ok' && (
                 <button onClick={startCamera}
                   className="w-full py-3.5 rounded-2xl text-sm font-semibold bg-[#22C55E] text-white hover:bg-[#16A34A] transition-colors flex items-center justify-center gap-2">
-                  <Camera size={16} /> Foto aufnehmen
+                  <Camera size={16} /> Gebäude fotografieren
                 </button>
               )}
-              {gpsStatus === 'error' && (
-                <button onClick={() => { setGpsStatus('ok'); setCoords(null); startCamera(); }}
-                  className="w-full py-3.5 rounded-2xl text-sm font-semibold bg-[#F97316] text-white hover:bg-[#EA580C] transition-colors flex items-center justify-center gap-2">
-                  <Camera size={16} /> Trotzdem einchecken (ohne GPS)
-                </button>
+              {gpsState === 'too_far' && (
+                <p className="text-xs text-center text-[#94A3B8]">
+                  Du musst vor Ort sein um einzuchecken.
+                </p>
               )}
             </div>
           </div>
@@ -195,21 +298,18 @@ export function CheckInFlow({ assignmentId, propertyName, propertyAddress, onSuc
           <div className="relative bg-black" style={{ minHeight: '60dvh' }}>
             <video ref={videoRef} autoPlay playsInline muted className="w-full object-cover" style={{ maxHeight: '70dvh' }} />
             <canvas ref={canvasRef} className="hidden" />
-
-            {/* Overlay guide */}
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute inset-6 border-2 border-white/30 rounded-2xl" />
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-[80%] bg-black/50 backdrop-blur-sm px-4 py-2 rounded-full">
-                <p className="text-white text-xs font-medium text-center">Gebäude fotografieren</p>
+              <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm px-4 py-2 rounded-full">
+                <p className="text-white text-xs font-semibold text-center">Gebäude fotografieren</p>
               </div>
             </div>
-
             <div className="absolute bottom-0 left-0 right-0 p-6 flex items-center justify-between bg-gradient-to-t from-black/70 to-transparent">
               <button onClick={handleCancel} className="w-12 h-12 rounded-full bg-white/20 backdrop-blur flex items-center justify-center">
                 <X size={20} className="text-white" />
               </button>
               <button onClick={takePhoto}
-                className="w-18 h-18 rounded-full bg-white border-4 border-white/30 shadow-lg flex items-center justify-center transition-transform active:scale-95"
+                className="rounded-full bg-white border-4 border-white/30 shadow-lg flex items-center justify-center transition-transform active:scale-95"
                 style={{ width: 72, height: 72 }}>
                 <div className="w-14 h-14 rounded-full bg-white" />
               </button>
@@ -222,11 +322,13 @@ export function CheckInFlow({ assignmentId, propertyName, propertyAddress, onSuc
         {step === 'preview' && photoDataUrl && (
           <div>
             <div className="relative">
-              <img src={photoDataUrl} alt="Aufgenommenes Foto" className="w-full object-cover" style={{ maxHeight: '55dvh' }} />
-              {coords && (
+              <img src={photoDataUrl} alt="Gebäude-Foto" className="w-full object-cover" style={{ maxHeight: '55dvh' }} />
+              {employeeCoords && (
                 <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5">
                   <MapPin size={12} className="text-[#22C55E]" />
-                  <span className="text-white text-[11px] font-medium">GPS verifiziert</span>
+                  <span className="text-white text-[11px] font-medium">
+                    GPS: {distLabel ? `${distLabel} vom Objekt` : 'verifiziert'}
+                  </span>
                 </div>
               )}
             </div>

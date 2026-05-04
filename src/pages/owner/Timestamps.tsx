@@ -108,6 +108,9 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
                       : null;
                     const dH = duration != null ? Math.floor(duration / 60) : 0;
                     const dM = duration != null ? duration % 60 : 0;
+                    const durationLabel = duration != null
+                      ? (dH > 0 ? `${dH}h ${dM}min` : `${dM}min`)
+                      : null;
 
                     return (
                       <div key={a.id} className="px-5 sm:px-6 py-4">
@@ -148,13 +151,31 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
                                 <span className="text-[10px] text-[#94A3B8] w-16">Fertig</span>
                               </div>
                             )}
-                            {duration != null && (
-                              <p className="text-[10px] text-[#94A3B8] text-right">
-                                {dH > 0 ? `${dH}h ` : ''}{dM}min Dauer
-                              </p>
+                            {durationLabel && (
+                              <div className="flex items-center justify-end gap-1 mt-1">
+                                <span className="text-[11px] font-bold text-[#0F172A] bg-[#F0FDF4] border border-[#BBF7D0] px-2 py-0.5 rounded-lg">
+                                  {durationLabel}
+                                </span>
+                              </div>
                             )}
                           </div>
                         </div>
+
+                        {/* Payroll note */}
+                        {a.status === 'completed' && durationLabel && (
+                          <div className="mt-2 pl-14">
+                            <span className="text-[10px] font-semibold text-[#22C55E] bg-[#F0FDF4] border border-[#BBF7D0] px-2.5 py-1 rounded-full">
+                              Wird in Abrechnung erfasst · {durationLabel}
+                            </span>
+                          </div>
+                        )}
+                        {a.status === 'checked_in' && a.checked_in_at && (
+                          <div className="mt-2 pl-14">
+                            <span className="text-[10px] font-semibold text-[#3B82F6] bg-[#EFF6FF] border border-[#BFDBFE] px-2.5 py-1 rounded-full">
+                              Noch eingecheckt · seit {new Date(a.checked_in_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr
+                            </span>
+                          </div>
+                        )}
 
                         {/* Row 2: Photos + GPS */}
                         {(a.checkin_photo_url || a.checkout_photo_url || a.checkin_lat || a.checkout_lat) && (
