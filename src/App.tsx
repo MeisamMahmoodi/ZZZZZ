@@ -13,6 +13,7 @@ import { Timestamps } from './pages/owner/Timestamps';
 import { Settings } from './pages/owner/Settings';
 import { EmployeeHome } from './pages/employee/EmployeeHome';
 import { SickLeave } from './pages/employee/SickLeave';
+import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { supabase } from './lib/supabase';
 import { Eye, EyeOff } from 'lucide-react';
 
@@ -129,7 +130,7 @@ function ChangePasswordScreen() {
 
 function AppRoutes() {
   const { user, loading, mustChangePassword } = useAuth();
-  const [role, setRole] = useState<'owner' | 'employee' | null>(null);
+  const [role, setRole] = useState<'owner' | 'employee' | 'admin' | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
   const prevUserId = React.useRef<string | null>(null);
 
@@ -154,7 +155,7 @@ function AppRoutes() {
       .eq('id', uid)
       .maybeSingle()
       .then(({ data }) => {
-        if (data?.role === 'owner' || data?.role === 'employee') {
+        if (data?.role === 'owner' || data?.role === 'employee' || data?.role === 'admin') {
           setRole(data.role);
         } else {
           setRole(null);
@@ -183,6 +184,10 @@ function AppRoutes() {
         <Route path="/*" element={<UnifiedLogin />} />
       </Routes>
     );
+  }
+
+  if (role === 'admin') {
+    return <AdminDashboard />;
   }
 
   if (mustChangePassword && role === 'employee') {

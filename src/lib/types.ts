@@ -1,6 +1,6 @@
 export interface Profile {
   id: string;
-  role: 'owner' | 'employee';
+  role: 'owner' | 'employee' | 'admin';
   created_at: string;
 }
 
@@ -10,6 +10,7 @@ export interface Company {
   owner_name: string;
   owner_email: string;
   owner_id: string | null;
+  contract: string;
   created_at: string;
 }
 
