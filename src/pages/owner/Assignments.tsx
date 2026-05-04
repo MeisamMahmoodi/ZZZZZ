@@ -5,6 +5,7 @@ import { Modal } from '../../components/shared/Modal';
 import { Avatar } from '../../components/shared/Avatar';
 import { useToast } from '../../components/shared/Toast';
 import { formatTime } from '../../lib/utils';
+import { sendPushToEmployee } from '../../hooks/usePushNotifications';
 import type { Employee, Property, Assignment, Company, SickReport } from '../../lib/types';
 
 interface AssignmentsProps {
@@ -82,12 +83,16 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
 
     const prop = properties.find(p => p.id === newPropertyId);
     if (prop) {
-      await supabase.from('notifications').insert(
-        newEmployeeIds.map(eid => ({
-          employee_id: eid, type: 'new_assignment', title: 'Neuer Einsatz',
-          message: `Du wurdest für ${prop.name} am ${new Date(newDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })} (${formatTime(newTimeFrom)}–${formatTime(newTimeTo)} Uhr) eingeteilt.`,
-          read: false,
-        }))
+      const dateLabel = new Date(newDate).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
+      const timeLabel = `${formatTime(newTimeFrom || prop.time_from)} – ${formatTime(newTimeTo || prop.time_to)} Uhr`;
+      const pushTitle = `Neuer Einsatz: ${prop.name}`;
+      const pushBody = `${dateLabel}, ${timeLabel}`;
+
+      // Send push + in-app notification to each employee in parallel
+      await Promise.all(
+        newEmployeeIds.map(eid =>
+          sendPushToEmployee(eid, pushTitle, pushBody, { type: 'new_assignment' })
+        )
       );
     }
 

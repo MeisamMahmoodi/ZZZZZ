@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Clock, LogIn, Mail, LogOut, Heart, Bell, CheckCircle, CalendarDays, Globe, AlertTriangle, LogOut as CheckOutIcon } from 'lucide-react';
+import { MapPin, Clock, LogIn, Mail, LogOut, Heart, Bell, CheckCircle, CalendarDays, Globe, AlertTriangle, LogOut as CheckOutIcon, BellRing, BellOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useLang } from '../../hooks/useLang';
@@ -7,6 +7,7 @@ import { formatDateLong, formatTime } from '../../lib/utils';
 import { langNames, langFlags, type Lang } from '../../lib/i18n';
 import { CheckInFlow } from '../../components/employee/CheckInFlow';
 import { CheckOutFlow } from '../../components/employee/CheckOutFlow';
+import { usePushNotifications } from '../../hooks/usePushNotifications';
 import type { Employee, Property, Assignment, ReplacementRequest, Notification, SickReport } from '../../lib/types';
 
 interface EmployeeHomeProps {
@@ -23,6 +24,8 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
   const { user, signOut } = useAuth();
   const { lang, setLang, t, rtl } = useLang();
   const [employee, setEmployee] = useState<Employee | null>(null);
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
+  const { permission, subscribed, loading: pushLoading, subscribe } = usePushNotifications(employee?.id ?? null);
   const [todayAssignment, setTodayAssignment] = useState<AssignmentWithProperty | null>(null);
   const [upcomingAssignments, setUpcomingAssignments] = useState<AssignmentWithProperty[]>([]);
   const [replacementRequest, setReplacementRequest] = useState<(ReplacementRequest & { property: Property; sickEmployee: Employee }) | null>(null);
@@ -54,6 +57,14 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
     if (!user) return;
     loadData();
   }, [user]);
+
+  // Show push prompt once when employee loaded and permission not yet decided
+  useEffect(() => {
+    if (employee && permission === 'default' && !subscribed) {
+      const timer = setTimeout(() => setShowPushPrompt(true), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [employee, permission, subscribed]);
 
   async function loadData() {
     try {
@@ -266,6 +277,52 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
           </div>
         </div>
       </div>
+
+      {/* Push Permission Prompt */}
+      {showPushPrompt && permission === 'default' && !subscribed && (
+        <div className="mb-5 rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-9 h-9 rounded-xl bg-[#3B82F6] flex items-center justify-center shrink-0">
+              <BellRing size={18} className="text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-[#1E3A5F]">Benachrichtigungen erlauben</p>
+              <p className="text-xs text-[#3B82F6] mt-0.5 leading-relaxed">
+                Erhalte sofort Bescheid wenn du einen neuen Einsatz bekommst.
+              </p>
+            </div>
+            <button onClick={() => setShowPushPrompt(false)} className="text-[#94A3B8] hover:text-[#64748B] shrink-0 mt-0.5">
+              <BellOff size={15} />
+            </button>
+          </div>
+          <div className="flex gap-2.5 mt-3.5">
+            <button
+              onClick={async () => {
+                const ok = await subscribe();
+                if (ok) setShowPushPrompt(false);
+              }}
+              disabled={pushLoading}
+              className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors disabled:opacity-60"
+            >
+              {pushLoading ? 'Wird aktiviert...' : 'Ja, aktivieren'}
+            </button>
+            <button
+              onClick={() => setShowPushPrompt(false)}
+              className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-white border border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] transition-colors"
+            >
+              Später
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Push active indicator (subtle, shown once subscribed) */}
+      {subscribed && permission === 'granted' && (
+        <div className="mb-5 rounded-2xl border border-[#BBF7D0] bg-[#F0FDF4] px-4 py-3 flex items-center gap-2.5">
+          <BellRing size={15} className="text-[#22C55E] shrink-0" />
+          <p className="text-xs font-semibold text-[#15803D]">Benachrichtigungen aktiv — du wirst bei neuen Einsätzen informiert</p>
+        </div>
+      )}
 
       {/* SICK STATUS PINNED BANNER */}
       {isSick && sickReports.length > 0 && (

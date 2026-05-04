@@ -36,6 +36,8 @@ export default defineConfig({
       workbox: {
         // Cache app shell + static assets
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        // Inject the push event handler into the generated SW
+        importScripts: ['/sw-push.js'],
         // Network-first for API calls, cache-first for assets
         runtimeCaching: [
           {
