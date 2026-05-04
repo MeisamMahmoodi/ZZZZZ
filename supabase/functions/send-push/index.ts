@@ -206,9 +206,9 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "3FeAXtUKgtzqqeyBRrQpA9RfBDhRyG_YQZ0RznTo_CEP8KqtroiKlETKOrZORBn0rykC7AunRwplAmL73mzHCg";
-    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "D_Cqra6IipREyjq2TkQZ9K8pAuwLp0cKZQJi-95sxwo";
-    const vapidSubject = "mailto:admin@blitz-reinigung.de";
+    const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "BP7dGwwS5VmjyTIQsjvqKYQWJNXFdkalsN8t2JKPOt7497HEzNrFhfxHQhnEQAjmmOYThd8N-PzIZdphGhWDjNk";
+    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "iEIeD4L_4dLDQgfG6XHCSvcvDeBWXroDlKLxP26CCs4";
+    const vapidSubject = "mailto:meisam.projects@gmail.com";
 
     const payload = JSON.stringify({ title, body, data: data ?? {} });
 
