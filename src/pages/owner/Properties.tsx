@@ -199,7 +199,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
           const noStaff = propEmployees.length === 0;
 
           return (
-            <div key={prop.id} className={`card-interactive p-5 relative ${noStaff ? 'border-[#FFEDD5]/60' : ''}`}>
+            <div key={prop.id} className={`card p-5 relative ${noStaff ? 'border-[#FFEDD5]/60' : ''}`}>
               <div className="flex items-start gap-3.5">
                 <div className="w-11 h-11 rounded-xl bg-[#F8FAFC] flex items-center justify-center shrink-0">
                   <TypeIcon type={prop.type} />

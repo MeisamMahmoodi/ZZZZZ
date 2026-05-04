@@ -191,7 +191,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const renderEmployeeCard = (emp: Employee) => {
     const knownProps = getKnownProperties(emp.id);
     return (
-      <div key={emp.id} className={`card-interactive p-5 relative ${menuOpen === emp.id ? 'ring-2 ring-[#22C55E]/20 border-[#BBF7D0]' : ''}`}>
+      <div key={emp.id} className={`card p-5 relative ${menuOpen === emp.id ? 'ring-2 ring-[#22C55E]/20 border-[#BBF7D0]' : ''}`}>
         <div className="flex items-start gap-3.5">
           <Avatar firstName={emp.first_name} lastName={emp.last_name} id={emp.id} size="md" />
           <div className="flex-1 min-w-0">
@@ -199,32 +199,32 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-1"><Phone size={12} className="text-[#94A3B8]" /> {emp.phone}</p>
             {emp.email && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Mail size={12} className="text-[#94A3B8]" /> {emp.email}</p>}
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             {emp.status === 'sick' ? <span className="badge-danger">Krank</span> : <span className="badge-success">Aktiv</span>}
             {emp.user_id ? <Shield size={14} className="text-[#3B82F6]" /> : <ShieldOff size={14} className="text-[#CBD5E1]" />}
+            <div className="relative" ref={menuOpen === emp.id ? menuRef : null}>
+              <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors">
+                <MoreVertical size={16} className="text-[#94A3B8]" />
+              </button>
+              {menuOpen === emp.id && (
+                <div className="absolute right-0 top-9 bg-white rounded-xl shadow-[0_10px_15px_-3px_rgba(0,0,0,0.08),0_4px_6px_-4px_rgba(0,0,0,0.04)] border border-[#E2E8F0]/60 py-1.5 z-20 min-w-[180px] animate-scale-in">
+                  <button onClick={() => openEditModal(emp)} className="w-full text-left px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F8FAFC] transition-colors flex items-center gap-2.5"><Pencil size={14} className="text-[#94A3B8]" /> Bearbeiten</button>
+                  {emp.status === 'active' ? (
+                    <button onClick={() => handleMarkSick(emp)} className="w-full text-left px-4 py-2.5 text-sm text-[#EF4444] hover:bg-[#FEF2F2] transition-colors">Als krank melden</button>
+                  ) : (
+                    <button onClick={() => handleMarkActive(emp)} className="w-full text-left px-4 py-2.5 text-sm text-[#16A34A] hover:bg-[#F0FDF4] transition-colors">Krankmeldung beenden</button>
+                  )}
+                  <div className="mx-3 my-1 h-px bg-[#F1F5F9]" />
+                  <button onClick={() => { setDeleteConfirm(emp); setMenuOpen(null); }} className="w-full text-left px-4 py-2.5 text-sm text-[#EF4444] hover:bg-[#FEF2F2] transition-colors flex items-center gap-2.5"><Trash2 size={14} /> Löschen</button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         {knownProps.length > 0 && <div className="mt-3">{renderPropertyChipsOverflow(knownProps)}</div>}
         {!emp.user_id && knownProps.length > 0 && (
           <p className="text-[11px] text-[#F97316] mt-2 flex items-center gap-1 font-medium"><AlertCircle size={10} /> Kein App-Zugang — kann Einsätze nicht bestätigen</p>
         )}
-        <div className="absolute top-4 right-4" ref={menuOpen === emp.id ? menuRef : null}>
-          <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors">
-            <MoreVertical size={16} className="text-[#94A3B8]" />
-          </button>
-          {menuOpen === emp.id && (
-            <div className="absolute right-0 top-9 bg-white rounded-xl shadow-[0_10px_15px_-3px_rgba(0,0,0,0.08),0_4px_6px_-4px_rgba(0,0,0,0.04)] border border-[#E2E8F0]/60 py-1.5 z-20 min-w-[180px] animate-scale-in">
-              <button onClick={() => openEditModal(emp)} className="w-full text-left px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F8FAFC] transition-colors flex items-center gap-2.5"><Pencil size={14} className="text-[#94A3B8]" /> Bearbeiten</button>
-              {emp.status === 'active' ? (
-                <button onClick={() => handleMarkSick(emp)} className="w-full text-left px-4 py-2.5 text-sm text-[#EF4444] hover:bg-[#FEF2F2] transition-colors">Als krank melden</button>
-              ) : (
-                <button onClick={() => handleMarkActive(emp)} className="w-full text-left px-4 py-2.5 text-sm text-[#16A34A] hover:bg-[#F0FDF4] transition-colors">Krankmeldung beenden</button>
-              )}
-              <div className="mx-3 my-1 h-px bg-[#F1F5F9]" />
-              <button onClick={() => { setDeleteConfirm(emp); setMenuOpen(null); }} className="w-full text-left px-4 py-2.5 text-sm text-[#EF4444] hover:bg-[#FEF2F2] transition-colors flex items-center gap-2.5"><Trash2 size={14} /> Löschen</button>
-            </div>
-          )}
-        </div>
       </div>
     );
   };
