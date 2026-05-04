@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays, AlertCircle, Euro, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDateLong, formatTime, getTodayDayAbbrev } from '../../lib/utils';
 import type { Employee, Property, Assignment, SickReport, EmployeeProperty } from '../../lib/types';
@@ -33,9 +33,6 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const [replacementModal, setReplacementModal] = useState<{ sickReport: SickReportWithEmployee; property: Property; assignment: AssignmentWithDetails } | null>(null);
   const [removeConfirm, setRemoveConfirm] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [monthAssignments, setMonthAssignments] = useState<AssignmentWithDetails[]>([]);
-  const [defaultWage, setDefaultWage] = useState('');
-  const [wageModal, setWageModal] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
 
@@ -56,21 +53,18 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
 
   async function loadData() {
     try {
-      const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
-      const [empRes, propRes, assignRes, sickRes, epRes, monthRes] = await Promise.all([
+      const [empRes, propRes, assignRes, sickRes, epRes] = await Promise.all([
         supabase.from('employees').select('*').eq('company_id', company.id),
         supabase.from('properties').select('*').eq('company_id', company.id),
         supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').eq('date', todayStr),
         supabase.from('sick_reports').select('*, employee:employees(*)').eq('date', todayStr),
         supabase.from('employee_properties').select('*'),
-        supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').gte('date', monthStart).lte('date', todayStr),
       ]);
       setEmployees(empRes.data || []);
       setProperties(propRes.data || []);
       setAssignments((assignRes.data as unknown as AssignmentWithDetails[]) || []);
       setSickReports((sickRes.data as unknown as SickReportWithEmployee[]) || []);
       setEmployeeProperties(epRes.data || []);
-      setMonthAssignments((monthRes.data as unknown as AssignmentWithDetails[]) || []);
     } catch {
       // Component renders with existing state
     }
@@ -165,90 +159,6 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
     const propIds = new Set(todayAssignments.map(a => a.property_id));
     return properties.filter(p => propIds.has(p.id));
   }, [todayAssignments, properties]);
-
-  const payrollData = useMemo(() => {
-    const monthStart = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-01`;
-    const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-    const daysPassed = today.getDate();
-
-    const employeeMap = new Map<string, {
-      employee: Employee;
-      totalMinutes: number;
-      expectedMinutes: number;
-      assignments: AssignmentWithDetails[];
-    }>();
-
-    for (const emp of employees) {
-      employeeMap.set(emp.id, { employee: emp, totalMinutes: 0, expectedMinutes: 0, assignments: [] });
-    }
-
-    for (const a of monthAssignments) {
-      const entry = employeeMap.get(a.employee_id);
-      if (!entry) continue;
-      entry.assignments.push(a);
-
-      const prop = a.property;
-      if (!prop) continue;
-
-      const [fromH, fromM] = prop.time_from.split(':').map(Number);
-      const [toH, toM] = prop.time_to.split(':').map(Number);
-      const durationMin = (toH * 60 + toM) - (fromH * 60 + fromM);
-
-      if (a.status === 'completed' || a.status === 'checked_in') {
-        entry.totalMinutes += durationMin;
-      }
-    }
-
-    // Calculate expected hours based on assigned properties' cleaning days
-    for (const emp of employees) {
-      const entry = employeeMap.get(emp.id);
-      if (!entry) continue;
-      const empProps = employeeProperties.filter(ep => ep.employee_id === emp.id);
-      for (const ep of empProps) {
-        const prop = properties.find(p => p.id === ep.property_id);
-        if (!prop) continue;
-        const [fromH, fromM] = prop.time_from.split(':').map(Number);
-        const [toH, toM] = prop.time_to.split(':').map(Number);
-        const durationMin = (toH * 60 + toM) - (fromH * 60 + fromM);
-        const daysPerWeek = prop.cleaning_days.length;
-        // Count how many of those cleaning days have passed this month
-        let workDaysThisMonth = 0;
-        for (let d = 1; d <= daysPassed; d++) {
-          const date = new Date(today.getFullYear(), today.getMonth(), d);
-          const dayNames = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
-          if (prop.cleaning_days.includes(dayNames[date.getDay()])) {
-            workDaysThisMonth++;
-          }
-        }
-        entry.expectedMinutes += durationMin * workDaysThisMonth;
-      }
-    }
-
-    const results = Array.from(employeeMap.values()).map(entry => {
-      const worked = entry.totalMinutes;
-      const expected = entry.expectedMinutes;
-      const diff = worked - expected;
-      const wage = entry.employee.hourly_wage;
-      const monthlyEarnings = wage != null ? (worked / 60) * wage : null;
-      return { ...entry, worked, expected, diff, wage, monthlyEarnings };
-    });
-
-    const totalMonthlyCost = results.reduce((sum, r) => sum + (r.monthlyEarnings || 0), 0);
-    const totalWorkedHours = results.reduce((sum, r) => sum + r.worked, 0) / 60;
-
-    return { results, totalMonthlyCost, totalWorkedHours, monthStart, daysInMonth, daysPassed };
-  }, [employees, monthAssignments, employeeProperties, properties, today]);
-
-  const handleSetDefaultWage = async () => {
-    const wage = parseFloat(defaultWage);
-    if (!wage || wage <= 0) return;
-    const empsWithoutWage = employees.filter(e => e.hourly_wage == null);
-    if (empsWithoutWage.length === 0) { setWageModal(false); return; }
-    const { error } = await supabase.from('employees').update({ hourly_wage: wage }).in('id', empsWithoutWage.map(e => e.id));
-    if (!error) { onRefresh(); addToast(`Stundenlohn (${wage.toFixed(2)} EUR) für ${empsWithoutWage.length} Mitarbeiter gesetzt`); }
-    setWageModal(false);
-    setDefaultWage('');
-  };
 
   return (
     <div>
@@ -438,107 +348,6 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
         </div>
       )}
 
-      {/* Payroll Section */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-[#0F172A]">Abrechnung {today.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' })}</h2>
-          <button onClick={() => setWageModal(true)} className="text-xs font-medium text-[#3B82F6] hover:text-[#2563EB] transition-colors flex items-center gap-1">
-            <Euro size={12} /> Stundenlohn setzen
-          </button>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-5">
-          <div className="card p-5">
-            <p className="section-label mb-3">Gesamtkosten</p>
-            <p className="text-2xl font-bold text-[#0F172A]">{payrollData.totalMonthlyCost.toFixed(2)} <span className="text-sm font-medium text-[#94A3B8]">EUR</span></p>
-            <p className="text-xs text-[#94A3B8] mt-2">dieser Monat bis heute</p>
-          </div>
-          <div className="card p-5">
-            <p className="section-label mb-3">Gesamtstunden</p>
-            <p className="text-2xl font-bold text-[#0F172A]">{payrollData.totalWorkedHours.toFixed(1)} <span className="text-sm font-medium text-[#94A3B8]">Std.</span></p>
-            <p className="text-xs text-[#94A3B8] mt-2">{payrollData.daysPassed}/{payrollData.daysInMonth} Tage</p>
-          </div>
-          <div className="card p-5 col-span-2 lg:col-span-1">
-            <p className="section-label mb-3">Ohne Stundenlohn</p>
-            <p className="text-2xl font-bold text-[#0F172A]">{employees.filter(e => e.hourly_wage == null).length}</p>
-            <p className="text-xs text-[#F97316] font-medium mt-2">{employees.filter(e => e.hourly_wage == null).length > 0 ? 'Lohn fehlt' : 'Alle erfasst'}</p>
-          </div>
-        </div>
-
-        {/* Employee Payroll Table */}
-        <div className="card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#F1F5F9]">
-                  <th className="text-left px-5 py-3.5 section-label">Mitarbeiter</th>
-                  <th className="text-left px-5 py-3.5 section-label">Stundenlohn</th>
-                  <th className="text-left px-5 py-3.5 section-label">Gearbeitet</th>
-                  <th className="text-left px-5 py-3.5 section-label">Erwartet</th>
-                  <th className="text-left px-5 py-3.5 section-label">Differenz</th>
-                  <th className="text-right px-5 py-3.5 section-label">Verdienst</th>
-                </tr>
-              </thead>
-              <tbody>
-                {payrollData.results.map(({ employee, worked, expected, diff, wage, monthlyEarnings }) => {
-                  const workedH = worked / 60;
-                  const expectedH = expected / 60;
-                  const diffH = diff / 60;
-                  return (
-                    <tr key={employee.id} className="border-b border-[#F1F5F9] hover:bg-[#F8FAFC]/50 transition-colors">
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-3">
-                          <Avatar firstName={employee.first_name} lastName={employee.last_name} id={employee.id} size="sm" />
-                          <div>
-                            <p className="text-sm font-medium text-[#0F172A]">{employee.first_name} {employee.last_name}</p>
-                            {employee.status === 'sick' && <span className="text-[10px] text-[#EF4444] font-semibold">KRANK</span>}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        {wage != null ? (
-                          <span className="text-sm font-medium text-[#0F172A]">{wage.toFixed(2)} EUR</span>
-                        ) : (
-                          <span className="text-xs text-[#F97316] font-medium">Nicht gesetzt</span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className="text-sm text-[#0F172A]">{workedH.toFixed(1)} Std.</span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <span className="text-sm text-[#64748B]">{expectedH.toFixed(1)} Std.</span>
-                      </td>
-                      <td className="px-5 py-3.5">
-                        <div className="flex items-center gap-1.5">
-                          {diffH > 0.05 ? <TrendingUp size={14} className="text-[#22C55E]" /> : diffH < -0.05 ? <TrendingDown size={14} className="text-[#EF4444]" /> : <Minus size={14} className="text-[#94A3B8]" />}
-                          <span className={`text-sm font-medium ${diffH > 0.05 ? 'text-[#22C55E]' : diffH < -0.05 ? 'text-[#EF4444]' : 'text-[#94A3B8]'}`}>
-                            {diffH > 0 ? '+' : ''}{diffH.toFixed(1)} Std.
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        {monthlyEarnings != null ? (
-                          <span className="text-sm font-semibold text-[#0F172A]">{monthlyEarnings.toFixed(2)} EUR</span>
-                        ) : (
-                          <span className="text-xs text-[#94A3B8]">—</span>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-              <tfoot>
-                <tr className="bg-[#F8FAFC]">
-                  <td colSpan={5} className="px-5 py-3.5 text-sm font-semibold text-[#0F172A]">Gesamt</td>
-                  <td className="px-5 py-3.5 text-right text-sm font-bold text-[#0F172A]">{payrollData.totalMonthlyCost.toFixed(2)} EUR</td>
-                </tr>
-              </tfoot>
-            </table>
-          </div>
-        </div>
-      </div>
-
       {/* Today's Assignments */}
       <div>
         <div className="flex items-center justify-between mb-5">
@@ -660,28 +469,6 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
           <div className="flex justify-end gap-3">
             <button onClick={() => setRemoveConfirm(null)} className="btn-ghost">Abbrechen</button>
             <button onClick={() => removeConfirm && handleRemoveAssignment(removeConfirm)} className="btn-danger">Entfernen</button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Set Default Wage Modal */}
-      <Modal open={wageModal} onClose={() => { setWageModal(false); setDefaultWage(''); }} width="max-w-sm">
-        <div className="p-8">
-          <div className="w-12 h-12 rounded-2xl bg-[#EFF6FF] flex items-center justify-center mb-5">
-            <Euro size={22} className="text-[#3B82F6]" />
-          </div>
-          <h2 className="text-lg font-bold text-[#0F172A] mb-2">Stundenlohn setzen</h2>
-          <p className="text-sm text-[#64748B] leading-relaxed mb-6">
-            Setze einen Standard-Stundenlohn für alle Mitarbeiter ohne individuellen Lohn. Bereits gesetzte Löhne bleiben unverändert.
-          </p>
-          <div className="mb-2">
-            <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Standard-Stundenlohn (EUR)</label>
-            <input type="number" step="0.01" min="0" value={defaultWage} onChange={e => setDefaultWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
-          </div>
-          <p className="text-xs text-[#94A3B8] mb-6">{employees.filter(e => e.hourly_wage == null).length} Mitarbeiter ohne Stundenlohn</p>
-          <div className="flex justify-end gap-3">
-            <button onClick={() => { setWageModal(false); setDefaultWage(''); }} className="btn-ghost">Abbrechen</button>
-            <button onClick={handleSetDefaultWage} disabled={!defaultWage || parseFloat(defaultWage) <= 0} className="btn-primary">Übernehmen</button>
           </div>
         </div>
       </Modal>

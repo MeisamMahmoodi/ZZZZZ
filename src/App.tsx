@@ -8,6 +8,7 @@ import { Dashboard } from './pages/owner/Dashboard';
 import { Employees } from './pages/owner/Employees';
 import { Properties } from './pages/owner/Properties';
 import { Assignments } from './pages/owner/Assignments';
+import { Payroll } from './pages/owner/Payroll';
 import { Settings } from './pages/owner/Settings';
 import { EmployeeHome } from './pages/employee/EmployeeHome';
 import { SickLeave } from './pages/employee/SickLeave';
@@ -25,6 +26,7 @@ function OwnerApp() {
           case 'employees': return <Employees {...props} />;
           case 'properties': return <Properties {...props} />;
           case 'assignments': return <Assignments {...props} />;
+          case 'payroll': return <Payroll {...props} />;
           case 'settings': return <Settings company={props.company} onRefresh={props.onRefresh} />;
           default: return <Dashboard {...props} />;
         }
