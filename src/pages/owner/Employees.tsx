@@ -289,9 +289,9 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
       </div>
 
       <div className="relative mb-5">
-        <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#94A3B8] pointer-events-none" />
         <input type="text" placeholder="Name, Telefon oder E-Mail..." value={search} onChange={e => setSearch(e.target.value)}
-          className="input-field pl-10" />
+          className="input-field !pl-11" />
       </div>
 
       <div className="flex gap-2 mb-6 overflow-x-auto pb-1">

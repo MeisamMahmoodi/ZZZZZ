@@ -26,11 +26,13 @@ export function Modal({ open, onClose, children, width = 'max-w-lg' }: ModalProp
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className={`relative bg-surface-0 rounded-2xl shadow-modal ${width} w-full max-h-[85vh] overflow-y-auto animate-scale-in`}>
-        <button onClick={onClose} className="absolute top-5 right-5 p-1.5 rounded-lg text-ink-300 hover:text-ink-700 hover:bg-surface-50 transition-all z-10">
+      <div className={`relative bg-white rounded-2xl shadow-modal ${width} w-full max-h-[85vh] overflow-y-auto animate-scale-in`}>
+        <button onClick={onClose} className="absolute top-4 right-4 p-2 rounded-xl text-[#94A3B8] hover:text-[#0F172A] hover:bg-[#F1F5F9] transition-all z-10">
           <X size={18} />
         </button>
-        {children}
+        <div className="pr-12">
+          {children}
+        </div>
       </div>
     </div>
   );

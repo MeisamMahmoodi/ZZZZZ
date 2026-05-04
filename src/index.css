@@ -122,6 +122,8 @@
     background-color: #FFFFFF;
     transition: all 0.15s;
     outline: none;
+    padding-left: 0.875rem;
+    padding-right: 0.875rem;
   }
 
   .input-field::placeholder {

@@ -120,7 +120,7 @@ export function Settings({ company, onRefresh }: SettingsProps) {
                 placeholder="Neues Passwort"
                 value={newPassword}
                 onChange={e => setNewPassword(e.target.value)}
-                className="input-field pr-10"
+                className="input-field !pr-10"
               />
               <button
                 type="button"

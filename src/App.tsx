@@ -90,7 +90,7 @@ function ChangePasswordScreen() {
               placeholder={t('newPassword')}
               value={password}
               onChange={e => setPassword(e.target.value)}
-              className="input-field pr-10"
+              className="input-field !pr-10"
             />
             <button
               type="button"

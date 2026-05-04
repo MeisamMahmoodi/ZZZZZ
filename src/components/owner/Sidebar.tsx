@@ -37,8 +37,15 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
     <>
       {/* Brand */}
       <div className="px-6 pt-7 pb-5">
-        <h1 className="text-white text-[22px] font-bold tracking-tight leading-none">Putzo</h1>
-        <p className="text-slate-500 text-[12px] font-medium mt-1.5 tracking-wide uppercase">Reinigungsservice</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-white text-[22px] font-bold tracking-tight leading-none">Putzo</h1>
+            <p className="text-slate-500 text-[12px] font-medium mt-1.5 tracking-wide uppercase">Reinigungsservice</p>
+          </div>
+          <button onClick={() => setMobileOpen(false)} className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
+            <X size={18} />
+          </button>
+        </div>
       </div>
 
       <div className="mx-5 h-px bg-white/[0.06]" />
@@ -83,22 +90,20 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
   return (
     <>
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-ink-900/95 backdrop-blur-sm flex items-center justify-between px-4 z-40 border-b border-white/[0.06]">
-        <h1 className="text-white text-lg font-bold tracking-tight">Putzo</h1>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="text-slate-400 hover:text-white p-1.5 rounded-lg transition-colors">
-          {mobileOpen ? <X size={22} /> : <Menu size={22} />}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-ink-900/95 backdrop-blur-sm flex items-center px-4 z-40 border-b border-white/[0.06]">
+        <button onClick={() => setMobileOpen(true)} className="text-slate-400 hover:text-white p-1.5 rounded-lg transition-colors mr-3">
+          <Menu size={22} />
         </button>
+        <h1 className="text-white text-lg font-bold tracking-tight">Putzo</h1>
       </div>
 
-      {/* Mobile Overlay */}
-      {mobileOpen && (
-        <div className="lg:hidden fixed inset-0 z-40" onClick={() => setMobileOpen(false)}>
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-          <aside className="relative w-64 h-full bg-ink-900 flex flex-col animate-fade-in" onClick={e => e.stopPropagation()}>
-            {sidebarContent}
-          </aside>
-        </div>
-      )}
+      {/* Mobile Drawer */}
+      <div className={`lg:hidden fixed inset-0 z-50 transition-all duration-300 ${mobileOpen ? 'visible' : 'invisible'}`}>
+        <div className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${mobileOpen ? 'opacity-100' : 'opacity-0'}`} onClick={() => setMobileOpen(false)} />
+        <aside className={`absolute left-0 top-0 bottom-0 w-72 bg-ink-900 flex flex-col transition-transform duration-300 ease-out ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+          {sidebarContent}
+        </aside>
+      </div>
 
       {/* Desktop Sidebar */}
       <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-60 bg-ink-900 flex-col z-40">
