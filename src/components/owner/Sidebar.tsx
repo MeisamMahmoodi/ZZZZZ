@@ -40,7 +40,7 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
       {/* Brand */}
       <div className="px-6 pt-7 pb-5">
         <div className="flex items-center justify-between">
-          <img src="/meizoLogo.png" alt="meizo" className="h-10 w-auto brightness-0 invert" />
+          <img src="/meizoLogo.png" alt="meizo" className="h-10 w-auto bg-white rounded-xl px-2 py-1" />
           <button onClick={() => setMobileOpen(false)} className="lg:hidden p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all">
             <X size={18} />
           </button>
@@ -93,7 +93,7 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
         <button onClick={() => setMobileOpen(true)} className="text-slate-400 hover:text-white p-1.5 rounded-lg transition-colors mr-3">
           <Menu size={22} />
         </button>
-        <img src="/meizoLogo.png" alt="meizo" className="h-7 w-auto brightness-0 invert" />
+        <img src="/meizoLogo.png" alt="meizo" className="h-7 w-auto bg-white rounded-lg px-1.5 py-0.5" />
       </div>
 
       {/* Mobile Drawer */}
