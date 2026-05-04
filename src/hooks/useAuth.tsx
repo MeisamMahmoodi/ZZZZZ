@@ -67,11 +67,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    try {
-      await supabase.auth.signOut({ scope: 'local' });
-    } catch {
-      // ignore server errors — clear local state regardless
-    }
+    // supabase.auth.signOut sends a network request that can fail with 403
+    // when the session is already invalid. Instead, wipe all auth keys from
+    // localStorage directly so the client session is cleared unconditionally.
+    const projectRef = new URL(import.meta.env.VITE_SUPABASE_URL).hostname.split('.')[0];
+    const storageKey = `sb-${projectRef}-auth-token`;
+    localStorage.removeItem(storageKey);
+    // Also attempt the server-side logout but don't await or care if it fails
+    supabase.auth.signOut({ scope: 'local' }).catch(() => {});
     setUser(null);
     setSession(null);
     setMustChangePassword(false);
