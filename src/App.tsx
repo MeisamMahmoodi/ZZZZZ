@@ -201,13 +201,20 @@ function AppRoutes() {
 
     supabase
       .from('profiles')
-      .select('role, company_id')
+      .select('role')
       .eq('id', uid)
       .maybeSingle()
-      .then(({ data }) => {
+      .then(async ({ data }) => {
         if (data?.role === 'owner' || data?.role === 'employee' || data?.role === 'admin') {
           setRole(data.role);
-          setCompanyId(data.company_id ?? null);
+          if (data.role === 'owner') {
+            const { data: company } = await supabase
+              .from('companies')
+              .select('id')
+              .eq('owner_id', uid)
+              .maybeSingle();
+            setCompanyId(company?.id ?? null);
+          }
         } else {
           setRole(null);
           setCompanyId(null);
