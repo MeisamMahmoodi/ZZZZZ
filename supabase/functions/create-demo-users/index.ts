@@ -7,106 +7,73 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+const DEMO_USERS = [
+  { email: "chef@meizo.demo",   password: "demo1234", role: "owner",    employeeEmail: null },
+  { email: "maria@meizo.demo",  password: "demo1234", role: "employee", employeeEmail: "maria@meizo.demo" },
+  { email: "stefan@meizo.demo", password: "demo1234", role: "employee", employeeEmail: "stefan@meizo.demo" },
+  { email: "jana@meizo.demo",   password: "demo1234", role: "employee", employeeEmail: "jana@meizo.demo" },
+];
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
-    const supabaseAdmin = createClient(
+    const admin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Create owner user
-    const { data: ownerData, error: ownerError } = await supabaseAdmin.auth.admin.createUser({
-      email: "owner@putzo.de",
-      password: "demo1234",
-      email_confirm: true,
-    });
+    const results: Record<string, string> = {};
 
-    if (ownerError) {
-      if (ownerError.message?.includes("already been registered")) {
-        const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-        const existingOwner = existingUsers?.users?.find((u: { email: string }) => u.email === "owner@putzo.de");
-        if (existingOwner) {
-          await supabaseAdmin.auth.admin.updateUserById(existingOwner.id, { password: "demo1234" });
-          await supabaseAdmin.from("profiles").upsert({ id: existingOwner.id, role: "owner" });
-          await supabaseAdmin.from("companies").update({ owner_id: existingOwner.id }).eq("owner_email", "owner@putzo.de");
+    for (const u of DEMO_USERS) {
+      // Create via admin API – this correctly populates identities
+      const { data, error } = await admin.auth.admin.createUser({
+        email: u.email,
+        password: u.password,
+        email_confirm: true,
+      });
 
-          // Also update Lisa if she exists
-          const existingLisa = existingUsers?.users?.find((u: { email: string }) => u.email === "lisa@putzo.de");
-          if (existingLisa) {
-            await supabaseAdmin.auth.admin.updateUserById(existingLisa.id, { password: "demo1234" });
-            await supabaseAdmin.from("profiles").upsert({ id: existingLisa.id, role: "employee" });
-            await supabaseAdmin.from("employees").update({ user_id: existingLisa.id, email: "lisa@putzo.de" }).eq("first_name", "Lisa").eq("last_name", "Müller");
-          }
+      let userId: string;
 
-          return new Response(
-            JSON.stringify({ message: "Owner user already existed, password updated", owner_id: existingOwner.id, lisa_id: existingLisa?.id ?? null }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
+      if (error) {
+        if (error.message?.includes("already been registered")) {
+          const { data: list } = await admin.auth.admin.listUsers();
+          const existing = list?.users?.find((x) => x.email === u.email);
+          if (!existing) throw new Error(`User ${u.email} not found after duplicate error`);
+          await admin.auth.admin.updateUserById(existing.id, { password: u.password });
+          userId = existing.id;
+        } else {
+          throw error;
         }
+      } else {
+        userId = data.user.id;
       }
-      throw ownerError;
-    }
 
-    const ownerId = ownerData.user.id;
+      // Upsert profile
+      await admin.from("profiles").upsert({ id: userId, role: u.role });
 
-    // Create employee user
-    const { data: employeeData, error: employeeError } = await supabaseAdmin.auth.admin.createUser({
-      email: "lisa@putzo.de",
-      password: "demo1234",
-      email_confirm: true,
-      user_metadata: { must_change_password: true },
-    });
-
-    if (employeeError) {
-      if (employeeError.message?.includes("already been registered")) {
-        const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-        const existingLisa = existingUsers?.users?.find((u: { email: string }) => u.email === "lisa@putzo.de");
-        if (existingLisa) {
-          await supabaseAdmin.auth.admin.updateUserById(existingLisa.id, { password: "demo1234" });
-          await supabaseAdmin.from("profiles").upsert({ id: existingLisa.id, role: "employee" });
-          await supabaseAdmin.from("employees").update({ user_id: existingLisa.id, email: "lisa@putzo.de" }).eq("first_name", "Lisa").eq("last_name", "Müller");
-
-          await supabaseAdmin.from("profiles").upsert({ id: ownerId, role: "owner" });
-          await supabaseAdmin.from("companies").update({ owner_id: ownerId }).eq("owner_email", "owner@putzo.de");
-
-          return new Response(
-            JSON.stringify({ message: "Users created/updated", owner_id: ownerId, lisa_id: existingLisa.id }),
-            { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
+      // Link owner to company
+      if (u.role === "owner") {
+        await admin.from("companies")
+          .update({ owner_id: userId })
+          .eq("owner_email", u.email);
       }
-      throw employeeError;
+
+      // Link employee record
+      if (u.employeeEmail) {
+        await admin.from("employees")
+          .update({ user_id: userId })
+          .eq("email", u.employeeEmail);
+      }
+
+      results[u.email] = userId;
     }
-
-    const lisaId = employeeData.user.id;
-
-    // Create profiles
-    await supabaseAdmin.from("profiles").upsert([
-      { id: ownerId, role: "owner" },
-      { id: lisaId, role: "employee" },
-    ]);
-
-    // Update company owner_id
-    await supabaseAdmin.from("companies").update({ owner_id: ownerId }).eq("owner_email", "owner@putzo.de");
-
-    // Update Lisa's employee record with user_id and email
-    await supabaseAdmin.from("employees").update({ user_id: lisaId, email: "lisa@putzo.de" }).eq("first_name", "Lisa").eq("last_name", "Müller");
 
     return new Response(
-      JSON.stringify({
-        message: "Demo users created successfully",
-        owner_id: ownerId,
-        lisa_id: lisaId,
-        credentials: {
-          owner: { email: "owner@putzo.de", password: "demo1234" },
-          employee: { email: "lisa@putzo.de", password: "demo1234" },
-        },
-      }),
+      JSON.stringify({ ok: true, users: results }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
