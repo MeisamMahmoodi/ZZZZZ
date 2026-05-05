@@ -131,7 +131,7 @@ function ChangePasswordScreen() {
 function AppRoutes() {
   const { user, loading, mustChangePassword, signOut } = useAuth();
   const [role, setRole] = useState<'owner' | 'employee' | 'admin' | null>(null);
-  const [roleLoading, setRoleLoading] = useState(false);
+  const [roleLoading, setRoleLoading] = useState(true);
   const prevUserId = React.useRef<string | null>(null);
 
   useEffect(() => {
