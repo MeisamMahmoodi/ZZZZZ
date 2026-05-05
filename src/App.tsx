@@ -128,10 +128,56 @@ function ChangePasswordScreen() {
   );
 }
 
+function AccountSuspendedScreen() {
+  return (
+    <div className="min-h-screen bg-surface-50 flex items-center justify-center px-6">
+      <div className="w-full max-w-sm text-center space-y-6">
+        <img src="/meizoLogo.png" alt="Meizo" className="h-14 w-auto mx-auto" />
+        <div className="card p-8 space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center mx-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600">
+              <circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-slate-900">Konto gesperrt</h1>
+            <p className="text-sm text-slate-500 mt-2 leading-relaxed">
+              Ihr Konto wurde vom Inhaber deaktiviert. Bitte wenden Sie sich direkt an uns, um Ihr Konto wiederherzustellen.
+            </p>
+          </div>
+          <div className="bg-slate-50 rounded-xl p-4 space-y-2 text-left">
+            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Kontakt</p>
+            <a
+              href="mailto:meisammahmoodi08@gmail.com"
+              className="flex items-center gap-2 text-sm font-medium text-slate-800 hover:text-slate-600 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 flex-shrink-0">
+                <rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+              </svg>
+              meisammahmoodi08@gmail.com
+            </a>
+            <a
+              href="tel:+4917661860432"
+              className="flex items-center gap-2 text-sm font-medium text-slate-800 hover:text-slate-600 transition-colors"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-400 flex-shrink-0">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.56 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+              </svg>
+              +49 176 6186 0432
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function AppRoutes() {
   const { user, loading, mustChangePassword, signOut } = useAuth();
   const [role, setRole] = useState<'owner' | 'employee' | 'admin' | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
+  const [companyId, setCompanyId] = useState<string | null>(null);
+  const [suspended, setSuspended] = useState(false);
   const prevUserId = React.useRef<string | null>(null);
 
   useEffect(() => {
@@ -140,10 +186,14 @@ function AppRoutes() {
     prevUserId.current = uid;
 
     if (!uid) {
+      // Don't clear suspended here — suspension screen must persist after signOut
       setRole(null);
+      setCompanyId(null);
       setRoleLoading(false);
       return;
     }
+
+    setSuspended(false);
 
     setRoleLoading(true);
 
@@ -151,17 +201,19 @@ function AppRoutes() {
 
     supabase
       .from('profiles')
-      .select('role')
+      .select('role, company_id')
       .eq('id', uid)
       .maybeSingle()
       .then(({ data }) => {
         if (data?.role === 'owner' || data?.role === 'employee' || data?.role === 'admin') {
           setRole(data.role);
+          setCompanyId(data.company_id ?? null);
         } else {
           setRole(null);
+          setCompanyId(null);
         }
       })
-      .catch(() => setRole(null))
+      .catch(() => { setRole(null); setCompanyId(null); })
       .finally(() => {
         clearTimeout(timeout);
         setRoleLoading(false);
@@ -169,6 +221,31 @@ function AppRoutes() {
 
     return () => clearTimeout(timeout);
   }, [user]);
+
+  // Realtime: watch for company deletion while owner is logged in
+  useEffect(() => {
+    if (!companyId || role !== 'owner') return;
+
+    const channel = supabase
+      .channel(`company-suspension-${companyId}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'companies', filter: `id=eq.${companyId}` },
+        (payload) => {
+          if (payload.new?.deleted_at) {
+            setSuspended(true);
+            signOut();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [companyId, role, signOut]);
+
+  if (suspended) {
+    return <AccountSuspendedScreen />;
+  }
 
   if (loading || (user && roleLoading)) {
     return (
