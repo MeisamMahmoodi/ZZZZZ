@@ -131,7 +131,7 @@ function ChangePasswordScreen() {
 function AppRoutes() {
   const { user, loading, mustChangePassword, signOut } = useAuth();
   const [role, setRole] = useState<'owner' | 'employee' | 'admin' | null>(null);
-  const [roleLoading, setRoleLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(false);
   const prevUserId = React.useRef<string | null>(null);
 
   useEffect(() => {
@@ -170,7 +170,7 @@ function AppRoutes() {
     return () => clearTimeout(timeout);
   }, [user]);
 
-  if (loading || roleLoading) {
+  if (loading || (user && roleLoading)) {
     return (
       <div className="min-h-screen bg-surface-50 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-ink-900 border-t-transparent rounded-full animate-spin" />
