@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Building2, Settings, LogOut, Menu, X, CalendarDays, Wallet, Timer } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Settings, LogOut, Menu, X, CalendarDays, Wallet, Timer, FileText, Shield } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 import { useAuth } from '../../hooks/useAuth';
 import { Modal } from '../shared/Modal';
@@ -67,6 +67,30 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
           );
         })}
       </nav>
+
+      <div className="mx-5 h-px bg-white/[0.06]" />
+
+      {/* Legal links */}
+      <div className="px-4 pt-3 pb-1 flex gap-1">
+        <button
+          onClick={() => handleNav('impressum')}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+            active === 'impressum' ? 'text-slate-200 bg-white/[0.06]' : 'text-slate-500 hover:text-slate-400 hover:bg-white/[0.04]'
+          }`}
+        >
+          <FileText size={11} />
+          Impressum
+        </button>
+        <button
+          onClick={() => handleNav('datenschutz')}
+          className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
+            active === 'datenschutz' ? 'text-slate-200 bg-white/[0.06]' : 'text-slate-500 hover:text-slate-400 hover:bg-white/[0.04]'
+          }`}
+        >
+          <Shield size={11} />
+          Datenschutz
+        </button>
+      </div>
 
       <div className="mx-5 h-px bg-white/[0.06]" />
 

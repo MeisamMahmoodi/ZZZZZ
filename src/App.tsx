@@ -11,6 +11,8 @@ import { Assignments } from './pages/owner/Assignments';
 import { Payroll } from './pages/owner/Payroll';
 import { Timestamps } from './pages/owner/Timestamps';
 import { Settings } from './pages/owner/Settings';
+import { Impressum } from './pages/owner/Impressum';
+import { Datenschutz } from './pages/owner/Datenschutz';
 import { EmployeeHome } from './pages/employee/EmployeeHome';
 import { SickLeave } from './pages/employee/SickLeave';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
@@ -31,6 +33,8 @@ function OwnerApp() {
           case 'payroll': return <Payroll {...props} />;
           case 'timestamps': return <Timestamps {...props} />;
           case 'settings': return <Settings company={props.company} onRefresh={props.onRefresh} />;
+          case 'impressum': return <Impressum />;
+          case 'datenschutz': return <Datenschutz />;
           default: return <Dashboard {...props} />;
         }
       }}
