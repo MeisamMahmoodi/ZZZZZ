@@ -18,6 +18,7 @@ import { SickLeave } from './pages/employee/SickLeave';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { supabase } from './lib/supabase';
 import { Eye, EyeOff } from 'lucide-react';
+import { Pricing } from './pages/Pricing';
 
 function OwnerApp() {
   const [page, setPage] = useState('dashboard');
@@ -176,6 +177,12 @@ function AccountSuspendedScreen() {
   );
 }
 
+function PricingGate() {
+  const [showLogin, setShowLogin] = useState(false);
+  if (showLogin) return <UnifiedLogin />;
+  return <Pricing onContinue={() => setShowLogin(true)} />;
+}
+
 function AppRoutes() {
   const { user, loading, mustChangePassword, signOut } = useAuth();
   const [role, setRole] = useState<'owner' | 'employee' | 'admin' | null>(null);
@@ -269,7 +276,7 @@ function AppRoutes() {
   if (!user) {
     return (
       <Routes>
-        <Route path="/*" element={<UnifiedLogin />} />
+        <Route path="/*" element={<PricingGate />} />
       </Routes>
     );
   }
