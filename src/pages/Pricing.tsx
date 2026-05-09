@@ -55,9 +55,6 @@ export function Pricing({ onContinue }: PricingProps) {
         <h1 className="text-3xl sm:text-4xl font-bold text-[#0F172A] tracking-tight">
           Wählen Sie Ihr Paket
         </h1>
-        <p className="text-[#64748B] mt-3 text-base max-w-xl mx-auto leading-relaxed">
-          Einmalige Zahlung — kein Abo, keine versteckten Kosten. Zugang für 12 Monate.
-        </p>
       </header>
 
       {/* Cards */}
