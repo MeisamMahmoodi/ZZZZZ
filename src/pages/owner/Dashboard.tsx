@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays, AlertCircle, Lock } from 'lucide-react';
+import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays, AlertCircle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDateLong, formatTime, getTodayDayAbbrev } from '../../lib/utils';
 import type { Employee, Property, Assignment, SickReport, EmployeeProperty } from '../../lib/types';
@@ -8,8 +8,6 @@ import { Modal } from '../../components/shared/Modal';
 import { Avatar } from '../../components/shared/Avatar';
 import { useToast } from '../../components/shared/Toast';
 import type { Company } from '../../lib/types';
-import { UpgradeModal } from '../../components/shared/UpgradeModal';
-import { getPlan, canAccessReplacement } from '../../lib/plans';
 
 interface DashboardProps {
   company: Company;
@@ -35,11 +33,8 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const [replacementModal, setReplacementModal] = useState<{ sickReport: SickReportWithEmployee; property: Property; assignment: AssignmentWithDetails } | null>(null);
   const [removeConfirm, setRemoveConfirm] = useState<string | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
-  const plan = getPlan(company.contract);
-  const replacementAllowed = canAccessReplacement(plan);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -234,16 +229,8 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                   </div>
                 </div>
                 {!hasReplacement && (
-                  <button
-                    onClick={() => replacementAllowed ? handleFindReplacement(sr) : setUpgradeOpen(true)}
-                    className={`w-full mt-5 py-3 rounded-xl text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${
-                      replacementAllowed
-                        ? 'bg-[#EF4444] text-white hover:bg-[#DC2626]'
-                        : 'bg-[#F1F5F9] text-[#94A3B8] cursor-pointer'
-                    }`}
-                  >
-                    {replacementAllowed ? <Search size={16} /> : <Lock size={16} />}
-                    {replacementAllowed ? 'Ersatz finden' : 'Ersatz finden (Business)'}
+                  <button onClick={() => handleFindReplacement(sr)} className="w-full mt-5 py-3 rounded-xl text-sm font-semibold bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors flex items-center justify-center gap-2">
+                    <Search size={16} /> Ersatz finden
                   </button>
                 )}
                 {hasReplacement && (
@@ -362,15 +349,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                       </div>
                     </div>
                     {hasSick && activeAssignments.length === 0 && sickForProp.length > 0 && (
-                      <button
-                        onClick={() => replacementAllowed ? handleFindReplacement(sickForProp[0]) : setUpgradeOpen(true)}
-                        className={`px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors shrink-0 flex items-center gap-1.5 ${
-                          replacementAllowed
-                            ? 'bg-[#EF4444] text-white hover:bg-[#DC2626]'
-                            : 'bg-[#F1F5F9] text-[#94A3B8]'
-                        }`}
-                      >
-                        {!replacementAllowed && <Lock size={13} />}
+                      <button onClick={() => handleFindReplacement(sickForProp[0])} className="bg-[#EF4444] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#DC2626] transition-colors shrink-0">
                         <span className="hidden sm:inline">Ersatz finden</span><span className="sm:hidden">Ersatz</span>
                       </button>
                     )}
@@ -412,8 +391,6 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
           </div>
         )}
       </div>
-
-      <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} currentPlan={plan} reason="Die Ersatz-finden-Funktion ist im Business-Paket enthalten." />
 
       {replacementModal && (
         <ReplacementModal

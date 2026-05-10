@@ -16,15 +16,6 @@ export const langFlags: Record<Lang, string> = {
   en: '🇬🇧',
 };
 
-// Locale string for toLocaleDateString / toLocaleTimeString
-export const langLocale: Record<Lang, string> = {
-  de: 'de-DE',
-  ro: 'ro-RO',
-  ar: 'ar-SA',
-  pl: 'pl-PL',
-  en: 'en-GB',
-};
-
 type TranslationKeys = {
   goodMorning: string;
   goodDay: string;
@@ -81,56 +72,6 @@ type TranslationKeys = {
   sickSince: string;
   at: string;
   clock: string;
-  // Push notifications
-  notifAllowTitle: string;
-  notifAllowDesc: string;
-  notifActivating: string;
-  notifActivate: string;
-  notifLater: string;
-  notifActive: string;
-  // Check-in/out status
-  checkedInAt: string;
-  checkOut: string;
-  // GPS / Check-in flow
-  checkInTitle: string;
-  gpsChecking: string;
-  gpsLocating: string;
-  gpsGeocoding: string;
-  gpsConfirmed: string;
-  gpsDistanceFrom: string;
-  gpsNotVerified: string;
-  gpsTooFar: string;
-  gpsTooFarDesc: string;
-  gpsMustBeOnSite: string;
-  gpsAccessDenied: string;
-  gpsUnavailable: string;
-  cameraError: string;
-  checkInError: string;
-  retake: string;
-  retry: string;
-  takePhoto: string;
-  reviewPhoto: string;
-  reviewPhotoDesc: string;
-  checkInConfirm: string;
-  checkingIn: string;
-  uploadingPhoto: string;
-  checkedInSuccess: string;
-  gpsVerified: string;
-  // Check-out flow
-  checkOutTitle: string;
-  checkedInLabel: string;
-  nowLabel: string;
-  durationLabel: string;
-  proofPhoto: string;
-  proofPhotoDesc: string;
-  photoCheckout: string;
-  takeWorkPhoto: string;
-  reviewWorkDesc: string;
-  checkingOut: string;
-  checkOutSuccess: string;
-  durationPrefix: string;
-  recordedInBilling: string;
-  checkOutError: string;
 };
 
 const translations: Record<Lang, TranslationKeys> = {
@@ -143,7 +84,7 @@ const translations: Record<Lang, TranslationKeys> = {
     upcomingAssignments: 'Deine kommenden Einsätze',
     noUpcomingAssignments: 'Keine kommenden Einsätze',
     checkIn: 'Einchecken',
-    checkedIn: 'Eingecheckt',
+    checkedIn: 'Eingechekt',
     sickLeave: 'Krank melden',
     logOut: 'Abmelden',
     notifications: 'Nachrichten',
@@ -190,52 +131,6 @@ const translations: Record<Lang, TranslationKeys> = {
     sickSince: 'Krank seit',
     at: 'um',
     clock: 'Uhr',
-    notifAllowTitle: 'Benachrichtigungen erlauben',
-    notifAllowDesc: 'Erhalte sofort Bescheid wenn du einen neuen Einsatz bekommst.',
-    notifActivating: 'Wird aktiviert...',
-    notifActivate: 'Ja, aktivieren',
-    notifLater: 'Später',
-    notifActive: 'Benachrichtigungen aktiv — du wirst bei neuen Einsätzen informiert',
-    checkedInAt: 'Eingecheckt um',
-    checkOut: 'Auschecken',
-    checkInTitle: 'Einchecken',
-    gpsChecking: 'Standort wird geprüft...',
-    gpsLocating: 'GPS wird ermittelt...',
-    gpsGeocoding: 'Adresse wird verifiziert...',
-    gpsConfirmed: 'Standort bestätigt',
-    gpsDistanceFrom: 'vom Objekt entfernt',
-    gpsNotVerified: 'Adresse konnte nicht verifiziert werden',
-    gpsTooFar: 'Zu weit entfernt',
-    gpsTooFarDesc: 'Erlaubt: bis',
-    gpsMustBeOnSite: 'Du musst vor Ort sein um einzuchecken.',
-    gpsAccessDenied: 'GPS-Zugriff verweigert. Bitte in den Browser-Einstellungen erlauben.',
-    gpsUnavailable: 'GPS nicht verfügbar. Bitte erneut versuchen.',
-    cameraError: 'Kamera konnte nicht geöffnet werden. Bitte Berechtigung erteilen.',
-    checkInError: 'Fehler beim Einchecken',
-    retake: 'Nochmal',
-    retry: 'Erneut versuchen',
-    takePhoto: 'Gebäude fotografieren',
-    reviewPhoto: 'Foto prüfen',
-    reviewPhotoDesc: 'Ist das Gebäude gut erkennbar?',
-    checkInConfirm: 'Einchecken',
-    checkingIn: 'Einchecken...',
-    uploadingPhoto: 'Foto wird hochgeladen',
-    checkedInSuccess: 'Eingecheckt!',
-    gpsVerified: 'verifiziert',
-    checkOutTitle: 'Auschecken',
-    checkedInLabel: 'Eingecheckt',
-    nowLabel: 'Jetzt',
-    durationLabel: 'Dauer',
-    proofPhoto: 'Nachweis-Foto',
-    proofPhotoDesc: 'Fotografiere den gereinigten Bereich als Nachweis der erledigten Arbeit.',
-    photoCheckout: 'Foto & Auschecken',
-    takeWorkPhoto: 'Erledigten Bereich fotografieren',
-    reviewWorkDesc: 'Ist die erledigte Arbeit gut erkennbar?',
-    checkingOut: 'Auschecken...',
-    checkOutSuccess: 'Fertig!',
-    durationPrefix: 'Dauer: ',
-    recordedInBilling: 'Wird in der Abrechnung erfasst',
-    checkOutError: 'Fehler beim Auschecken',
   },
   ro: {
     goodMorning: 'Buna dimineata',
@@ -257,7 +152,7 @@ const translations: Record<Lang, TranslationKeys> = {
     canYouCover: 'este bolnav. Poti inlocui azi?',
     yesICan: 'Da, vin',
     no: 'Nu',
-    bossInformed: 'Seful a fost informat!',
+    bossInformed: 'Sefull a fost informat!',
     showRoute: 'Arata ruta',
     sickReport: 'Raport medical',
     today: 'Azi',
@@ -269,7 +164,7 @@ const translations: Record<Lang, TranslationKeys> = {
     sendSickReport: 'Trimite raportul medical',
     sending: 'Se trimite...',
     reported: 'Raportat',
-    bossInformedGetWell: 'Seful tau a fost informat.\nSanatate!',
+    bossInformedGetWell: 'Sefull tau a fost informat.\nSanatate!',
     backToOverview: 'Inapoi la prezentare generala',
     back: 'Inapoi',
     login: 'Autentificare',
@@ -293,52 +188,6 @@ const translations: Record<Lang, TranslationKeys> = {
     sickSince: 'Bolnav din',
     at: 'la',
     clock: '',
-    notifAllowTitle: 'Permite notificari',
-    notifAllowDesc: 'Primeste imediat cand ai o sarcina noua.',
-    notifActivating: 'Se activeaza...',
-    notifActivate: 'Da, activeaza',
-    notifLater: 'Mai tarziu',
-    notifActive: 'Notificari active — vei fi anuntat la sarcini noi',
-    checkedInAt: 'Check-in la',
-    checkOut: 'Check-out',
-    checkInTitle: 'Check-in',
-    gpsChecking: 'Se verifica locatia...',
-    gpsLocating: 'Se determina GPS-ul...',
-    gpsGeocoding: 'Se verifica adresa...',
-    gpsConfirmed: 'Locatie confirmata',
-    gpsDistanceFrom: 'de la obiect',
-    gpsNotVerified: 'Adresa nu a putut fi verificata',
-    gpsTooFar: 'Prea departe',
-    gpsTooFarDesc: 'Permis: pana la',
-    gpsMustBeOnSite: 'Trebuie sa fii la fata locului pentru check-in.',
-    gpsAccessDenied: 'Acces GPS refuzat. Permiteti in setarile browserului.',
-    gpsUnavailable: 'GPS indisponibil. Incercati din nou.',
-    cameraError: 'Camera nu a putut fi deschisa. Acordati permisiunea.',
-    checkInError: 'Eroare la check-in',
-    retake: 'Reface',
-    retry: 'Incearca din nou',
-    takePhoto: 'Fotografiaza cladirea',
-    reviewPhoto: 'Verifica fotografia',
-    reviewPhotoDesc: 'Este cladirea clar vizibila?',
-    checkInConfirm: 'Check-in',
-    checkingIn: 'Se face check-in...',
-    uploadingPhoto: 'Se incarca fotografia',
-    checkedInSuccess: 'Check-in efectuat!',
-    gpsVerified: 'verificat',
-    checkOutTitle: 'Check-out',
-    checkedInLabel: 'Check-in',
-    nowLabel: 'Acum',
-    durationLabel: 'Durata',
-    proofPhoto: 'Foto dovada',
-    proofPhotoDesc: 'Fotografiaza zona curatata ca dovada a lucrarii efectuate.',
-    photoCheckout: 'Foto & Check-out',
-    takeWorkPhoto: 'Fotografiaza zona finalizata',
-    reviewWorkDesc: 'Este munca efectuata clar vizibila?',
-    checkingOut: 'Se face check-out...',
-    checkOutSuccess: 'Gata!',
-    durationPrefix: 'Durata: ',
-    recordedInBilling: 'Va fi inregistrat in salarizare',
-    checkOutError: 'Eroare la check-out',
   },
   ar: {
     goodMorning: 'صباح الخير',
@@ -396,52 +245,6 @@ const translations: Record<Lang, TranslationKeys> = {
     sickSince: 'مريض منذ',
     at: 'في',
     clock: '',
-    notifAllowTitle: 'السماح بالإشعارات',
-    notifAllowDesc: 'احصل على إشعار فوري عند تعيين مهمة جديدة لك.',
-    notifActivating: 'جارٍ التفعيل...',
-    notifActivate: 'نعم، فعّل',
-    notifLater: 'لاحقاً',
-    notifActive: 'الإشعارات نشطة — ستُعلَم بالمهام الجديدة',
-    checkedInAt: 'تم تسجيل الحضور في',
-    checkOut: 'تسجيل المغادرة',
-    checkInTitle: 'تسجيل الحضور',
-    gpsChecking: 'جارٍ التحقق من الموقع...',
-    gpsLocating: 'جارٍ تحديد GPS...',
-    gpsGeocoding: 'جارٍ التحقق من العنوان...',
-    gpsConfirmed: 'تم تأكيد الموقع',
-    gpsDistanceFrom: 'من الموقع',
-    gpsNotVerified: 'تعذر التحقق من العنوان',
-    gpsTooFar: 'أنت بعيد جداً',
-    gpsTooFarDesc: 'المسموح: حتى',
-    gpsMustBeOnSite: 'يجب أن تكون في الموقع لتسجيل الحضور.',
-    gpsAccessDenied: 'تم رفض الوصول إلى GPS. يرجى السماح في إعدادات المتصفح.',
-    gpsUnavailable: 'GPS غير متوفر. حاول مرة أخرى.',
-    cameraError: 'تعذر فتح الكاميرا. يرجى منح الإذن.',
-    checkInError: 'خطأ أثناء تسجيل الحضور',
-    retake: 'إعادة التصوير',
-    retry: 'حاول مجدداً',
-    takePhoto: 'تصوير المبنى',
-    reviewPhoto: 'مراجعة الصورة',
-    reviewPhotoDesc: 'هل المبنى واضح في الصورة؟',
-    checkInConfirm: 'تسجيل الحضور',
-    checkingIn: 'جارٍ تسجيل الحضور...',
-    uploadingPhoto: 'جارٍ رفع الصورة',
-    checkedInSuccess: 'تم تسجيل الحضور!',
-    gpsVerified: 'موثّق',
-    checkOutTitle: 'تسجيل المغادرة',
-    checkedInLabel: 'الحضور',
-    nowLabel: 'الآن',
-    durationLabel: 'المدة',
-    proofPhoto: 'صورة إثبات',
-    proofPhotoDesc: 'صوّر المنطقة التي تم تنظيفها كدليل على إتمام العمل.',
-    photoCheckout: 'صورة ومغادرة',
-    takeWorkPhoto: 'تصوير المنطقة المنجزة',
-    reviewWorkDesc: 'هل العمل المنجز واضح في الصورة؟',
-    checkingOut: 'جارٍ تسجيل المغادرة...',
-    checkOutSuccess: 'تم!',
-    durationPrefix: 'المدة: ',
-    recordedInBilling: 'سيتم تسجيله في كشف الرواتب',
-    checkOutError: 'خطأ أثناء تسجيل المغادرة',
   },
   pl: {
     goodMorning: 'Dzien dobry',
@@ -451,8 +254,8 @@ const translations: Record<Lang, TranslationKeys> = {
     noAssignmentToday: 'Brak zaplanowanych zadan na dzis',
     upcomingAssignments: 'Twoje nadchodzace zadania',
     noUpcomingAssignments: 'Brak nadchodzacych zadan',
-    checkIn: 'Zamelduj sie',
-    checkedIn: 'Zameldowany',
+    checkIn: 'Check-in',
+    checkedIn: 'Zalogowano',
     sickLeave: 'Zglos chorobe',
     logOut: 'Wyloguj',
     notifications: 'Powiadomienia',
@@ -499,52 +302,6 @@ const translations: Record<Lang, TranslationKeys> = {
     sickSince: 'Chory od',
     at: 'o',
     clock: '',
-    notifAllowTitle: 'Zezwol na powiadomienia',
-    notifAllowDesc: 'Otrzymuj natychmiastowe powiadomienia o nowych zadaniach.',
-    notifActivating: 'Aktywowanie...',
-    notifActivate: 'Tak, wlacz',
-    notifLater: 'Pozniej',
-    notifActive: 'Powiadomienia aktywne — bedziesz informowany o nowych zadaniach',
-    checkedInAt: 'Zameldowano o',
-    checkOut: 'Wymelduj sie',
-    checkInTitle: 'Zameldowanie',
-    gpsChecking: 'Sprawdzanie lokalizacji...',
-    gpsLocating: 'Ustalanie GPS...',
-    gpsGeocoding: 'Weryfikacja adresu...',
-    gpsConfirmed: 'Lokalizacja potwierdzona',
-    gpsDistanceFrom: 'od obiektu',
-    gpsNotVerified: 'Adres nie mogl zostac zweryfikowany',
-    gpsTooFar: 'Zbyt daleko',
-    gpsTooFarDesc: 'Dozwolone: do',
-    gpsMustBeOnSite: 'Musisz byc na miejscu, aby sie zameldowac.',
-    gpsAccessDenied: 'Dostep do GPS odrzucony. Zezwol w ustawieniach przegladarki.',
-    gpsUnavailable: 'GPS niedostepny. Sprobuj ponownie.',
-    cameraError: 'Nie mozna otworzyc kamery. Udziel uprawnien.',
-    checkInError: 'Blad podczas meldowania',
-    retake: 'Ponow',
-    retry: 'Sprobuj ponownie',
-    takePhoto: 'Sfotografuj budynek',
-    reviewPhoto: 'Sprawdz zdjecie',
-    reviewPhotoDesc: 'Czy budynek jest dobrze widoczny?',
-    checkInConfirm: 'Zamelduj sie',
-    checkingIn: 'Meldowanie...',
-    uploadingPhoto: 'Przesylanie zdjecia',
-    checkedInSuccess: 'Zameldowano!',
-    gpsVerified: 'zweryfikowano',
-    checkOutTitle: 'Wymeldowanie',
-    checkedInLabel: 'Zameldowano',
-    nowLabel: 'Teraz',
-    durationLabel: 'Czas trwania',
-    proofPhoto: 'Zdjecie dowodowe',
-    proofPhotoDesc: 'Sfotografuj posprzatany obszar jako dowod wykonanej pracy.',
-    photoCheckout: 'Zdjecie i wymeldowanie',
-    takeWorkPhoto: 'Sfotografuj wykonana prace',
-    reviewWorkDesc: 'Czy wykonana praca jest dobrze widoczna?',
-    checkingOut: 'Wymeldowywanie...',
-    checkOutSuccess: 'Gotowe!',
-    durationPrefix: 'Czas: ',
-    recordedInBilling: 'Zostanie zarejestrowane w rozliczeniu',
-    checkOutError: 'Blad podczas wymeldowania',
   },
   en: {
     goodMorning: 'Good morning',
@@ -602,57 +359,11 @@ const translations: Record<Lang, TranslationKeys> = {
     sickSince: 'Sick since',
     at: 'at',
     clock: '',
-    notifAllowTitle: 'Allow notifications',
-    notifAllowDesc: 'Get notified instantly when you have a new assignment.',
-    notifActivating: 'Activating...',
-    notifActivate: 'Yes, enable',
-    notifLater: 'Later',
-    notifActive: 'Notifications active — you will be informed about new assignments',
-    checkedInAt: 'Checked in at',
-    checkOut: 'Check out',
-    checkInTitle: 'Check in',
-    gpsChecking: 'Checking location...',
-    gpsLocating: 'Getting GPS...',
-    gpsGeocoding: 'Verifying address...',
-    gpsConfirmed: 'Location confirmed',
-    gpsDistanceFrom: 'from the location',
-    gpsNotVerified: 'Address could not be verified',
-    gpsTooFar: 'Too far away',
-    gpsTooFarDesc: 'Allowed: up to',
-    gpsMustBeOnSite: 'You must be on site to check in.',
-    gpsAccessDenied: 'GPS access denied. Please allow in browser settings.',
-    gpsUnavailable: 'GPS unavailable. Please try again.',
-    cameraError: 'Could not open camera. Please grant permission.',
-    checkInError: 'Error during check-in',
-    retake: 'Retake',
-    retry: 'Try again',
-    takePhoto: 'Photograph building',
-    reviewPhoto: 'Review photo',
-    reviewPhotoDesc: 'Is the building clearly visible?',
-    checkInConfirm: 'Check in',
-    checkingIn: 'Checking in...',
-    uploadingPhoto: 'Uploading photo',
-    checkedInSuccess: 'Checked in!',
-    gpsVerified: 'verified',
-    checkOutTitle: 'Check out',
-    checkedInLabel: 'Checked in',
-    nowLabel: 'Now',
-    durationLabel: 'Duration',
-    proofPhoto: 'Proof photo',
-    proofPhotoDesc: 'Photograph the cleaned area as proof of completed work.',
-    photoCheckout: 'Photo & Check out',
-    takeWorkPhoto: 'Photograph completed area',
-    reviewWorkDesc: 'Is the completed work clearly visible?',
-    checkingOut: 'Checking out...',
-    checkOutSuccess: 'Done!',
-    durationPrefix: 'Duration: ',
-    recordedInBilling: 'Will be recorded in payroll',
-    checkOutError: 'Error during check-out',
   },
 };
 
 export function t(lang: Lang, key: keyof TranslationKeys): string {
-  return translations[lang]?.[key] ?? translations.de[key] ?? key;
+  return translations[lang]?.[key] || translations.de[key] || key;
 }
 
 export function isRTL(lang: Lang): boolean {

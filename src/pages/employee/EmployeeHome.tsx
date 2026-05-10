@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useLang } from '../../hooks/useLang';
 import { formatDateLong, formatTime } from '../../lib/utils';
-import { langNames, langFlags, langLocale, type Lang } from '../../lib/i18n';
+import { langNames, langFlags, type Lang } from '../../lib/i18n';
 import { CheckInFlow } from '../../components/employee/CheckInFlow';
 import { CheckOutFlow } from '../../components/employee/CheckOutFlow';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
@@ -206,7 +206,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString(langLocale[lang], { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+    return d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
   };
 
   if (!employee) {
@@ -228,7 +228,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
           <h1 className="text-2xl font-bold text-ink-900 tracking-tight">
             {getGreeting()}, {employee.first_name}
           </h1>
-          <p className="text-ink-500 text-sm mt-1.5">{formatDateLong(today, langLocale[lang])}</p>
+          <p className="text-ink-500 text-sm mt-1.5">{formatDateLong(today)}</p>
         </div>
         <div className="flex items-center gap-1">
           <div className="relative" ref={langRef}>
@@ -286,9 +286,9 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
               <BellRing size={18} className="text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-[#1E3A5F]">{t('notifAllowTitle')}</p>
+              <p className="text-sm font-bold text-[#1E3A5F]">Benachrichtigungen erlauben</p>
               <p className="text-xs text-[#3B82F6] mt-0.5 leading-relaxed">
-                {t('notifAllowDesc')}
+                Erhalte sofort Bescheid wenn du einen neuen Einsatz bekommst.
               </p>
             </div>
             <button onClick={() => setShowPushPrompt(false)} className="text-[#94A3B8] hover:text-[#64748B] shrink-0 mt-0.5">
@@ -304,13 +304,13 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
               disabled={pushLoading}
               className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors disabled:opacity-60"
             >
-              {pushLoading ? t('notifActivating') : t('notifActivate')}
+              {pushLoading ? 'Wird aktiviert...' : 'Ja, aktivieren'}
             </button>
             <button
               onClick={() => setShowPushPrompt(false)}
               className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-white border border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] transition-colors"
             >
-              {t('notifLater')}
+              Später
             </button>
           </div>
         </div>
@@ -320,7 +320,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
       {subscribed && permission === 'granted' && (
         <div className="mb-5 rounded-2xl border border-[#BBF7D0] bg-[#F0FDF4] px-4 py-3 flex items-center gap-2.5">
           <BellRing size={15} className="text-[#22C55E] shrink-0" />
-          <p className="text-xs font-semibold text-[#15803D]">{t('notifActive')}</p>
+          <p className="text-xs font-semibold text-[#15803D]">Benachrichtigungen aktiv — du wirst bei neuen Einsätzen informiert</p>
         </div>
       )}
 
@@ -332,7 +332,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
             <div className="flex-1">
               <p className="text-base font-bold text-danger-500">{t('youAreSick')}</p>
               <p className="text-sm text-ink-500 mt-1">
-                {t('sickSince')}: {sickReports.map(sr => new Date(sr.date).toLocaleDateString(langLocale[lang], { day: '2-digit', month: '2-digit', year: 'numeric' })).join(', ')}
+                {t('sickSince')}: {sickReports.map(sr => new Date(sr.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })).join(', ')}
               </p>
             </div>
           </div>
@@ -407,10 +407,10 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
       {checkedIn && todayAssignment && (
         <div className="mb-6 space-y-3">
           <div className="w-full py-3 rounded-2xl text-sm font-semibold bg-brand-50 text-brand-600 text-center border border-brand-200/50">
-            {t('checkedInAt')} {checkedInAt ? `${new Date(checkedInAt).toLocaleTimeString(langLocale[lang], { hour: '2-digit', minute: '2-digit' })}${t('clock') ? ' ' + t('clock') : ''}` : ''}
+            Eingecheckt {checkedInAt ? `um ${new Date(checkedInAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr` : ''}
           </div>
           <button onClick={() => setShowCheckOutFlow(true)} className="w-full py-3.5 rounded-2xl text-base font-semibold bg-[#F97316] text-white hover:bg-[#EA580C] transition-colors flex items-center justify-center gap-2.5 shadow-sm">
-            <CheckOutIcon size={20} /> {t('checkOut')}
+            <CheckOutIcon size={20} /> Auschecken
           </button>
         </div>
       )}
@@ -468,7 +468,6 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
           onSuccess={handleCheckInSuccess}
           onCancel={() => setShowCheckInFlow(false)}
           rtl={rtl}
-          lang={lang}
         />
       )}
 
@@ -481,7 +480,6 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
           onSuccess={handleCheckOutSuccess}
           onCancel={() => setShowCheckOutFlow(false)}
           rtl={rtl}
-          lang={lang}
         />
       )}
     </div>

@@ -30,8 +30,8 @@ export function getTodayDayAbbrev(): string {
   return getDayAbbrev(new Date());
 }
 
-export function formatDateLong(date: Date, locale = 'de-DE'): string {
-  return date.toLocaleDateString(locale, {
+export function formatDateLong(date: Date): string {
+  return date.toLocaleDateString('de-DE', {
     weekday: 'long',
     year: 'numeric',
     month: 'long',
