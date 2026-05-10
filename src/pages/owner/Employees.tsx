@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Search, MoreVertical, Phone, Pencil, Trash2, Mail, Shield, ShieldOff, AlertCircle, Euro } from 'lucide-react';
+import { Plus, Search, MoreVertical, Phone, Pencil, Trash2, Mail, Shield, ShieldOff, AlertCircle, Euro, Lock, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
+import { UpgradeModal } from '../../components/shared/UpgradeModal';
+import { getPlan, canAccessHourlyWage, canAccessEmployeeLogin, isAtEmployeeLimit, PLAN_LIMITS } from '../../lib/plans';
 import type { Employee, Property, EmployeeProperty, Company } from '../../lib/types';
 
 interface EmployeesProps {
@@ -26,6 +28,11 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const [deleteConfirm, setDeleteConfirm] = useState<Employee | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const plan = getPlan(company.contract);
+  const wageAllowed = canAccessHourlyWage(plan);
+  const loginAllowed = canAccessEmployeeLogin(plan);
+  const limit = PLAN_LIMITS[plan];
 
   const [newFirst, setNewFirst] = useState('');
   const [newLast, setNewLast] = useState('');
@@ -201,7 +208,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             <p className="text-sm font-semibold text-[#0F172A]">{emp.first_name} {emp.last_name}</p>
             <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-1"><Phone size={12} className="text-[#94A3B8]" /> {emp.phone}</p>
             {emp.email && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Mail size={12} className="text-[#94A3B8]" /> {emp.email}</p>}
-            {emp.hourly_wage != null && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Euro size={12} className="text-[#94A3B8]" /> {emp.hourly_wage.toFixed(2)} EUR/h</p>}
+            {wageAllowed && emp.hourly_wage != null && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Euro size={12} className="text-[#94A3B8]" /> {emp.hourly_wage.toFixed(2)} EUR/h</p>}
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {emp.status === 'sick' ? <span className="badge-danger">Krank</span> : <span className="badge-success">Aktiv</span>}
@@ -249,23 +256,27 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             <span className="text-xs text-[#64748B] flex items-center gap-1.5"><Mail size={13} className="text-[#94A3B8]" /> {emp.email || '—'}</span>
           </div>
         </td>
-        <td className="px-5 py-4">
-          {emp.hourly_wage != null ? (
-            <span className="text-sm font-medium text-[#0F172A]">{emp.hourly_wage.toFixed(2)} EUR</span>
-          ) : (
-            <span className="text-xs text-[#94A3B8]">—</span>
-          )}
-        </td>
+        {wageAllowed && (
+          <td className="px-5 py-4">
+            {emp.hourly_wage != null ? (
+              <span className="text-sm font-medium text-[#0F172A]">{emp.hourly_wage.toFixed(2)} EUR</span>
+            ) : (
+              <span className="text-xs text-[#94A3B8]">—</span>
+            )}
+          </td>
+        )}
         <td className="px-5 py-4">
           {emp.status === 'sick' ? <span className="badge-danger">Krank</span> : <span className="badge-success">Aktiv</span>}
         </td>
-        <td className="px-5 py-4">
-          {emp.user_id ? (
-            <span className="badge-info"><Shield size={12} /> Aktiv</span>
-          ) : (
-            <span className="badge-neutral"><ShieldOff size={12} /> Kein Zugang</span>
-          )}
-        </td>
+        {loginAllowed && (
+          <td className="px-5 py-4">
+            {emp.user_id ? (
+              <span className="badge-info"><Shield size={12} /> Aktiv</span>
+            ) : (
+              <span className="badge-neutral"><ShieldOff size={12} /> Kein Zugang</span>
+            )}
+          </td>
+        )}
         <td className="px-5 py-4">{renderPropertyChipsOverflow(knownProps)}</td>
         <td className="px-5 py-4">
           <div className="relative" ref={menuOpen === emp.id ? menuRef : null}>
@@ -292,11 +303,22 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
 
   return (
     <div>
+      <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} currentPlan={plan} reason="Sie haben das Mitarbeiterlimit Ihres Pakets erreicht. Upgraden Sie, um mehr Mitarbeiter hinzuzufügen." />
+
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Mitarbeiter</h1>
-        <button onClick={() => setAddModal(true)} className="btn-primary flex items-center justify-center gap-2">
-          <Plus size={16} /> Mitarbeiter hinzufügen
-        </button>
+        <div>
+          <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Mitarbeiter</h1>
+          <p className="text-xs text-[#94A3B8] mt-1 font-medium">{employees.length} / {limit} Plätze belegt</p>
+        </div>
+        {isAtEmployeeLimit(plan, employees.length) ? (
+          <button onClick={() => setUpgradeOpen(true)} className="btn-primary flex items-center justify-center gap-2 bg-amber-500 hover:bg-amber-600">
+            <Users size={16} /> Limit erreicht – Upgrade
+          </button>
+        ) : (
+          <button onClick={() => setAddModal(true)} className="btn-primary flex items-center justify-center gap-2">
+            <Plus size={16} /> Mitarbeiter hinzufügen
+          </button>
+        )}
       </div>
 
       <div className="relative mb-5">
@@ -329,16 +351,16 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             <tr className="border-b border-[#F1F5F9]">
               <th className="text-left px-5 py-3.5 section-label">Mitarbeiter</th>
               <th className="text-left px-5 py-3.5 section-label">Kontakt</th>
-              <th className="text-left px-5 py-3.5 section-label">Stundenlohn</th>
+              {wageAllowed && <th className="text-left px-5 py-3.5 section-label">Stundenlohn</th>}
               <th className="text-left px-5 py-3.5 section-label">Status</th>
-              <th className="text-left px-5 py-3.5 section-label">Login</th>
+              {loginAllowed && <th className="text-left px-5 py-3.5 section-label">Login</th>}
               <th className="text-left px-5 py-3.5 section-label">Objekte</th>
               <th className="px-5 py-3.5"></th>
             </tr>
           </thead>
           <tbody>
             {filteredEmployees.map(renderEmployeeRow)}
-            {filteredEmployees.length === 0 && <tr><td colSpan={7} className="px-5 py-10 text-center text-sm text-[#94A3B8]">Keine Mitarbeiter gefunden</td></tr>}
+            {filteredEmployees.length === 0 && <tr><td colSpan={wageAllowed && loginAllowed ? 7 : wageAllowed || loginAllowed ? 6 : 5} className="px-5 py-10 text-center text-sm text-[#94A3B8]">Keine Mitarbeiter gefunden</td></tr>}
           </tbody>
         </table>
       </div>
@@ -362,32 +384,48 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Telefon <span className="text-[#EF4444]">*</span></label>
               <input type="text" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+49 171..." className="input-field" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Stundenlohn (EUR)</label>
-              <input type="number" step="0.01" min="0" value={newWage} onChange={e => setNewWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
-            </div>
+            {wageAllowed ? (
+              <div>
+                <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Stundenlohn (EUR)</label>
+                <input type="number" step="0.01" min="0" value={newWage} onChange={e => setNewWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
+              </div>
+            ) : (
+              <button type="button" onClick={() => setUpgradeOpen(true)} className="w-full flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-sm text-[#94A3B8] hover:bg-[#F1F5F9] transition-colors">
+                <Lock size={14} className="text-[#CBD5E1]" />
+                <span>Stundenlohn (Premium)</span>
+              </button>
+            )}
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Bekannte Objekte</label>
               {renderPropertyChips(newPropertyIds, setNewPropertyIds)}
             </div>
             <div className="h-px bg-[#F1F5F9] my-1" />
             <div>
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={loginEnabled} onChange={e => setLoginEnabled(e.target.checked)} className="w-4 h-4 rounded accent-[#22C55E]" />
-                <span className="text-sm font-medium text-[#0F172A]">Login-Daten (optional)</span>
-              </label>
-              <p className="text-xs text-[#94A3B8] mt-1 ml-6.5">Mitarbeiter kann sich in der App anmelden und muss beim ersten Login ein Passwort setzen.</p>
-              {loginEnabled && (
-                <div className="space-y-4 mt-4 ml-6.5">
-                  <div>
-                    <label className="block text-sm font-medium text-[#0F172A] mb-1.5">E-Mail</label>
-                    <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="max@beispiel.de" className="input-field" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Initiales Passwort</label>
-                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mind. 6 Zeichen" className="input-field" />
-                  </div>
-                </div>
+              {loginAllowed ? (
+                <>
+                  <label className="flex items-center gap-2.5 cursor-pointer">
+                    <input type="checkbox" checked={loginEnabled} onChange={e => setLoginEnabled(e.target.checked)} className="w-4 h-4 rounded accent-[#22C55E]" />
+                    <span className="text-sm font-medium text-[#0F172A]">Login-Daten (optional)</span>
+                  </label>
+                  <p className="text-xs text-[#94A3B8] mt-1 ml-6.5">Mitarbeiter kann sich in der App anmelden und muss beim ersten Login ein Passwort setzen.</p>
+                  {loginEnabled && (
+                    <div className="space-y-4 mt-4 ml-6.5">
+                      <div>
+                        <label className="block text-sm font-medium text-[#0F172A] mb-1.5">E-Mail</label>
+                        <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="max@beispiel.de" className="input-field" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Initiales Passwort</label>
+                        <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mind. 6 Zeichen" className="input-field" />
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <button type="button" onClick={() => setUpgradeOpen(true)} className="w-full flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-sm text-[#94A3B8] hover:bg-[#F1F5F9] transition-colors">
+                  <Lock size={14} className="text-[#CBD5E1]" />
+                  <span>App-Login für Mitarbeiter (Premium)</span>
+                </button>
               )}
             </div>
           </div>
@@ -419,10 +457,17 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Telefon</label>
               <input type="text" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="+49 171..." className="input-field" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Stundenlohn (EUR)</label>
-              <input type="number" step="0.01" min="0" value={editWage} onChange={e => setEditWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
-            </div>
+            {wageAllowed ? (
+              <div>
+                <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Stundenlohn (EUR)</label>
+                <input type="number" step="0.01" min="0" value={editWage} onChange={e => setEditWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
+              </div>
+            ) : (
+              <button type="button" onClick={() => setUpgradeOpen(true)} className="w-full flex items-center gap-2.5 px-4 py-3 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] text-sm text-[#94A3B8] hover:bg-[#F1F5F9] transition-colors">
+                <Lock size={14} className="text-[#CBD5E1]" />
+                <span>Stundenlohn (Premium)</span>
+              </button>
+            )}
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Bekannte Objekte</label>
               {renderPropertyChips(editPropertyIds, setEditPropertyIds)}

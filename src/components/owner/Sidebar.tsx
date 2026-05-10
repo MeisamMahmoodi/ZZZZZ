@@ -1,29 +1,41 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Building2, Settings, LogOut, Menu, X, CalendarDays, Wallet, Timer, FileText, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Settings, LogOut, Menu, X, CalendarDays, Wallet, Timer, FileText, Shield, Lock } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 import { useAuth } from '../../hooks/useAuth';
 import { Modal } from '../shared/Modal';
+import { UpgradeModal } from '../shared/UpgradeModal';
+import type { Plan } from '../../lib/plans';
+import { canAccessPayroll, canAccessTimestamps, getPlan } from '../../lib/plans';
 
 interface SidebarProps {
   active: string;
   onNavigate: (page: string) => void;
   ownerName: string;
+  contract: string;
 }
 
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'employees', label: 'Mitarbeiter', icon: Users },
-  { id: 'properties', label: 'Objekte', icon: Building2 },
-  { id: 'assignments', label: 'Einsätze', icon: CalendarDays },
-  { id: 'payroll', label: 'Abrechnung', icon: Wallet },
-  { id: 'timestamps', label: 'Zeitstempel', icon: Timer },
-  { id: 'settings', label: 'Einstellungen', icon: Settings },
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, requiresPlan: null },
+  { id: 'employees', label: 'Mitarbeiter', icon: Users, requiresPlan: null },
+  { id: 'properties', label: 'Objekte', icon: Building2, requiresPlan: null },
+  { id: 'assignments', label: 'Einsätze', icon: CalendarDays, requiresPlan: null },
+  { id: 'payroll', label: 'Abrechnung', icon: Wallet, requiresPlan: 'Business' as Plan },
+  { id: 'timestamps', label: 'Zeitstempel', icon: Timer, requiresPlan: 'Business' as Plan },
+  { id: 'settings', label: 'Einstellungen', icon: Settings, requiresPlan: null },
 ];
 
-export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
+export function Sidebar({ active, onNavigate, ownerName, contract }: SidebarProps) {
   const { signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutConfirm, setLogoutConfirm] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const plan = getPlan(contract);
+
+  const isItemAllowed = (itemId: string) => {
+    if (itemId === 'payroll') return canAccessPayroll(plan);
+    if (itemId === 'timestamps') return canAccessTimestamps(plan);
+    return true;
+  };
 
   const handleNav = (id: string) => {
     onNavigate(id);
@@ -53,16 +65,21 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
       <nav className="flex-1 mt-3 px-4">
         {navItems.map(item => {
           const isActive = active === item.id;
+          const allowed = isItemAllowed(item.id);
           return (
-            <button key={item.id} onClick={() => handleNav(item.id)}
+            <button key={item.id}
+              onClick={() => allowed ? handleNav(item.id) : setUpgradeOpen(true)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 mb-0.5 ${
                 isActive
                   ? 'bg-white/[0.08] text-white'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+                  : allowed
+                  ? 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+                  : 'text-slate-600 hover:bg-white/[0.04] cursor-pointer'
               }`}>
               <item.icon size={18} strokeWidth={isActive ? 2 : 1.5} className={isActive ? 'text-brand-400' : ''} />
               {item.label}
               {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-400" />}
+              {!allowed && !isActive && <Lock size={12} className="ml-auto text-slate-600" />}
             </button>
           );
         })}
@@ -132,6 +149,8 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
       <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-60 bg-ink-900 flex-col z-40">
         {sidebarContent}
       </aside>
+
+      <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} currentPlan={plan} reason="Dieses Modul ist in Ihrem aktuellen Paket nicht enthalten." />
 
       {/* Logout Confirmation */}
       <Modal open={logoutConfirm} onClose={() => setLogoutConfirm(false)} width="max-w-sm">

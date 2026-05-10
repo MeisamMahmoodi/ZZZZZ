@@ -19,25 +19,43 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { supabase } from './lib/supabase';
 import { Eye, EyeOff } from 'lucide-react';
 import { Pricing } from './pages/Pricing';
+import { getPlan, canAccessPayroll, canAccessTimestamps } from './lib/plans';
+import { UpgradeModal } from './components/shared/UpgradeModal';
 
 function OwnerApp() {
   const [page, setPage] = useState('dashboard');
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
+
+  const handleNavigate = (target: string, contract: string) => {
+    const plan = getPlan(contract);
+    if (target === 'payroll' && !canAccessPayroll(plan)) { setUpgradeOpen(true); return; }
+    if (target === 'timestamps' && !canAccessTimestamps(plan)) { setUpgradeOpen(true); return; }
+    setPage(target);
+  };
 
   return (
     <OwnerLayout activePage={page} onNavigate={setPage}>
       {(props) => {
-        switch (page) {
-          case 'dashboard': return <Dashboard {...props} />;
-          case 'employees': return <Employees {...props} />;
-          case 'properties': return <Properties {...props} />;
-          case 'assignments': return <Assignments {...props} />;
-          case 'payroll': return <Payroll {...props} />;
-          case 'timestamps': return <Timestamps {...props} />;
-          case 'settings': return <Settings company={props.company} onRefresh={props.onRefresh} />;
-          case 'impressum': return <Impressum />;
-          case 'datenschutz': return <Datenschutz />;
-          default: return <Dashboard {...props} />;
-        }
+        const plan = getPlan(props.company.contract);
+        return (
+          <>
+            <UpgradeModal open={upgradeOpen} onClose={() => setUpgradeOpen(false)} currentPlan={plan} reason="Dieses Modul ist in Ihrem aktuellen Paket nicht enthalten." />
+            {(() => {
+              switch (page) {
+                case 'dashboard': return <Dashboard {...props} />;
+                case 'employees': return <Employees {...props} />;
+                case 'properties': return <Properties {...props} />;
+                case 'assignments': return <Assignments {...props} />;
+                case 'payroll': return canAccessPayroll(plan) ? <Payroll {...props} /> : <Dashboard {...props} />;
+                case 'timestamps': return canAccessTimestamps(plan) ? <Timestamps {...props} /> : <Dashboard {...props} />;
+                case 'settings': return <Settings company={props.company} onRefresh={props.onRefresh} />;
+                case 'impressum': return <Impressum />;
+                case 'datenschutz': return <Datenschutz />;
+                default: return <Dashboard {...props} />;
+              }
+            })()}
+          </>
+        );
       }}
     </OwnerLayout>
   );
