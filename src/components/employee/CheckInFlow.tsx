@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, MapPin, Check, X, RotateCcw, Loader2, AlertTriangle, Navigation } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { t as translate, langLocale, type Lang } from '../../lib/i18n';
 
 interface CheckInFlowProps {
   assignmentId: string;
@@ -13,6 +14,7 @@ interface CheckInFlowProps {
   onSuccess: () => void;
   onCancel: () => void;
   rtl?: boolean;
+  lang?: Lang;
 }
 
 type Step = 'gps' | 'camera' | 'preview' | 'uploading' | 'done';
@@ -45,8 +47,11 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
 export function CheckInFlow({
   assignmentId, propertyId, propertyName, propertyAddress,
   propertyLat, propertyLng, propertyRadiusM,
-  onSuccess, onCancel, rtl,
+  onSuccess, onCancel, rtl, lang = 'de',
 }: CheckInFlowProps) {
+  const tr = (key: Parameters<typeof translate>[1]) => translate(lang, key);
+  const locale = langLocale[lang];
+
   const [step, setStep] = useState<Step>('gps');
   const [gpsState, setGpsState] = useState<GpsState>('idle');
   const [employeeCoords, setEmployeeCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -71,13 +76,12 @@ export function CheckInFlow({
     setGpsError('');
     setDistanceM(null);
 
-    // 1. Get employee location
     const empCoords = await new Promise<{ lat: number; lng: number } | null>(resolve => {
       navigator.geolocation.getCurrentPosition(
         pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
         err => {
-          if (err.code === 1) setGpsError('GPS-Zugriff verweigert. Bitte in den Browser-Einstellungen erlauben.');
-          else setGpsError('GPS nicht verfuegbar. Bitte erneut versuchen.');
+          if (err.code === 1) setGpsError(tr('gpsAccessDenied'));
+          else setGpsError(tr('gpsUnavailable'));
           resolve(null);
         },
         { enableHighAccuracy: true, timeout: 12000 }
@@ -87,26 +91,22 @@ export function CheckInFlow({
     if (!empCoords) { setGpsState('error'); return; }
     setEmployeeCoords(empCoords);
 
-    // 2. Get or geocode property coords
     let propCoords = targetCoords;
     if (!propCoords) {
       setGpsState('geocoding');
       propCoords = await geocodeAddress(propertyAddress);
       if (propCoords) {
         setTargetCoords(propCoords);
-        // Cache coords in DB so next time is instant
         await supabase.from('properties').update({ lat: propCoords.lat, lng: propCoords.lng }).eq('id', propertyId);
       }
     }
 
     if (!propCoords) {
-      // Could not geocode — allow check-in but note it
       setGpsState('ok');
       setDistanceM(null);
       return;
     }
 
-    // 3. Compare distance
     const dist = distanceMeters(empCoords.lat, empCoords.lng, propCoords.lat, propCoords.lng);
     setDistanceM(Math.round(dist));
 
@@ -115,7 +115,7 @@ export function CheckInFlow({
     } else {
       setGpsState('too_far');
     }
-  }, [targetCoords, propertyAddress, propertyId, radius]);
+  }, [targetCoords, propertyAddress, propertyId, radius, lang]);
 
   const startCamera = useCallback(async () => {
     setStep('camera');
@@ -130,10 +130,10 @@ export function CheckInFlow({
         videoRef.current.play();
       }
     } catch {
-      setUploadError('Kamera konnte nicht geöffnet werden. Bitte Berechtigung erteilen.');
+      setUploadError(tr('cameraError'));
       setStep('gps');
     }
-  }, []);
+  }, [lang]);
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach(t => t.stop());
@@ -183,10 +183,10 @@ export function CheckInFlow({
       setStep('done');
       setTimeout(onSuccess, 1200);
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Fehler beim Einchecken');
+      setUploadError(err instanceof Error ? err.message : tr('checkInError'));
       setStep('preview');
     }
-  }, [photoDataUrl, assignmentId, employeeCoords, onSuccess]);
+  }, [photoDataUrl, assignmentId, employeeCoords, onSuccess, lang]);
 
   const handleCancel = () => { stopCamera(); onCancel(); };
 
@@ -202,7 +202,7 @@ export function CheckInFlow({
         {step === 'gps' && (
           <div className="p-7">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-bold text-[#0F172A]">Einchecken</h2>
+              <h2 className="text-lg font-bold text-[#0F172A]">{tr('checkInTitle')}</h2>
               <button onClick={handleCancel} className="p-2 rounded-xl hover:bg-[#F1F5F9] transition-colors">
                 <X size={18} className="text-[#94A3B8]" />
               </button>
@@ -237,31 +237,31 @@ export function CheckInFlow({
               </div>
 
               {gpsState === 'idle' && (
-                <p className="text-sm text-[#64748B] text-center">Standort wird geprueft...</p>
+                <p className="text-sm text-[#64748B] text-center">{tr('gpsChecking')}</p>
               )}
               {gpsState === 'locating' && (
-                <p className="text-sm text-[#64748B] text-center">GPS wird ermittelt...</p>
+                <p className="text-sm text-[#64748B] text-center">{tr('gpsLocating')}</p>
               )}
               {gpsState === 'geocoding' && (
-                <p className="text-sm text-[#64748B] text-center">Objektadresse wird geolocated...</p>
+                <p className="text-sm text-[#64748B] text-center">{tr('gpsGeocoding')}</p>
               )}
               {gpsState === 'ok' && (
                 <div className="text-center">
-                  <p className="text-sm font-bold text-[#22C55E]">Standort bestätigt</p>
+                  <p className="text-sm font-bold text-[#22C55E]">{tr('gpsConfirmed')}</p>
                   {distLabel && (
-                    <p className="text-xs text-[#64748B] mt-1">{distLabel} vom Objekt entfernt</p>
+                    <p className="text-xs text-[#64748B] mt-1">{distLabel} {tr('gpsDistanceFrom')}</p>
                   )}
                   {!distLabel && (
-                    <p className="text-xs text-[#94A3B8] mt-1">Adresse konnte nicht verifiziert werden</p>
+                    <p className="text-xs text-[#94A3B8] mt-1">{tr('gpsNotVerified')}</p>
                   )}
                 </div>
               )}
               {gpsState === 'too_far' && (
                 <div className="text-center">
-                  <p className="text-sm font-bold text-[#EF4444]">Zu weit entfernt</p>
+                  <p className="text-sm font-bold text-[#EF4444]">{tr('gpsTooFar')}</p>
                   <p className="text-xs text-[#64748B] mt-1">
-                    Du bist {distLabel} vom Objekt entfernt.<br />
-                    Erlaubt: bis {radius} m
+                    {distLabel} {tr('gpsDistanceFrom')}<br />
+                    {tr('gpsTooFarDesc')} {radius} m
                   </p>
                 </div>
               )}
@@ -275,18 +275,18 @@ export function CheckInFlow({
               {(gpsState === 'too_far' || gpsState === 'error') && (
                 <button onClick={checkProximity}
                   className="w-full py-3.5 rounded-2xl text-sm font-semibold bg-[#F1F5F9] text-[#0F172A] hover:bg-[#E2E8F0] transition-colors flex items-center justify-center gap-2">
-                  <RotateCcw size={15} /> Erneut versuchen
+                  <RotateCcw size={15} /> {tr('retry')}
                 </button>
               )}
               {gpsState === 'ok' && (
                 <button onClick={startCamera}
                   className="w-full py-3.5 rounded-2xl text-sm font-semibold bg-[#22C55E] text-white hover:bg-[#16A34A] transition-colors flex items-center justify-center gap-2">
-                  <Camera size={16} /> Gebäude fotografieren
+                  <Camera size={16} /> {tr('takePhoto')}
                 </button>
               )}
               {gpsState === 'too_far' && (
                 <p className="text-xs text-center text-[#94A3B8]">
-                  Du musst vor Ort sein um einzuchecken.
+                  {tr('gpsMustBeOnSite')}
                 </p>
               )}
             </div>
@@ -301,7 +301,7 @@ export function CheckInFlow({
             <div className="absolute inset-0 pointer-events-none">
               <div className="absolute inset-6 border-2 border-white/30 rounded-2xl" />
               <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-black/60 backdrop-blur-sm px-4 py-2 rounded-full">
-                <p className="text-white text-xs font-semibold text-center">Gebäude fotografieren</p>
+                <p className="text-white text-xs font-semibold text-center">{tr('takePhoto')}</p>
               </div>
             </div>
             <div className="absolute bottom-0 left-0 right-0 p-6 flex items-center justify-between bg-gradient-to-t from-black/70 to-transparent">
@@ -322,26 +322,26 @@ export function CheckInFlow({
         {step === 'preview' && photoDataUrl && (
           <div>
             <div className="relative">
-              <img src={photoDataUrl} alt="Gebäude-Foto" className="w-full object-cover" style={{ maxHeight: '55dvh' }} />
+              <img src={photoDataUrl} alt={tr('takePhoto')} className="w-full object-cover" style={{ maxHeight: '55dvh' }} />
               {employeeCoords && (
                 <div className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5">
                   <MapPin size={12} className="text-[#22C55E]" />
                   <span className="text-white text-[11px] font-medium">
-                    GPS: {distLabel ? `${distLabel} vom Objekt` : 'verifiziert'}
+                    GPS: {distLabel ? `${distLabel} ${tr('gpsDistanceFrom')}` : tr('gpsVerified')}
                   </span>
                 </div>
               )}
             </div>
             <div className="p-6">
-              <h3 className="text-base font-bold text-[#0F172A] mb-1">Foto prüfen</h3>
-              <p className="text-sm text-[#64748B] mb-5">Ist das Gebäude gut erkennbar?</p>
+              <h3 className="text-base font-bold text-[#0F172A] mb-1">{tr('reviewPhoto')}</h3>
+              <p className="text-sm text-[#64748B] mb-5">{tr('reviewPhotoDesc')}</p>
               {uploadError && <p className="text-xs text-[#EF4444] mb-4">{uploadError}</p>}
               <div className="flex gap-3">
                 <button onClick={retakePhoto} className="flex-1 py-3.5 rounded-2xl text-sm font-semibold bg-[#F1F5F9] text-[#0F172A] hover:bg-[#E2E8F0] transition-colors flex items-center justify-center gap-2">
-                  <RotateCcw size={15} /> Nochmal
+                  <RotateCcw size={15} /> {tr('retake')}
                 </button>
                 <button onClick={uploadAndCheckIn} className="flex-1 py-3.5 rounded-2xl text-sm font-semibold bg-[#22C55E] text-white hover:bg-[#16A34A] transition-colors flex items-center justify-center gap-2">
-                  <Check size={15} /> Einchecken
+                  <Check size={15} /> {tr('checkInConfirm')}
                 </button>
               </div>
             </div>
@@ -352,8 +352,8 @@ export function CheckInFlow({
         {step === 'uploading' && (
           <div className="p-10 flex flex-col items-center justify-center" style={{ minHeight: '40dvh' }}>
             <Loader2 size={40} className="text-[#22C55E] animate-spin mb-5" />
-            <p className="text-sm font-semibold text-[#0F172A]">Einchecken...</p>
-            <p className="text-xs text-[#94A3B8] mt-1">Foto wird hochgeladen</p>
+            <p className="text-sm font-semibold text-[#0F172A]">{tr('checkingIn')}</p>
+            <p className="text-xs text-[#94A3B8] mt-1">{tr('uploadingPhoto')}</p>
           </div>
         )}
 
@@ -363,8 +363,10 @@ export function CheckInFlow({
             <div className="w-20 h-20 rounded-3xl bg-[#DCFCE7] flex items-center justify-center mb-5">
               <Check size={40} className="text-[#22C55E]" />
             </div>
-            <p className="text-lg font-bold text-[#0F172A]">Eingecheckt!</p>
-            <p className="text-sm text-[#64748B] mt-1">{new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</p>
+            <p className="text-lg font-bold text-[#0F172A]">{tr('checkedInSuccess')}</p>
+            <p className="text-sm text-[#64748B] mt-1">
+              {new Date().toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}{translate(lang, 'clock') ? ' ' + translate(lang, 'clock') : ''}
+            </p>
           </div>
         )}
       </div>

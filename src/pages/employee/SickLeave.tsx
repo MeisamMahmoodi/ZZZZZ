@@ -3,6 +3,7 @@ import { ArrowLeft, AlertTriangle } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useLang } from '../../hooks/useLang';
+import { langLocale } from '../../lib/i18n';
 
 interface SickLeaveProps {
   onBack: () => void;
@@ -11,7 +12,7 @@ interface SickLeaveProps {
 
 export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
   const { user } = useAuth();
-  const { t, rtl } = useLang();
+  const { t, rtl, lang } = useLang();
   const [day, setDay] = useState<'today' | 'tomorrow' | 'custom'>('today');
   const [customDate, setCustomDate] = useState('');
   const [reason, setReason] = useState('');
@@ -138,7 +139,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
           <div>
             <p className="text-sm font-semibold text-ink-900">{t('today')}</p>
             <p className="text-xs text-ink-300 mt-0.5">
-              {today.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' })}
+              {today.toLocaleDateString(langLocale[lang], { weekday: 'short', day: 'numeric', month: 'long' })}
             </p>
           </div>
         </label>
@@ -154,7 +155,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
           <div>
             <p className="text-sm font-semibold text-ink-900">{t('tomorrow')}</p>
             <p className="text-xs text-ink-300 mt-0.5">
-              {tomorrow.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' })}
+              {tomorrow.toLocaleDateString(langLocale[lang], { weekday: 'short', day: 'numeric', month: 'long' })}
             </p>
           </div>
         </label>
