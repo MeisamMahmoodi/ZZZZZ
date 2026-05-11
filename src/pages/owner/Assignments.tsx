@@ -70,8 +70,8 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
 
     setSaving(true);
     const prop = properties.find(p => p.id === newPropertyId);
-    const timeFrom = newTimeFrom || prop?.time_from || null;
-    const timeTo = newTimeTo || prop?.time_to || null;
+    const timeFrom = newTimeFrom || null;
+    const timeTo = newTimeTo || null;
     const inserts = newEmployeeIds.map(eid => ({
       property_id: newPropertyId,
       employee_id: eid,
@@ -86,7 +86,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
 
     if (prop) {
       const dateLabel = new Date(newDate).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
-      const timeLabel = `${formatTime(timeFrom || prop.time_from)} – ${formatTime(timeTo || prop.time_to)} Uhr`;
+      const timeLabel = `${formatTime(timeFrom ?? prop.time_from)} – ${formatTime(timeTo ?? prop.time_to)} Uhr`;
       const pushTitle = `Neuer Einsatz: ${prop.name}`;
       const pushBody = `${dateLabel}, ${timeLabel}`;
 
@@ -270,7 +270,6 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
             {selectedProperty && (
               <div className="bg-[#F8FAFC] rounded-xl p-3.5 text-sm text-[#64748B]">
                 <p className="flex items-center gap-1.5"><MapPin size={14} className="text-[#94A3B8]" /> {selectedProperty.address}</p>
-                <p className="flex items-center gap-1.5 mt-1"><Clock size={14} className="text-[#94A3B8]" /> {formatTime(selectedProperty.time_from)} – {formatTime(selectedProperty.time_to)} Uhr</p>
               </div>
             )}
             <div className="flex gap-3">
