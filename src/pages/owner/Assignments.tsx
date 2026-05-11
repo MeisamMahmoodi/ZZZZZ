@@ -39,6 +39,15 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
 
   useEffect(() => { loadData(); }, [company.id, refreshKey, selectedDate]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel(`assignments-${company.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sick_reports' }, () => loadData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [company.id, selectedDate]);
+
   async function loadData() {
     setLoading(true);
     try {

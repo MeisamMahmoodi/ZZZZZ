@@ -58,6 +58,18 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
     loadData();
   }, [user]);
 
+  useEffect(() => {
+    if (!employee) return;
+    const channel = supabase
+      .channel(`employee-home-${employee.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments', filter: `employee_id=eq.${employee.id}` }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sick_reports', filter: `employee_id=eq.${employee.id}` }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'notifications', filter: `employee_id=eq.${employee.id}` }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'replacement_requests' }, () => loadData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [employee?.id]);
+
   // Show push prompt once when employee loaded and permission not yet decided
   useEffect(() => {
     if (employee && permission === 'default' && !subscribed) {

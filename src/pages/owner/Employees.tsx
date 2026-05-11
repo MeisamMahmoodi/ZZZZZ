@@ -49,6 +49,15 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   useEffect(() => { loadData(); }, [company.id, refreshKey]);
 
   useEffect(() => {
+    const channel = supabase
+      .channel(`employees-${company.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'employees', filter: `company_id=eq.${company.id}` }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sick_reports' }, () => loadData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [company.id]);
+
+  useEffect(() => {
     if (!menuOpen) return;
     function handleClickOutside(e: MouseEvent) {
       const target = e.target as Element;

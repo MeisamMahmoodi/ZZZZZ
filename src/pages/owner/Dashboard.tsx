@@ -59,6 +59,16 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
 
   useEffect(() => { loadData(); }, [company.id, refreshKey]);
 
+  useEffect(() => {
+    const channel = supabase
+      .channel(`dashboard-${company.id}`)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'sick_reports' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' }, () => loadData())
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [company.id]);
+
   async function loadData() {
     try {
       const [empRes, propRes, assignRes, sickRes, epRes] = await Promise.all([
