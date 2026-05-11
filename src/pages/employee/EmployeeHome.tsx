@@ -405,7 +405,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
           <>
             <p className="text-lg font-bold text-ink-900">{todayAssignment.property?.name}</p>
             <p className="text-sm text-ink-500 mt-2 flex items-center gap-1.5"><MapPin size={14} className="text-ink-300" /> {todayAssignment.property?.address}</p>
-            <p className="text-sm text-ink-500 mt-1 flex items-center gap-1.5"><Clock size={14} className="text-ink-300" /> {formatTime(todayAssignment.property?.time_from || '')} – {formatTime(todayAssignment.property?.time_to || '')} {t('clock')}</p>
+            <p className="text-sm text-ink-500 mt-1 flex items-center gap-1.5"><Clock size={14} className="text-ink-300" /> {formatTime(todayAssignment.time_from ?? todayAssignment.property?.time_from ?? '')} – {formatTime(todayAssignment.time_to ?? todayAssignment.property?.time_to ?? '')} {t('clock')}</p>
           </>
         ) : (
           <p className="text-sm text-ink-300">{t('noAssignmentToday')}</p>
@@ -450,7 +450,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
                     <MapPin size={12} className="text-ink-300" /> {a.property?.address}
                   </p>
                   <p className="text-[13px] text-ink-500 mt-0.5 flex items-center gap-1.5">
-                    <Clock size={12} className="text-ink-300" /> {formatTime(a.property?.time_from || '')} – {formatTime(a.property?.time_to || '')} {t('clock')}
+                    <Clock size={12} className="text-ink-300" /> {formatTime(a.time_from ?? a.property?.time_from ?? '')} – {formatTime(a.time_to ?? a.property?.time_to ?? '')} {t('clock')}
                   </p>
                 </div>
               );

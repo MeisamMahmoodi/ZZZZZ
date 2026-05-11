@@ -76,15 +76,24 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
     }
 
     setSaving(true);
-    const inserts = newEmployeeIds.map(eid => ({ property_id: newPropertyId, employee_id: eid, date: newDate, status: 'assigned' }));
+    const prop = properties.find(p => p.id === newPropertyId);
+    const timeFrom = newTimeFrom || prop?.time_from || null;
+    const timeTo = newTimeTo || prop?.time_to || null;
+    const inserts = newEmployeeIds.map(eid => ({
+      property_id: newPropertyId,
+      employee_id: eid,
+      date: newDate,
+      status: 'assigned',
+      time_from: timeFrom,
+      time_to: timeTo,
+    }));
     const { error } = await supabase.from('assignments').insert(inserts);
 
     if (error) { addToast('Fehler beim Speichern', 'error'); setSaving(false); return; }
 
-    const prop = properties.find(p => p.id === newPropertyId);
     if (prop) {
       const dateLabel = new Date(newDate).toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' });
-      const timeLabel = `${formatTime(newTimeFrom || prop.time_from)} – ${formatTime(newTimeTo || prop.time_to)} Uhr`;
+      const timeLabel = `${formatTime(timeFrom || prop.time_from)} – ${formatTime(timeTo || prop.time_to)} Uhr`;
       const pushTitle = `Neuer Einsatz: ${prop.name}`;
       const pushBody = `${dateLabel}, ${timeLabel}`;
 
@@ -190,12 +199,16 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
         </div>
       ) : (
         <div className="space-y-4">
-          {groupedAssignments.map(({ property, assignments: propAssignments }) => (
+          {groupedAssignments.map(({ property, assignments: propAssignments }) => {
+            const firstA = propAssignments[0];
+            const displayFrom = firstA?.time_from ?? property.time_from;
+            const displayTo = firstA?.time_to ?? property.time_to;
+            return (
             <div key={property.id} className="card overflow-hidden">
               <div className="px-5 sm:px-6 py-4 border-b border-[#F1F5F9] bg-[#F8FAFC]">
                 <p className="text-sm font-semibold text-[#0F172A]">{property.name}</p>
                 <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {property.address}</p>
-                <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(property.time_from)} – {formatTime(property.time_to)} Uhr</p>
+                <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(displayFrom)} – {formatTime(displayTo)} Uhr</p>
               </div>
               <div className="divide-y divide-[#F1F5F9]">
                 {propAssignments.map(a => {
@@ -236,7 +249,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
                 })}
               </div>
             </div>
-          ))}
+          );})}
         </div>
       )}
 

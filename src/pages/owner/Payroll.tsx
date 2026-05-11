@@ -82,8 +82,10 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
       const prop = a.property;
       if (!prop) continue;
 
-      const [fromH, fromM] = prop.time_from.split(':').map(Number);
-      const [toH, toM] = prop.time_to.split(':').map(Number);
+      const aTimeFrom = a.time_from ?? prop.time_from;
+      const aTimeTo = a.time_to ?? prop.time_to;
+      const [fromH, fromM] = aTimeFrom.split(':').map(Number);
+      const [toH, toM] = aTimeTo.split(':').map(Number);
       const durationMin = (toH * 60 + toM) - (fromH * 60 + fromM);
 
       if (a.status === 'completed' || a.status === 'checked_in') {
@@ -286,8 +288,10 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
                         {assignments
                           .sort((a, b) => a.date.localeCompare(b.date))
                           .map(a => {
-                            const [fromH, fromM] = a.property.time_from.split(':').map(Number);
-                            const [toH, toM] = a.property.time_to.split(':').map(Number);
+                            const aTimeFrom = a.time_from ?? a.property.time_from;
+                            const aTimeTo = a.time_to ?? a.property.time_to;
+                            const [fromH, fromM] = aTimeFrom.split(':').map(Number);
+                            const [toH, toM] = aTimeTo.split(':').map(Number);
                             const durationMin = (toH * 60 + toM) - (fromH * 60 + fromM);
                             const durationH = durationMin / 60;
                             return (
@@ -299,7 +303,7 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm font-medium text-[#0F172A]">{a.property.name}</p>
                                   <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5">
-                                    <Clock size={11} /> {formatTime(a.property.time_from)} – {formatTime(a.property.time_to)} Uhr
+                                    <Clock size={11} /> {formatTime(aTimeFrom)} – {formatTime(aTimeTo)} Uhr
                                     <span className="text-[#94A3B8]">({durationH.toFixed(1)} Std.)</span>
                                   </p>
                                 </div>

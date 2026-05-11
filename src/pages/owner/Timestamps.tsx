@@ -128,7 +128,7 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
                             <div className="flex items-center gap-1.5 mt-0.5">
                               <Clock size={11} className="text-[#94A3B8] shrink-0" />
                               <p className="text-xs text-[#64748B]">
-                                {formatTime(a.property?.time_from || '')} – {formatTime(a.property?.time_to || '')} Uhr
+                                {formatTime(a.time_from ?? a.property?.time_from ?? '')} – {formatTime(a.time_to ?? a.property?.time_to ?? '')} Uhr
                               </p>
                             </div>
                           </div>

@@ -55,6 +55,8 @@ export interface Assignment {
   date: string;
   status: 'assigned' | 'checked_in' | 'completed' | 'cancelled';
   created_at: string;
+  time_from: string | null;
+  time_to: string | null;
   checked_in_at?: string | null;
   completed_at?: string | null;
   checkin_photo_url?: string | null;

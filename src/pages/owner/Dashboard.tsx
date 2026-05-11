@@ -236,7 +236,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                     {empAssignments.map(a => (
                       <div key={a.id} className="mt-3 bg-white/70 rounded-xl p-3">
                         <p className="text-sm font-semibold text-[#0F172A] flex items-center gap-1.5"><MapPin size={14} className="text-[#94A3B8]" /> {a.property?.name}</p>
-                        <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(a.property?.time_from || '')} – {formatTime(a.property?.time_to || '')} Uhr</p>
+                        <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(a.time_from ?? a.property?.time_from ?? '')} – {formatTime(a.time_to ?? a.property?.time_to ?? '')} Uhr</p>
                       </div>
                     ))}
                   </div>
@@ -337,6 +337,9 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
               const hasSick = hasSickEmployeeForProperty(prop.id);
               const sickForProp = sickReportsForCompany.filter(sr => propAssignments.some(a => a.employee_id === sr.employee_id));
               const activeAssignments = propAssignments.filter(a => !sickReportsForCompany.some(sr => sr.employee_id === a.employee_id));
+              const firstAssignment = propAssignments[0];
+              const displayTimeFrom = firstAssignment?.time_from ?? prop.time_from;
+              const displayTimeTo = firstAssignment?.time_to ?? prop.time_to;
 
               let statusColor = 'bg-[#CBD5E1]';
               if (hasSick && activeAssignments.length === 0) statusColor = 'bg-[#F87171]';
@@ -350,7 +353,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-[#0F172A]">{prop.name}</p>
                       <p className="text-xs text-[#64748B] mt-1 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {prop.address}</p>
-                      <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(prop.time_from)} – {formatTime(prop.time_to)} Uhr</p>
+                      <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(displayTimeFrom)} – {formatTime(displayTimeTo)} Uhr</p>
                       <div className="mt-3 flex items-center gap-1.5 flex-wrap">
                         {activeAssignments.map(a => (
                           <span key={a.id} className="chip"><User size={11} /> {a.employee?.first_name} {a.employee?.last_name?.charAt(0)}.</span>
