@@ -78,6 +78,7 @@ type TranslationKeys = {
   sickConfirmYes: string;
   sickConfirmNo: string;
   youAreSick: string;
+  markAsHealthy: string;
   sickSince: string;
   sickReportedFor: string;
   sickReportedFrom: string;
@@ -152,6 +153,7 @@ const translations: Record<Lang, TranslationKeys> = {
     sickConfirmYes: 'Ja, krank melden',
     sickConfirmNo: 'Abbrechen',
     youAreSick: 'Du bist krankgemeldet',
+    markAsHealthy: 'Ich bin wieder gesund',
     sickSince: 'Krank seit',
     sickReportedFor: 'Krankgemeldet für',
     sickReportedFrom: 'Krankgemeldet von',
@@ -224,6 +226,7 @@ const translations: Record<Lang, TranslationKeys> = {
     sickConfirmYes: 'Da, declar bolnav',
     sickConfirmNo: 'Anuleaza',
     youAreSick: 'Esti in concediu medical',
+    markAsHealthy: 'Sunt din nou sanatos',
     sickSince: 'Bolnav din',
     sickReportedFor: 'Declarat bolnav pentru',
     sickReportedFrom: 'Declarat bolnav de la',
@@ -296,6 +299,7 @@ const translations: Record<Lang, TranslationKeys> = {
     sickConfirmYes: 'نعم، إبلاغ عن مرض',
     sickConfirmNo: 'إلغاء',
     youAreSick: 'أنت مبلغ عن مرضك',
+    markAsHealthy: 'أنا بصحة جيدة الآن',
     sickSince: 'مريض منذ',
     sickReportedFor: 'مبلغ عن مرضك ليوم',
     sickReportedFrom: 'مبلغ عن مرضك من',
@@ -368,6 +372,7 @@ const translations: Record<Lang, TranslationKeys> = {
     sickConfirmYes: 'Tak, zglos chorobe',
     sickConfirmNo: 'Anuluj',
     youAreSick: 'Jestes na zwolnieniu chorobowym',
+    markAsHealthy: 'Jestem znowu zdrow',
     sickSince: 'Chory od',
     sickReportedFor: 'Zgloszona choroba na',
     sickReportedFrom: 'Zgloszona choroba od',
@@ -440,6 +445,7 @@ const translations: Record<Lang, TranslationKeys> = {
     sickConfirmYes: 'Yes, report sick',
     sickConfirmNo: 'Cancel',
     youAreSick: 'You are reported sick',
+    markAsHealthy: 'I am healthy again',
     sickSince: 'Sick since',
     sickReportedFor: 'Reported sick for',
     sickReportedFrom: 'Reported sick from',

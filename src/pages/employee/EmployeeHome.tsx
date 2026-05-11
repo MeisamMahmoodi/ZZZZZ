@@ -167,6 +167,35 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
     loadData();
   };
 
+  const handleMarkAsHealthy = async () => {
+    if (sickReports.length === 0 || !employee) return;
+    try {
+      const activeSickIds = sickReports
+        .filter(sr => {
+          const startDate = new Date(sr.date);
+          const endDate = sr.date_to ? new Date(sr.date_to) : startDate;
+          const today = new Date(todayStr);
+          return startDate <= today && today <= endDate;
+        })
+        .map(sr => sr.id);
+
+      if (activeSickIds.length === 0) return;
+
+      for (const id of activeSickIds) {
+        await supabase.from('sick_reports').delete().eq('id', id);
+      }
+
+      await supabase
+        .from('employees')
+        .update({ status: 'active' })
+        .eq('id', employee.id);
+
+      setSickReports(sickReports.filter(sr => !activeSickIds.includes(sr.id)));
+    } catch {
+      // Handle error silently
+    }
+  };
+
   const handleAcceptReplacement = async () => {
     if (!replacementRequest || !employee) return;
     const { error: e1 } = await supabase.from('replacement_requests').update({ status: 'accepted' }).eq('id', replacementRequest.id);
@@ -359,6 +388,12 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
                   <p key={sr.id} className="text-sm text-ink-500">{formatSickLabel(sr)}</p>
                 ))}
               </div>
+              <button
+                onClick={handleMarkAsHealthy}
+                className="mt-3 py-2 px-3 rounded-lg text-sm font-semibold bg-danger-500 text-white hover:bg-danger-600 transition-colors"
+              >
+                {t('markAsHealthy')}
+              </button>
             </div>
           </div>
         </div>
