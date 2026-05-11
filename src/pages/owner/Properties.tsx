@@ -3,6 +3,8 @@ import { Plus, MapPin, Users, MoreVertical, Pencil, Trash2, Building2, Graduatio
 import { supabase } from '../../lib/supabase';
 import { Modal } from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
+import { AddressAutocomplete } from '../../components/shared/AddressAutocomplete';
+import type { AddressValue } from '../../components/shared/AddressAutocomplete';
 import { formatTime, getTodayDayAbbrev } from '../../lib/utils';
 import type { Employee, Property, EmployeeProperty, Company } from '../../lib/types';
 
@@ -34,7 +36,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   const { addToast } = useToast();
 
   const [newName, setNewName] = useState('');
-  const [newAddress, setNewAddress] = useState('');
+  const [newAddress, setNewAddress] = useState<AddressValue>({ formatted: '', lat: null, lng: null });
   const [newType, setNewType] = useState('office');
   const [newDays, setNewDays] = useState<string[]>(['Mo', 'Di', 'Mi', 'Do', 'Fr']);
   const [newTimeFrom, setNewTimeFrom] = useState('08:00');
@@ -42,7 +44,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   const [newEmployeeIds, setNewEmployeeIds] = useState<string[]>([]);
 
   const [editName, setEditName] = useState('');
-  const [editAddress, setEditAddress] = useState('');
+  const [editAddress, setEditAddress] = useState<AddressValue>({ formatted: '', lat: null, lng: null });
   const [editType, setEditType] = useState('office');
   const [editDays, setEditDays] = useState<string[]>([]);
   const [editTimeFrom, setEditTimeFrom] = useState('08:00');
@@ -88,7 +90,9 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   };
 
   const openEditModal = (prop: Property) => {
-    setEditName(prop.name); setEditAddress(prop.address); setEditType(prop.type);
+    setEditName(prop.name);
+    setEditAddress({ formatted: prop.address, lat: prop.lat ?? null, lng: prop.lng ?? null });
+    setEditType(prop.type);
     setEditDays(prop.cleaning_days || []); setEditTimeFrom(prop.time_from || '08:00'); setEditTimeTo(prop.time_to || '12:00');
     setEditEmployeeIds(employeeProperties.filter(ep => ep.property_id === prop.id).map(ep => ep.employee_id));
     setEditModal(prop); setMenuOpen(null);
@@ -97,7 +101,8 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   const handleAddProperty = async () => {
     if (!newName) return;
     const { data, error } = await supabase.from('properties').insert({
-      company_id: company.id, name: newName, address: newAddress, type: newType, cleaning_days: newDays, time_from: newTimeFrom, time_to: newTimeTo,
+      company_id: company.id, name: newName, address: newAddress.formatted, type: newType, cleaning_days: newDays, time_from: newTimeFrom, time_to: newTimeTo,
+      lat: newAddress.lat, lng: newAddress.lng,
     }).select().maybeSingle();
 
     if (error) { addToast('Fehler beim Speichern', 'error'); return; }
@@ -116,7 +121,8 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   const handleEditProperty = async () => {
     if (!editModal || !editName) return;
     const { error } = await supabase.from('properties').update({
-      name: editName, address: editAddress, type: editType, cleaning_days: editDays, time_from: editTimeFrom, time_to: editTimeTo,
+      name: editName, address: editAddress.formatted, type: editType, cleaning_days: editDays, time_from: editTimeFrom, time_to: editTimeTo,
+      lat: editAddress.lat, lng: editAddress.lng,
     }).eq('id', editModal.id);
 
     if (error) { addToast('Fehler beim Speichern', 'error'); return; }
@@ -139,7 +145,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   };
 
   const resetForm = () => {
-    setNewName(''); setNewAddress(''); setNewType('office');
+    setNewName(''); setNewAddress({ formatted: '', lat: null, lng: null }); setNewType('office');
     setNewDays(['Mo', 'Di', 'Mi', 'Do', 'Fr']); setNewTimeFrom('08:00'); setNewTimeTo('12:00'); setNewEmployeeIds([]);
   };
 
@@ -257,8 +263,11 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
               <input type="text" value={newName} onChange={e => setNewName(e.target.value)} className="input-field" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Adresse</label>
-              <input type="text" value={newAddress} onChange={e => setNewAddress(e.target.value)} className="input-field" />
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Adresse <span className="text-[#EF4444]">*</span></label>
+              <AddressAutocomplete
+                value={newAddress.formatted}
+                onChange={setNewAddress}
+              />
             </div>
             <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Typ</label>{renderTypePicker(newType, setNewType)}</div>
             <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Reinigungstage</label>{renderDayPicker(newDays, setNewDays)}</div>
@@ -270,7 +279,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
           </div>
           <div className="flex justify-end gap-3 mt-8">
             <button onClick={() => { setAddModal(false); resetForm(); }} className="btn-ghost">Abbrechen</button>
-            <button onClick={handleAddProperty} disabled={!newName} className="btn-primary">Speichern</button>
+            <button onClick={handleAddProperty} disabled={!newName || !newAddress.lat} className="btn-primary">Speichern</button>
           </div>
         </div>
       </Modal>
@@ -281,7 +290,13 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
           <h2 className="text-lg font-bold text-[#0F172A] mb-6">Objekt bearbeiten</h2>
           <div className="space-y-4">
             <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Objektname</label><input type="text" value={editName} onChange={e => setEditName(e.target.value)} className="input-field" /></div>
-            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Adresse</label><input type="text" value={editAddress} onChange={e => setEditAddress(e.target.value)} className="input-field" /></div>
+            <div>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Adresse <span className="text-[#EF4444]">*</span></label>
+              <AddressAutocomplete
+                value={editAddress.formatted}
+                onChange={setEditAddress}
+              />
+            </div>
             <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Typ</label>{renderTypePicker(editType, setEditType)}</div>
             <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Reinigungstage</label>{renderDayPicker(editDays, setEditDays)}</div>
             <div className="flex gap-3">
@@ -292,7 +307,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
           </div>
           <div className="flex justify-end gap-3 mt-8">
             <button onClick={() => setEditModal(null)} className="btn-ghost">Abbrechen</button>
-            <button onClick={handleEditProperty} disabled={!editName} className="btn-primary">Speichern</button>
+            <button onClick={handleEditProperty} disabled={!editName || !editAddress.lat} className="btn-primary">Speichern</button>
           </div>
         </div>
       </Modal>
