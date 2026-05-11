@@ -94,7 +94,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
 
     const { data, error } = await supabase.from('employees').insert({
       company_id: company.id, first_name: newFirst, last_name: newLast, phone: newPhone,
-      email: isPremium && loginEnabled ? (newEmail || null) : null,
+      email: loginEnabled ? (newEmail || null) : null,
       status: 'active',
       hourly_wage: isPremium && newWage ? parseFloat(newWage) : null,
     }).select().maybeSingle();
@@ -105,7 +105,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
       await supabase.from('employee_properties').insert(newPropertyIds.map(pid => ({ employee_id: data.id, property_id: pid })));
     }
 
-    if (data && isPremium && loginEnabled && newEmail && newPassword) {
+    if (data && loginEnabled && newEmail && newPassword) {
       try {
         const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-employee-user`;
         const session = (await supabase.auth.getSession()).data.session;
@@ -216,7 +216,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {emp.status === 'sick' ? <span className="badge-danger">Krank</span> : <span className="badge-success">Aktiv</span>}
-            {isPremium && (emp.user_id ? <Shield size={14} className="text-[#3B82F6]" /> : <ShieldOff size={14} className="text-[#CBD5E1]" />)}
+            {emp.user_id ? <Shield size={14} className="text-[#3B82F6]" /> : <ShieldOff size={14} className="text-[#CBD5E1]" />}
             <div className="relative" ref={menuOpen === emp.id ? menuRef : null}>
               <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors">
                 <MoreVertical size={16} className="text-[#94A3B8]" />
@@ -237,7 +237,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
           </div>
         </div>
         {knownProps.length > 0 && <div className="mt-3">{renderPropertyChipsOverflow(knownProps)}</div>}
-        {isPremium && !emp.user_id && knownProps.length > 0 && (
+        {!emp.user_id && knownProps.length > 0 && (
           <p className="text-[11px] text-[#F97316] mt-2 flex items-center gap-1 font-medium"><AlertCircle size={10} /> Kein App-Zugang — kann Einsätze nicht bestätigen</p>
         )}
       </div>
@@ -277,16 +277,10 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
           {emp.status === 'sick' ? <span className="badge-danger">Krank</span> : <span className="badge-success">Aktiv</span>}
         </td>
         <td className="px-5 py-4">
-          {isPremium ? (
-            emp.user_id ? (
-              <span className="badge-info"><Shield size={12} /> Aktiv</span>
-            ) : (
-              <span className="badge-neutral"><ShieldOff size={12} /> Kein Zugang</span>
-            )
+          {emp.user_id ? (
+            <span className="badge-info"><Shield size={12} /> Aktiv</span>
           ) : (
-            <button onClick={() => setUpgradeOpen(true)} className="flex items-center gap-1.5 text-[11px] font-semibold text-[#64748B] hover:text-[#16A34A] transition-colors">
-              <Lock size={11} /> Premium
-            </button>
+            <span className="badge-neutral"><ShieldOff size={12} /> Kein Zugang</span>
           )}
         </td>
         <td className="px-5 py-4">{renderPropertyChipsOverflow(knownProps)}</td>
@@ -407,38 +401,25 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
               {renderPropertyChips(newPropertyIds, setNewPropertyIds)}
             </div>
             <div className="h-px bg-[#F1F5F9] my-1" />
-            {isPremium ? (
-              <div>
-                <label className="flex items-center gap-2.5 cursor-pointer">
-                  <input type="checkbox" checked={loginEnabled} onChange={e => setLoginEnabled(e.target.checked)} className="w-4 h-4 rounded accent-[#22C55E]" />
-                  <span className="text-sm font-medium text-[#0F172A]">Login-Daten (optional)</span>
-                </label>
-                <p className="text-xs text-[#94A3B8] mt-1 ml-6.5">Mitarbeiter kann sich in der App anmelden und muss beim ersten Login ein Passwort setzen.</p>
-                {loginEnabled && (
-                  <div className="space-y-4 mt-4 ml-6.5">
-                    <div>
-                      <label className="block text-sm font-medium text-[#0F172A] mb-1.5">E-Mail</label>
-                      <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="max@beispiel.de" className="input-field" />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Initiales Passwort</label>
-                      <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mind. 6 Zeichen" className="input-field" />
-                    </div>
+            <div>
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input type="checkbox" checked={loginEnabled} onChange={e => setLoginEnabled(e.target.checked)} className="w-4 h-4 rounded accent-[#22C55E]" />
+                <span className="text-sm font-medium text-[#0F172A]">Login-Daten (optional)</span>
+              </label>
+              <p className="text-xs text-[#94A3B8] mt-1 ml-6.5">Mitarbeiter kann sich in der App anmelden und muss beim ersten Login ein Passwort setzen.</p>
+              {loginEnabled && (
+                <div className="space-y-4 mt-4 ml-6.5">
+                  <div>
+                    <label className="block text-sm font-medium text-[#0F172A] mb-1.5">E-Mail</label>
+                    <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="max@beispiel.de" className="input-field" />
                   </div>
-                )}
-              </div>
-            ) : (
-              <button type="button" onClick={() => setUpgradeOpen(true)} className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] transition-colors">
-                <div className="flex items-center gap-2.5">
-                  <Lock size={14} className="text-[#94A3B8]" />
-                  <div className="text-left">
-                    <p className="text-sm font-medium text-[#0F172A]">App-Login für Mitarbeiter</p>
-                    <p className="text-[11px] text-[#94A3B8]">Verfügbar ab Premium-Paket</p>
+                  <div>
+                    <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Initiales Passwort</label>
+                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mind. 6 Zeichen" className="input-field" />
                   </div>
                 </div>
-                <span className="text-[10px] font-semibold text-[#16A34A] bg-[#F0FDF4] border border-[#BBF7D0] px-2 py-0.5 rounded-md">Premium</span>
-              </button>
-            )}
+              )}
+            </div>
           </div>
           <div className="flex justify-end gap-3 mt-8">
             <button onClick={() => { setAddModal(false); setLoginEnabled(false); }} className="btn-ghost">Abbrechen</button>
