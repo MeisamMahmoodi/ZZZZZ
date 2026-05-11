@@ -68,13 +68,6 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
       return;
     }
 
-    const existing = companyAssignments.filter(a => a.property_id === newPropertyId);
-    const duplicateEmpIds = newEmployeeIds.filter(eid => existing.some(a => a.employee_id === eid));
-    if (duplicateEmpIds.length > 0) {
-      addToast('Einige Mitarbeiter sind diesem Objekt bereits zugewiesen', 'error');
-      return;
-    }
-
     setSaving(true);
     const prop = properties.find(p => p.id === newPropertyId);
     const timeFrom = newTimeFrom || prop?.time_from || null;
