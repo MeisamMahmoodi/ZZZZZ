@@ -68,10 +68,27 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
       return;
     }
 
-    setSaving(true);
     const prop = properties.find(p => p.id === newPropertyId);
     const timeFrom = newTimeFrom || null;
     const timeTo = newTimeTo || null;
+
+    const resolvedFrom = timeFrom ?? prop?.time_from ?? null;
+    const resolvedTo = timeTo ?? prop?.time_to ?? null;
+    const duplicate = newEmployeeIds.some(eid =>
+      companyAssignments.some(a =>
+        a.property_id === newPropertyId &&
+        a.employee_id === eid &&
+        a.date === newDate &&
+        (a.time_from ?? a.property?.time_from ?? null) === resolvedFrom &&
+        (a.time_to ?? a.property?.time_to ?? null) === resolvedTo
+      )
+    );
+    if (duplicate) {
+      addToast('Für diesen Mitarbeiter existiert bereits ein Einsatz zu dieser Zeit', 'error');
+      return;
+    }
+
+    setSaving(true);
     const inserts = newEmployeeIds.map(eid => ({
       property_id: newPropertyId,
       employee_id: eid,
@@ -138,8 +155,11 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const groupedAssignments = useMemo(() => {
     const groups: Record<string, { property: Property; assignments: AssignmentWithDetails[] }> = {};
     companyAssignments.forEach(a => {
-      if (!groups[a.property_id]) groups[a.property_id] = { property: a.property, assignments: [] };
-      groups[a.property_id].assignments.push(a);
+      const timeFrom = a.time_from ?? a.property?.time_from ?? '';
+      const timeTo = a.time_to ?? a.property?.time_to ?? '';
+      const key = `${a.property_id}__${timeFrom}__${timeTo}`;
+      if (!groups[key]) groups[key] = { property: a.property, assignments: [] };
+      groups[key].assignments.push(a);
     });
     return Object.values(groups);
   }, [companyAssignments]);
