@@ -180,29 +180,16 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
   };
 
   const handleMarkAsHealthy = async () => {
-    if (sickReports.length === 0 || !employee) return;
+    if (!employee) return;
     try {
-      const activeSickIds = sickReports
-        .filter(sr => {
-          const startDate = new Date(sr.date);
-          const endDate = sr.date_to ? new Date(sr.date_to) : startDate;
-          const today = new Date(todayStr);
-          return startDate <= today && today <= endDate;
-        })
-        .map(sr => sr.id);
-
-      if (activeSickIds.length === 0) return;
-
-      for (const id of activeSickIds) {
-        await supabase.from('sick_reports').delete().eq('id', id);
-      }
+      await supabase.from('sick_reports').delete().eq('employee_id', employee.id);
 
       await supabase
         .from('employees')
         .update({ status: 'active' })
         .eq('id', employee.id);
 
-      setSickReports(sickReports.filter(sr => !activeSickIds.includes(sr.id)));
+      setSickReports([]);
     } catch {
       // Handle error silently
     }
