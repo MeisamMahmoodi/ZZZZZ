@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays, AlertCircle } from 'lucide-react';
+import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays, AlertCircle, AlarmClock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDateLong, formatTime, getTodayDayAbbrev } from '../../lib/utils';
 import type { Employee, Property, Assignment, SickReport, EmployeeProperty } from '../../lib/types';
@@ -89,6 +89,15 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
     if (hour < 12) return 'Guten Morgen';
     if (hour < 18) return 'Guten Tag';
     return 'Guten Abend';
+  };
+
+  const isLateNoCheckIn = (a: AssignmentWithDetails) => {
+    if (a.status !== 'assigned') return false;
+    const timeFrom = a.time_from ?? a.property?.time_from;
+    if (!timeFrom) return false;
+    const [h, m] = timeFrom.split(':').map(Number);
+    const startMs = new Date().setHours(h, m, 0, 0);
+    return Date.now() >= startMs + 5 * 60 * 1000;
   };
 
   const formatSickDate = (sr: SickReport) => {
@@ -340,9 +349,11 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
               const firstAssignment = propAssignments[0];
               const displayTimeFrom = firstAssignment?.time_from ?? prop.time_from;
               const displayTimeTo = firstAssignment?.time_to ?? prop.time_to;
+              const hasLateNoCheckIn = activeAssignments.some(a => isLateNoCheckIn(a));
 
               let statusColor = 'bg-[#CBD5E1]';
               if (hasSick && activeAssignments.length === 0) statusColor = 'bg-[#F87171]';
+              else if (hasLateNoCheckIn) statusColor = 'bg-[#F87171]';
               else if (propAssignments.length > 0 && !hasSick) statusColor = 'bg-[#22C55E]';
               else if (hasSick) statusColor = 'bg-[#FB923C]';
 
@@ -375,20 +386,29 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                     <div className="border-t border-[#F1F5F9] divide-y divide-[#F1F5F9]">
                       {propAssignments.map(a => {
                         const isSick = sickReportsForCompany.some(sr => sr.employee_id === a.employee_id);
+                        const lateNoCheckIn = !isSick && isLateNoCheckIn(a);
                         return (
-                          <div key={a.id} className={`px-5 sm:px-6 py-3.5 flex items-center gap-3 ${isSick ? 'bg-[#FEF2F2]/40' : ''}`}>
+                          <div key={a.id} className={`px-5 sm:px-6 py-3.5 flex items-center gap-3 ${isSick ? 'bg-[#FEF2F2]/40' : lateNoCheckIn ? 'bg-[#FEF2F2]/30' : ''}`}>
                             <Avatar firstName={a.employee?.first_name || ''} lastName={a.employee?.last_name || ''} id={a.employee_id} size="sm" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-[#0F172A]">{a.employee?.first_name} {a.employee?.last_name}</p>
+                              {lateNoCheckIn && (
+                                <p className="text-xs text-[#EF4444] font-medium mt-0.5 flex items-center gap-1">
+                                  <AlarmClock size={11} /> Noch nicht eingecheckt
+                                </p>
+                              )}
                             </div>
                             {isSick && <span className="badge-danger">Krank</span>}
                             {!isSick && (
                               <span className={
+                                lateNoCheckIn ? 'badge-danger' :
                                 a.status === 'checked_in' ? 'badge-success' :
                                 a.status === 'completed' ? 'badge-neutral' :
                                 'badge-info'
                               }>
-                                {a.status === 'checked_in' ? 'Eingecheckt' : a.status === 'completed' ? 'Fertig' : 'Zugewiesen'}
+                                {lateNoCheckIn ? 'Fehlt' :
+                                  a.status === 'checked_in' ? 'Eingecheckt' :
+                                  a.status === 'completed' ? 'Fertig' : 'Zugewiesen'}
                               </span>
                             )}
                             {a.status === 'assigned' && !isSick && (

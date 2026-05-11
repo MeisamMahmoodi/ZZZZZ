@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Clock, LogIn, Mail, LogOut, Heart, Bell, CheckCircle, CalendarDays, Globe, AlertTriangle, LogOut as CheckOutIcon, BellRing, BellOff } from 'lucide-react';
+import { MapPin, Clock, LogIn, Mail, LogOut, Heart, Bell, CheckCircle, CalendarDays, Globe, AlertTriangle, LogOut as CheckOutIcon, BellRing, BellOff, AlarmClock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useLang } from '../../hooks/useLang';
@@ -234,6 +234,15 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
   const unreadCount = notifications.length;
   const isSick = employee.status === 'sick';
 
+  const isLateCheckIn = (() => {
+    if (!todayAssignment || checkedIn || isSick) return false;
+    const timeFrom = todayAssignment.time_from ?? todayAssignment.property?.time_from;
+    if (!timeFrom) return false;
+    const [h, m] = timeFrom.split(':').map(Number);
+    const startMs = new Date().setHours(h, m, 0, 0);
+    return Date.now() >= startMs + 5 * 60 * 1000;
+  })();
+
   return (
     <div className={`min-h-screen bg-surface-50 px-5 sm:px-6 py-6 sm:py-8 max-w-md mx-auto ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
       {/* Header */}
@@ -398,14 +407,30 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
         </div>
       )}
 
+      {/* Late check-in warning banner */}
+      {isLateCheckIn && (
+        <div className="bg-danger-50 border border-danger-200/60 rounded-2xl p-4 mb-5 animate-scale-in">
+          <div className="flex items-start gap-3">
+            <AlarmClock size={20} className="text-danger-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-sm font-bold text-danger-500">{t('assignmentStarted')}</p>
+              <p className="text-sm text-ink-500 mt-0.5">{t('notCheckedIn')}</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Today's Assignment */}
-      <div className="card p-5 sm:p-6 mb-6">
-        <p className="section-label mb-3">{t('todaysAssignment')}</p>
+      <div className={`p-5 sm:p-6 mb-6 rounded-2xl border transition-colors ${isLateCheckIn ? 'bg-danger-50 border-danger-200/60' : 'card'}`}>
+        <p className={`section-label mb-3 ${isLateCheckIn ? 'text-danger-500' : ''}`}>{t('todaysAssignment')}</p>
         {todayAssignment ? (
           <>
             <p className="text-lg font-bold text-ink-900">{todayAssignment.property?.name}</p>
-            <p className="text-sm text-ink-500 mt-2 flex items-center gap-1.5"><MapPin size={14} className="text-ink-300" /> {todayAssignment.property?.address}</p>
-            <p className="text-sm text-ink-500 mt-1 flex items-center gap-1.5"><Clock size={14} className="text-ink-300" /> {formatTime(todayAssignment.time_from ?? todayAssignment.property?.time_from ?? '')} – {formatTime(todayAssignment.time_to ?? todayAssignment.property?.time_to ?? '')} {t('clock')}</p>
+            <p className="text-sm text-ink-500 mt-2 flex items-center gap-1.5"><MapPin size={14} className={isLateCheckIn ? 'text-danger-300' : 'text-ink-300'} /> {todayAssignment.property?.address}</p>
+            <p className={`text-sm mt-1 flex items-center gap-1.5 ${isLateCheckIn ? 'text-danger-500 font-semibold' : 'text-ink-500'}`}>
+              <Clock size={14} className={isLateCheckIn ? 'text-danger-400' : 'text-ink-300'} />
+              {formatTime(todayAssignment.time_from ?? todayAssignment.property?.time_from ?? '')} – {formatTime(todayAssignment.time_to ?? todayAssignment.property?.time_to ?? '')} {t('clock')}
+            </p>
           </>
         ) : (
           <p className="text-sm text-ink-300">{t('noAssignmentToday')}</p>
@@ -414,8 +439,8 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
 
       {/* Check-in Button */}
       {todayAssignment && !checkedIn && !isSick && (
-        <button onClick={() => setShowCheckInFlow(true)} className="w-full py-3.5 rounded-2xl text-base font-semibold bg-brand-500 text-white hover:bg-brand-600 transition-colors flex items-center justify-center gap-2.5 mb-6 shadow-sm">
-          <LogIn size={20} /> {t('checkIn')}
+        <button onClick={() => setShowCheckInFlow(true)} className={`w-full py-3.5 rounded-2xl text-base font-semibold transition-colors flex items-center justify-center gap-2.5 mb-6 shadow-sm ${isLateCheckIn ? 'bg-danger-500 text-white hover:bg-danger-600 animate-pulse' : 'bg-brand-500 text-white hover:bg-brand-600'}`}>
+          <LogIn size={20} /> {isLateCheckIn ? t('checkInNow') : t('checkIn')}
         </button>
       )}
 

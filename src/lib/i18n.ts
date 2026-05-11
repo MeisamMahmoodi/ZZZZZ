@@ -92,6 +92,9 @@ type TranslationKeys = {
   enablingNotifications: string;
   later: string;
   notificationsActive: string;
+  assignmentStarted: string;
+  notCheckedIn: string;
+  checkInNow: string;
 };
 
 const translations: Record<Lang, TranslationKeys> = {
@@ -163,6 +166,9 @@ const translations: Record<Lang, TranslationKeys> = {
     enablingNotifications: 'Wird aktiviert...',
     later: 'Später',
     notificationsActive: 'Benachrichtigungen aktiv — du wirst bei neuen Einsätzen informiert',
+    assignmentStarted: 'Einsatz hat begonnen',
+    notCheckedIn: 'Du hast dich noch nicht eingecheckt',
+    checkInNow: 'Jetzt einchecken',
   },
   ro: {
     goodMorning: 'Buna dimineata',
@@ -232,6 +238,9 @@ const translations: Record<Lang, TranslationKeys> = {
     enablingNotifications: 'Se activeaza...',
     later: 'Mai tarziu',
     notificationsActive: 'Notificari active — vei fi informat despre noile sarcini',
+    assignmentStarted: 'Sarcina a inceput',
+    notCheckedIn: 'Nu ai facut check-in inca',
+    checkInNow: 'Fa check-in acum',
   },
   ar: {
     goodMorning: 'صباح الخير',
@@ -301,6 +310,9 @@ const translations: Record<Lang, TranslationKeys> = {
     enablingNotifications: 'جارٍ التفعيل...',
     later: 'لاحقاً',
     notificationsActive: 'الإشعارات نشطة — ستُبلَّغ بالمهام الجديدة',
+    assignmentStarted: 'بدأت المهمة',
+    notCheckedIn: 'لم تسجل حضورك بعد',
+    checkInNow: 'سجل حضورك الآن',
   },
   pl: {
     goodMorning: 'Dzien dobry',
@@ -370,6 +382,9 @@ const translations: Record<Lang, TranslationKeys> = {
     enablingNotifications: 'Wlaczanie...',
     later: 'Pozniej',
     notificationsActive: 'Powiadomienia aktywne — bedziesz informowany o nowych zadaniach',
+    assignmentStarted: 'Zadanie sie rozpoczelo',
+    notCheckedIn: 'Nie zrobiles jeszcze check-ina',
+    checkInNow: 'Zrob check-in teraz',
   },
   en: {
     goodMorning: 'Good morning',
@@ -439,6 +454,9 @@ const translations: Record<Lang, TranslationKeys> = {
     enablingNotifications: 'Enabling...',
     later: 'Later',
     notificationsActive: 'Notifications active — you will be informed about new assignments',
+    assignmentStarted: 'Assignment has started',
+    notCheckedIn: 'You have not checked in yet',
+    checkInNow: 'Check in now',
   },
 };
 
