@@ -88,6 +88,8 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
 
       if (!emp) { setLoading(false); return; }
 
+      await supabase.from('sick_reports').delete().eq('employee_id', emp.id).eq('date', dateStr);
+
       const { error: sickErr } = await supabase.from('sick_reports').insert({
         employee_id: emp.id,
         date: dateStr,
