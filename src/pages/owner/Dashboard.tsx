@@ -65,13 +65,20 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
         supabase.from('employees').select('*').eq('company_id', company.id),
         supabase.from('properties').select('*').eq('company_id', company.id),
         supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').eq('date', todayStr),
-        supabase.from('sick_reports').select('*, employee:employees(*)').lte('date', todayStr).or(`date_to.is.null,date_to.gte.${todayStr}`),
+        supabase.from('sick_reports').select('*, employee:employees(*)'),
         supabase.from('employee_properties').select('*'),
       ]);
       setEmployees(empRes.data || []);
       setProperties(propRes.data || []);
       setAssignments((assignRes.data as unknown as AssignmentWithDetails[]) || []);
-      setSickReports((sickRes.data as unknown as SickReportWithEmployee[]) || []);
+      const activeSickReports = (sickRes.data as unknown as SickReportWithEmployee[]) || [];
+      const todayDate = new Date(todayStr);
+      const filtered = activeSickReports.filter(sr => {
+        const startDate = new Date(sr.date);
+        const endDate = sr.date_to ? new Date(sr.date_to) : startDate;
+        return startDate <= todayDate && todayDate <= endDate;
+      });
+      setSickReports(filtered);
       setEmployeeProperties(epRes.data || []);
     } catch {
       // Component renders with existing state
