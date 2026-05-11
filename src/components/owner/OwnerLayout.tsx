@@ -69,7 +69,7 @@ export function OwnerLayout({ children, activePage, onNavigate }: OwnerLayoutPro
 
   return (
     <div className="min-h-screen bg-surface-50">
-      <Sidebar active={activePage} onNavigate={onNavigate} ownerName={company.owner_name} />
+      <Sidebar active={activePage} onNavigate={onNavigate} ownerName={company.owner_name} plan={(company.contract as 'Starter' | 'Business' | 'Premium') || 'Starter'} />
       <main className="lg:ml-60 pt-14 lg:pt-0 p-4 sm:p-6 lg:p-8">
         {children({ company, refreshKey, onRefresh, onNavigate })}
       </main>

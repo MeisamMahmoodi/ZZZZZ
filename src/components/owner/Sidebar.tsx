@@ -1,32 +1,53 @@
 import { useState } from 'react';
-import { LayoutDashboard, Users, Building2, Settings, LogOut, Menu, X, CalendarDays, Wallet, Timer, FileText, Shield } from 'lucide-react';
+import { LayoutDashboard, Users, Building2, Settings, LogOut, Menu, X, CalendarDays, Wallet, Timer, FileText, Shield, Lock } from 'lucide-react';
 import { Avatar } from '../shared/Avatar';
 import { useAuth } from '../../hooks/useAuth';
 import { Modal } from '../shared/Modal';
+import { UpgradeModal } from '../shared/UpgradeModal';
+import type { Plan } from '../shared/UpgradeModal';
 
 interface SidebarProps {
   active: string;
   onNavigate: (page: string) => void;
   ownerName: string;
+  plan: Plan;
 }
 
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'employees', label: 'Mitarbeiter', icon: Users },
-  { id: 'properties', label: 'Objekte', icon: Building2 },
-  { id: 'assignments', label: 'Einsätze', icon: CalendarDays },
-  { id: 'payroll', label: 'Abrechnung', icon: Wallet },
-  { id: 'timestamps', label: 'Zeitstempel', icon: Timer },
-  { id: 'settings', label: 'Einstellungen', icon: Settings },
+interface NavItem {
+  id: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  requiredPlan: Plan;
+}
+
+const navItems: NavItem[] = [
+  { id: 'dashboard',   label: 'Dashboard',    icon: LayoutDashboard, requiredPlan: 'Starter'  },
+  { id: 'employees',   label: 'Mitarbeiter',  icon: Users,           requiredPlan: 'Starter'  },
+  { id: 'properties',  label: 'Objekte',      icon: Building2,       requiredPlan: 'Starter'  },
+  { id: 'assignments', label: 'Einsätze',     icon: CalendarDays,    requiredPlan: 'Starter'  },
+  { id: 'payroll',     label: 'Abrechnung',   icon: Wallet,          requiredPlan: 'Business' },
+  { id: 'timestamps',  label: 'Zeitstempel',  icon: Timer,           requiredPlan: 'Business' },
+  { id: 'settings',    label: 'Einstellungen',icon: Settings,        requiredPlan: 'Starter'  },
 ];
 
-export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
+const planOrder: Plan[] = ['Starter', 'Business', 'Premium'];
+
+function planAllows(userPlan: Plan, required: Plan): boolean {
+  return planOrder.indexOf(userPlan) >= planOrder.indexOf(required);
+}
+
+export function Sidebar({ active, onNavigate, ownerName, plan }: SidebarProps) {
   const { signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutConfirm, setLogoutConfirm] = useState(false);
+  const [upgradeModal, setUpgradeModal] = useState<{ featureName: string; requiredPlan: Plan } | null>(null);
 
-  const handleNav = (id: string) => {
-    onNavigate(id);
+  const handleNav = (item: NavItem) => {
+    if (!planAllows(plan, item.requiredPlan)) {
+      setUpgradeModal({ featureName: item.label, requiredPlan: item.requiredPlan });
+      return;
+    }
+    onNavigate(item.id);
     setMobileOpen(false);
   };
 
@@ -53,16 +74,31 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
       <nav className="flex-1 mt-3 px-4">
         {navItems.map(item => {
           const isActive = active === item.id;
+          const locked = !planAllows(plan, item.requiredPlan);
           return (
-            <button key={item.id} onClick={() => handleNav(item.id)}
+            <button
+              key={item.id}
+              onClick={() => handleNav(item)}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 mb-0.5 ${
-                isActive
-                  ? 'bg-white/[0.08] text-white'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
-              }`}>
-              <item.icon size={18} strokeWidth={isActive ? 2 : 1.5} className={isActive ? 'text-brand-400' : ''} />
-              {item.label}
-              {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-400" />}
+                locked
+                  ? 'text-slate-600 hover:bg-white/[0.03] cursor-pointer'
+                  : isActive
+                    ? 'bg-white/[0.08] text-white'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+              }`}
+            >
+              <item.icon
+                size={18}
+                strokeWidth={isActive ? 2 : 1.5}
+                className={locked ? 'text-slate-600' : isActive ? 'text-brand-400' : ''}
+              />
+              <span className={locked ? 'text-slate-600' : ''}>{item.label}</span>
+              {locked && (
+                <span className="ml-auto flex items-center gap-1 text-[10px] font-semibold text-slate-600 bg-white/[0.05] px-1.5 py-0.5 rounded-md">
+                  <Lock size={9} /> {item.requiredPlan}
+                </span>
+              )}
+              {!locked && isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-400" />}
             </button>
           );
         })}
@@ -73,7 +109,7 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
       {/* Legal links */}
       <div className="px-4 pt-3 pb-1 flex gap-1">
         <button
-          onClick={() => handleNav('impressum')}
+          onClick={() => { onNavigate('impressum'); setMobileOpen(false); }}
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
             active === 'impressum' ? 'text-slate-200 bg-white/[0.06]' : 'text-slate-500 hover:text-slate-400 hover:bg-white/[0.04]'
           }`}
@@ -82,7 +118,7 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
           Impressum
         </button>
         <button
-          onClick={() => handleNav('datenschutz')}
+          onClick={() => { onNavigate('datenschutz'); setMobileOpen(false); }}
           className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all duration-200 ${
             active === 'datenschutz' ? 'text-slate-200 bg-white/[0.06]' : 'text-slate-500 hover:text-slate-400 hover:bg-white/[0.04]'
           }`}
@@ -100,7 +136,7 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
           <Avatar firstName={ownerName?.split(' ')[0] || 'O'} lastName={ownerName?.split(' ')[1] || ''} id="owner" size="sm" />
           <div className="flex-1 min-w-0">
             <p className="text-white text-sm font-medium truncate leading-tight">{ownerName || 'Inhaber'}</p>
-            <p className="text-slate-500 text-[11px] font-medium mt-0.5">Inhaber</p>
+            <p className="text-slate-500 text-[11px] font-medium mt-0.5">{plan} Plan</p>
           </div>
           <button onClick={() => setLogoutConfirm(true)} className="p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-white/[0.06] transition-all" title="Abmelden">
             <LogOut size={15} />
@@ -147,6 +183,17 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
           </div>
         </div>
       </Modal>
+
+      {/* Upgrade Modal */}
+      {upgradeModal && (
+        <UpgradeModal
+          open={true}
+          onClose={() => setUpgradeModal(null)}
+          currentPlan={plan}
+          requiredPlan={upgradeModal.requiredPlan}
+          featureName={upgradeModal.featureName}
+        />
+      )}
     </>
   );
 }
