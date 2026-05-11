@@ -1,9 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Plus, Search, MoreVertical, Phone, Pencil, Trash2, Mail, Shield, ShieldOff, AlertCircle, Euro } from 'lucide-react';
+import { Plus, Search, MoreVertical, Phone, Pencil, Trash2, Mail, Shield, ShieldOff, AlertCircle, Euro, Lock } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
+import { UpgradeModal } from '../../components/shared/UpgradeModal';
+import type { Plan } from '../../components/shared/UpgradeModal';
 import type { Employee, Property, EmployeeProperty, Company } from '../../lib/types';
 
 interface EmployeesProps {
@@ -24,8 +26,12 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [loginEnabled, setLoginEnabled] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<Employee | null>(null);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
+
+  const plan = ((company.contract as Plan) || 'Starter') as Plan;
+  const isPremium = plan === 'Premium';
 
   const [newFirst, setNewFirst] = useState('');
   const [newLast, setNewLast] = useState('');
@@ -87,7 +93,10 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
     setCreatingAccount(true);
 
     const { data, error } = await supabase.from('employees').insert({
-      company_id: company.id, first_name: newFirst, last_name: newLast, phone: newPhone, email: loginEnabled ? (newEmail || null) : null, status: 'active', hourly_wage: newWage ? parseFloat(newWage) : null,
+      company_id: company.id, first_name: newFirst, last_name: newLast, phone: newPhone,
+      email: isPremium && loginEnabled ? (newEmail || null) : null,
+      status: 'active',
+      hourly_wage: isPremium && newWage ? parseFloat(newWage) : null,
     }).select().maybeSingle();
 
     if (error) { addToast('Fehler beim Speichern', 'error'); setCreatingAccount(false); return; }
@@ -96,7 +105,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
       await supabase.from('employee_properties').insert(newPropertyIds.map(pid => ({ employee_id: data.id, property_id: pid })));
     }
 
-    if (data && loginEnabled && newEmail && newPassword) {
+    if (data && isPremium && loginEnabled && newEmail && newPassword) {
       try {
         const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-employee-user`;
         const session = (await supabase.auth.getSession()).data.session;
@@ -124,7 +133,9 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
 
   const handleEditEmployee = async () => {
     if (!editModal || !editFirst || !editLast) return;
-    const { error } = await supabase.from('employees').update({ first_name: editFirst, last_name: editLast, phone: editPhone, hourly_wage: editWage ? parseFloat(editWage) : null }).eq('id', editModal.id);
+    const updatePayload: Record<string, unknown> = { first_name: editFirst, last_name: editLast, phone: editPhone };
+    if (isPremium) updatePayload.hourly_wage = editWage ? parseFloat(editWage) : null;
+    const { error } = await supabase.from('employees').update(updatePayload).eq('id', editModal.id);
     if (error) { addToast('Fehler beim Speichern', 'error'); return; }
 
     const currentPropIds = employeeProperties.filter(ep => ep.employee_id === editModal.id).map(ep => ep.property_id);
@@ -201,11 +212,11 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
             <p className="text-sm font-semibold text-[#0F172A]">{emp.first_name} {emp.last_name}</p>
             <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-1"><Phone size={12} className="text-[#94A3B8]" /> {emp.phone}</p>
             {emp.email && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Mail size={12} className="text-[#94A3B8]" /> {emp.email}</p>}
-            {emp.hourly_wage != null && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Euro size={12} className="text-[#94A3B8]" /> {emp.hourly_wage.toFixed(2)} EUR/h</p>}
+            {isPremium && emp.hourly_wage != null && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Euro size={12} className="text-[#94A3B8]" /> {emp.hourly_wage.toFixed(2)} EUR/h</p>}
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {emp.status === 'sick' ? <span className="badge-danger">Krank</span> : <span className="badge-success">Aktiv</span>}
-            {emp.user_id ? <Shield size={14} className="text-[#3B82F6]" /> : <ShieldOff size={14} className="text-[#CBD5E1]" />}
+            {isPremium && (emp.user_id ? <Shield size={14} className="text-[#3B82F6]" /> : <ShieldOff size={14} className="text-[#CBD5E1]" />)}
             <div className="relative" ref={menuOpen === emp.id ? menuRef : null}>
               <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors">
                 <MoreVertical size={16} className="text-[#94A3B8]" />
@@ -226,7 +237,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
           </div>
         </div>
         {knownProps.length > 0 && <div className="mt-3">{renderPropertyChipsOverflow(knownProps)}</div>}
-        {!emp.user_id && knownProps.length > 0 && (
+        {isPremium && !emp.user_id && knownProps.length > 0 && (
           <p className="text-[11px] text-[#F97316] mt-2 flex items-center gap-1 font-medium"><AlertCircle size={10} /> Kein App-Zugang — kann Einsätze nicht bestätigen</p>
         )}
       </div>
@@ -250,20 +261,32 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
           </div>
         </td>
         <td className="px-5 py-4">
-          {emp.hourly_wage != null ? (
-            <span className="text-sm font-medium text-[#0F172A]">{emp.hourly_wage.toFixed(2)} EUR</span>
+          {isPremium ? (
+            emp.hourly_wage != null ? (
+              <span className="text-sm font-medium text-[#0F172A]">{emp.hourly_wage.toFixed(2)} EUR</span>
+            ) : (
+              <span className="text-xs text-[#94A3B8]">—</span>
+            )
           ) : (
-            <span className="text-xs text-[#94A3B8]">—</span>
+            <button onClick={() => setUpgradeOpen(true)} className="flex items-center gap-1.5 text-[11px] font-semibold text-[#64748B] hover:text-[#16A34A] transition-colors">
+              <Lock size={11} /> Premium
+            </button>
           )}
         </td>
         <td className="px-5 py-4">
           {emp.status === 'sick' ? <span className="badge-danger">Krank</span> : <span className="badge-success">Aktiv</span>}
         </td>
         <td className="px-5 py-4">
-          {emp.user_id ? (
-            <span className="badge-info"><Shield size={12} /> Aktiv</span>
+          {isPremium ? (
+            emp.user_id ? (
+              <span className="badge-info"><Shield size={12} /> Aktiv</span>
+            ) : (
+              <span className="badge-neutral"><ShieldOff size={12} /> Kein Zugang</span>
+            )
           ) : (
-            <span className="badge-neutral"><ShieldOff size={12} /> Kein Zugang</span>
+            <button onClick={() => setUpgradeOpen(true)} className="flex items-center gap-1.5 text-[11px] font-semibold text-[#64748B] hover:text-[#16A34A] transition-colors">
+              <Lock size={11} /> Premium
+            </button>
           )}
         </td>
         <td className="px-5 py-4">{renderPropertyChipsOverflow(knownProps)}</td>
@@ -363,33 +386,59 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
               <input type="text" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+49 171..." className="input-field" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Stundenlohn (EUR)</label>
-              <input type="number" step="0.01" min="0" value={newWage} onChange={e => setNewWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-[#0F172A]">Stundenlohn (EUR)</label>
+                {!isPremium && (
+                  <button type="button" onClick={() => setUpgradeOpen(true)} className="flex items-center gap-1 text-[10px] font-semibold text-[#16A34A] bg-[#F0FDF4] border border-[#BBF7D0] px-2 py-0.5 rounded-md hover:bg-[#DCFCE7] transition-colors">
+                    <Lock size={9} /> Premium
+                  </button>
+                )}
+              </div>
+              {isPremium ? (
+                <input type="number" step="0.01" min="0" value={newWage} onChange={e => setNewWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
+              ) : (
+                <button type="button" onClick={() => setUpgradeOpen(true)} className="w-full text-left input-field bg-[#F8FAFC] text-[#94A3B8] cursor-pointer flex items-center gap-2 hover:bg-[#F1F5F9]">
+                  <Lock size={13} /> Individuelle Stundensätze (ab Premium)
+                </button>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Bekannte Objekte</label>
               {renderPropertyChips(newPropertyIds, setNewPropertyIds)}
             </div>
             <div className="h-px bg-[#F1F5F9] my-1" />
-            <div>
-              <label className="flex items-center gap-2.5 cursor-pointer">
-                <input type="checkbox" checked={loginEnabled} onChange={e => setLoginEnabled(e.target.checked)} className="w-4 h-4 rounded accent-[#22C55E]" />
-                <span className="text-sm font-medium text-[#0F172A]">Login-Daten (optional)</span>
-              </label>
-              <p className="text-xs text-[#94A3B8] mt-1 ml-6.5">Mitarbeiter kann sich in der App anmelden und muss beim ersten Login ein Passwort setzen.</p>
-              {loginEnabled && (
-                <div className="space-y-4 mt-4 ml-6.5">
-                  <div>
-                    <label className="block text-sm font-medium text-[#0F172A] mb-1.5">E-Mail</label>
-                    <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="max@beispiel.de" className="input-field" />
+            {isPremium ? (
+              <div>
+                <label className="flex items-center gap-2.5 cursor-pointer">
+                  <input type="checkbox" checked={loginEnabled} onChange={e => setLoginEnabled(e.target.checked)} className="w-4 h-4 rounded accent-[#22C55E]" />
+                  <span className="text-sm font-medium text-[#0F172A]">Login-Daten (optional)</span>
+                </label>
+                <p className="text-xs text-[#94A3B8] mt-1 ml-6.5">Mitarbeiter kann sich in der App anmelden und muss beim ersten Login ein Passwort setzen.</p>
+                {loginEnabled && (
+                  <div className="space-y-4 mt-4 ml-6.5">
+                    <div>
+                      <label className="block text-sm font-medium text-[#0F172A] mb-1.5">E-Mail</label>
+                      <input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="max@beispiel.de" className="input-field" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Initiales Passwort</label>
+                      <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mind. 6 Zeichen" className="input-field" />
+                    </div>
                   </div>
-                  <div>
-                    <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Initiales Passwort</label>
-                    <input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="Mind. 6 Zeichen" className="input-field" />
+                )}
+              </div>
+            ) : (
+              <button type="button" onClick={() => setUpgradeOpen(true)} className="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-[#F8FAFC] hover:bg-[#F1F5F9] border border-[#E2E8F0] transition-colors">
+                <div className="flex items-center gap-2.5">
+                  <Lock size={14} className="text-[#94A3B8]" />
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-[#0F172A]">App-Login für Mitarbeiter</p>
+                    <p className="text-[11px] text-[#94A3B8]">Verfügbar ab Premium-Paket</p>
                   </div>
                 </div>
-              )}
-            </div>
+                <span className="text-[10px] font-semibold text-[#16A34A] bg-[#F0FDF4] border border-[#BBF7D0] px-2 py-0.5 rounded-md">Premium</span>
+              </button>
+            )}
           </div>
           <div className="flex justify-end gap-3 mt-8">
             <button onClick={() => { setAddModal(false); setLoginEnabled(false); }} className="btn-ghost">Abbrechen</button>
@@ -420,8 +469,21 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
               <input type="text" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="+49 171..." className="input-field" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Stundenlohn (EUR)</label>
-              <input type="number" step="0.01" min="0" value={editWage} onChange={e => setEditWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
+              <div className="flex items-center justify-between mb-1.5">
+                <label className="block text-sm font-medium text-[#0F172A]">Stundenlohn (EUR)</label>
+                {!isPremium && (
+                  <button type="button" onClick={() => setUpgradeOpen(true)} className="flex items-center gap-1 text-[10px] font-semibold text-[#16A34A] bg-[#F0FDF4] border border-[#BBF7D0] px-2 py-0.5 rounded-md hover:bg-[#DCFCE7] transition-colors">
+                    <Lock size={9} /> Premium
+                  </button>
+                )}
+              </div>
+              {isPremium ? (
+                <input type="number" step="0.01" min="0" value={editWage} onChange={e => setEditWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
+              ) : (
+                <button type="button" onClick={() => setUpgradeOpen(true)} className="w-full text-left input-field bg-[#F8FAFC] text-[#94A3B8] cursor-pointer flex items-center gap-2 hover:bg-[#F1F5F9]">
+                  <Lock size={13} /> Individuelle Stundensätze (ab Premium)
+                </button>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Bekannte Objekte</label>
@@ -439,6 +501,17 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
           </div>
         </div>
       </Modal>
+
+      {/* Upgrade Modal */}
+      {upgradeOpen && (
+        <UpgradeModal
+          open={upgradeOpen}
+          onClose={() => setUpgradeOpen(false)}
+          currentPlan={plan}
+          requiredPlan="Premium"
+          featureName="Erweiterte Mitarbeiterprofile"
+        />
+      )}
 
       {/* Delete Confirmation */}
       <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} width="max-w-sm">

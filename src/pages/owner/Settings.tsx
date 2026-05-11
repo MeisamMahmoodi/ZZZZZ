@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Lock, Eye, EyeOff, Package, Check, Zap, Star, Crown } from 'lucide-react';
+import { Lock, Eye, EyeOff, Package, Check, Zap, Star, Crown, ArrowUp } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../components/shared/Toast';
+import { UpgradeModal } from '../../components/shared/UpgradeModal';
+import type { Plan } from '../../components/shared/UpgradeModal';
 import type { Company } from '../../lib/types';
 
 interface SettingsProps {
@@ -19,6 +21,7 @@ export function Settings({ company, onRefresh }: SettingsProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
 
   const { addToast } = useToast();
 
@@ -61,7 +64,8 @@ export function Settings({ company, onRefresh }: SettingsProps) {
     }
   };
 
-  const plan = (company.contract || 'Starter') as 'Starter' | 'Business' | 'Premium';
+  const plan = ((company.contract as Plan) || 'Starter') as Plan;
+  const isPremium = plan === 'Premium';
 
   const planConfig = {
     Starter: {
@@ -125,6 +129,15 @@ export function Settings({ company, onRefresh }: SettingsProps) {
               </div>
             ))}
           </div>
+
+          {!isPremium && (
+            <button
+              onClick={() => setUpgradeOpen(true)}
+              className="w-full mt-5 py-3 rounded-xl bg-ink-900 text-white text-sm font-semibold hover:bg-ink-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
+            >
+              <ArrowUp size={15} /> Jetzt upgraden
+            </button>
+          )}
         </div>
 
         {/* Company Settings */}
@@ -211,6 +224,16 @@ export function Settings({ company, onRefresh }: SettingsProps) {
           </button>
         </div>
       </div>
+
+      {upgradeOpen && (
+        <UpgradeModal
+          open={upgradeOpen}
+          onClose={() => setUpgradeOpen(false)}
+          currentPlan={plan}
+          requiredPlan={plan === 'Starter' ? 'Business' : 'Premium'}
+          featureName="Upgrade"
+        />
+      )}
     </div>
   );
 }
