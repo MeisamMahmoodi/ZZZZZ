@@ -115,6 +115,21 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
     return `${from} – ${to}`;
   };
 
+  const groupedPropertyAssignments = useMemo(() => {
+    const groups: Record<string, { property: Property; timeFrom: string; timeTo: string; assignments: AssignmentWithDetails[] }> = {};
+    todayAssignments.forEach(a => {
+      if (a.status === 'cancelled') return;
+      const timeFrom = a.time_from ?? a.property?.time_from ?? '';
+      const timeTo = a.time_to ?? a.property?.time_to ?? '';
+      const key = `${a.property_id}__${timeFrom}__${timeTo}`;
+      if (!groups[key]) {
+        groups[key] = { property: a.property!, timeFrom, timeTo, assignments: [] };
+      }
+      groups[key].assignments.push(a);
+    });
+    return Object.values(groups);
+  }, [todayAssignments]);
+
   const getPropertyAssignments = (propertyId: string) =>
     todayAssignments.filter(a => a.property_id === propertyId && a.status !== 'cancelled');
 
@@ -353,14 +368,11 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
           </div>
         ) : (
           <div className="space-y-4">
-            {propertiesWithAssignments.map(prop => {
-              const propAssignments = getPropertyAssignments(prop.id);
-              const hasSick = hasSickEmployeeForProperty(prop.id);
+            {groupedPropertyAssignments.map((group) => {
+              const propAssignments = group.assignments;
+              const hasSick = sickReportsForCompany.some(sr => propAssignments.some(a => a.employee_id === sr.employee_id));
               const sickForProp = sickReportsForCompany.filter(sr => propAssignments.some(a => a.employee_id === sr.employee_id));
               const activeAssignments = propAssignments.filter(a => !sickReportsForCompany.some(sr => sr.employee_id === a.employee_id));
-              const firstAssignment = propAssignments[0];
-              const displayTimeFrom = firstAssignment?.time_from ?? prop.time_from;
-              const displayTimeTo = firstAssignment?.time_to ?? prop.time_to;
               const hasLateNoCheckIn = activeAssignments.some(a => isLateNoCheckIn(a));
 
               let statusColor = 'bg-[#CBD5E1]';
@@ -370,13 +382,13 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
               else if (hasSick) statusColor = 'bg-[#FB923C]';
 
               return (
-                <div key={prop.id} className="card overflow-hidden">
+                <div key={`${group.property.id}_${group.timeFrom}_${group.timeTo}`} className="card overflow-hidden">
                   <div className="p-5 sm:p-6 flex items-start gap-4">
                     <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${statusColor}`} />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-[#0F172A]">{prop.name}</p>
-                      <p className="text-xs text-[#64748B] mt-1 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {prop.address}</p>
-                      <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(displayTimeFrom)} – {formatTime(displayTimeTo)} Uhr</p>
+                      <p className="text-sm font-semibold text-[#0F172A]">{group.property.name}</p>
+                      <p className="text-xs text-[#64748B] mt-1 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {group.property.address}</p>
+                      <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(group.timeFrom)} – {formatTime(group.timeTo)} Uhr</p>
                       <div className="mt-3 flex items-center gap-1.5 flex-wrap">
                         {activeAssignments.map(a => (
                           <span key={a.id} className="chip"><User size={11} /> {a.employee?.first_name} {a.employee?.last_name?.charAt(0)}.</span>
