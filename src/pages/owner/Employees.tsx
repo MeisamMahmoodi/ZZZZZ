@@ -158,6 +158,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const handleMarkActive = async (emp: Employee) => {
     const { error } = await supabase.from('employees').update({ status: 'active' }).eq('id', emp.id);
     if (error) { addToast('Fehler', 'error'); return; }
+    await supabase.from('sick_reports').update({ date_to: todayStr }).eq('employee_id', emp.id).is('date_to', null);
     setMenuOpen(null); onRefresh(); addToast(`${emp.first_name} ${emp.last_name} als gesund markiert`);
   };
 
