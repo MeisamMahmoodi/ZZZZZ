@@ -69,6 +69,7 @@ export interface SickReport {
   id: string;
   employee_id: string;
   date: string;
+  date_to: string | null;
   reason: string;
   created_at: string;
 }

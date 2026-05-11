@@ -4,7 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useLang } from '../../hooks/useLang';
 import { formatDateLong, formatTime } from '../../lib/utils';
-import { langNames, langFlags, type Lang } from '../../lib/i18n';
+import { langNames, langFlags, langLocale, type Lang } from '../../lib/i18n';
 import { CheckInFlow } from '../../components/employee/CheckInFlow';
 import { CheckOutFlow } from '../../components/employee/CheckOutFlow';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
@@ -204,9 +204,23 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
     return t('goodEvening');
   };
 
+  const locale = langLocale[lang];
+
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00');
-    return d.toLocaleDateString('de-DE', { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+    return d.toLocaleDateString(locale, { weekday: 'short', day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  const formatDateShort = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString(locale, { day: 'numeric', month: 'long' });
+  };
+
+  const formatSickLabel = (sr: SickReport) => {
+    if (sr.date_to) {
+      return `${t('sickReportedFrom')} ${formatDateShort(sr.date)} ${t('sickUntil')} ${formatDateShort(sr.date_to)}`;
+    }
+    return `${t('sickReportedFor')} ${formatDateShort(sr.date)}`;
   };
 
   if (!employee) {
@@ -286,9 +300,9 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
               <BellRing size={18} className="text-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-[#1E3A5F]">Benachrichtigungen erlauben</p>
+              <p className="text-sm font-bold text-[#1E3A5F]">{t('allowNotifications')}</p>
               <p className="text-xs text-[#3B82F6] mt-0.5 leading-relaxed">
-                Erhalte sofort Bescheid wenn du einen neuen Einsatz bekommst.
+                {t('allowNotificationsDesc')}
               </p>
             </div>
             <button onClick={() => setShowPushPrompt(false)} className="text-[#94A3B8] hover:text-[#64748B] shrink-0 mt-0.5">
@@ -304,13 +318,13 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
               disabled={pushLoading}
               className="flex-1 py-2.5 rounded-xl text-xs font-bold bg-[#3B82F6] text-white hover:bg-[#2563EB] transition-colors disabled:opacity-60"
             >
-              {pushLoading ? 'Wird aktiviert...' : 'Ja, aktivieren'}
+              {pushLoading ? t('enablingNotifications') : t('enableNotifications')}
             </button>
             <button
               onClick={() => setShowPushPrompt(false)}
               className="flex-1 py-2.5 rounded-xl text-xs font-semibold bg-white border border-[#BFDBFE] text-[#3B82F6] hover:bg-[#EFF6FF] transition-colors"
             >
-              Später
+              {t('later')}
             </button>
           </div>
         </div>
@@ -320,7 +334,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
       {subscribed && permission === 'granted' && (
         <div className="mb-5 rounded-2xl border border-[#BBF7D0] bg-[#F0FDF4] px-4 py-3 flex items-center gap-2.5">
           <BellRing size={15} className="text-[#22C55E] shrink-0" />
-          <p className="text-xs font-semibold text-[#15803D]">Benachrichtigungen aktiv — du wirst bei neuen Einsätzen informiert</p>
+          <p className="text-xs font-semibold text-[#15803D]">{t('notificationsActive')}</p>
         </div>
       )}
 
@@ -331,9 +345,11 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
             <AlertTriangle size={22} className="text-danger-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-base font-bold text-danger-500">{t('youAreSick')}</p>
-              <p className="text-sm text-ink-500 mt-1">
-                {t('sickSince')}: {sickReports.map(sr => new Date(sr.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })).join(', ')}
-              </p>
+              <div className="mt-1 space-y-0.5">
+                {sickReports.map(sr => (
+                  <p key={sr.id} className="text-sm text-ink-500">{formatSickLabel(sr)}</p>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -407,10 +423,10 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
       {checkedIn && todayAssignment && (
         <div className="mb-6 space-y-3">
           <div className="w-full py-3 rounded-2xl text-sm font-semibold bg-brand-50 text-brand-600 text-center border border-brand-200/50">
-            Eingecheckt {checkedInAt ? `um ${new Date(checkedInAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr` : ''}
+            {t('checkedIn')} {checkedInAt ? `${t('at')} ${new Date(checkedInAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} ${t('clock')}` : ''}
           </div>
           <button onClick={() => setShowCheckOutFlow(true)} className="w-full py-3.5 rounded-2xl text-base font-semibold bg-[#F97316] text-white hover:bg-[#EA580C] transition-colors flex items-center justify-center gap-2.5 shadow-sm">
-            <CheckOutIcon size={20} /> Auschecken
+            <CheckOutIcon size={20} /> {t('checkOut')}
           </button>
         </div>
       )}

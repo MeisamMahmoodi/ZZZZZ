@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, Plus, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useLang } from '../../hooks/useLang';
+import { langLocale } from '../../lib/i18n';
 
 interface SickLeaveProps {
   onBack: () => void;
@@ -11,9 +12,12 @@ interface SickLeaveProps {
 
 export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
   const { user } = useAuth();
-  const { t, rtl } = useLang();
+  const { lang, t, rtl } = useLang();
+  const locale = langLocale[lang];
   const [day, setDay] = useState<'today' | 'tomorrow' | 'custom'>('today');
   const [customDate, setCustomDate] = useState('');
+  const [hasEndDate, setHasEndDate] = useState(false);
+  const [endDate, setEndDate] = useState('');
   const [reason, setReason] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -32,6 +36,17 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
   };
 
   const dateStr = getSelectedDate().toISOString().split('T')[0];
+  const minEndDate = (() => {
+    const d = new Date(dateStr + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split('T')[0];
+  })();
+
+  useEffect(() => {
+    if (hasEndDate && endDate && endDate < minEndDate) {
+      setEndDate(minEndDate);
+    }
+  }, [dateStr]);
 
   useEffect(() => {
     if (!user) return;
@@ -76,6 +91,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
       const { error: sickErr } = await supabase.from('sick_reports').insert({
         employee_id: emp.id,
         date: dateStr,
+        date_to: hasEndDate && endDate ? endDate : null,
         reason,
       });
 
@@ -93,6 +109,11 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
     }
   };
 
+  const formatDateDisplay = (dateIso: string) => {
+    const d = new Date(dateIso + 'T00:00:00');
+    return d.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'long' });
+  };
+
   if (submitted) {
     return (
       <div className={`min-h-screen bg-surface-50 flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
@@ -104,10 +125,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
           <p className="text-ink-500 text-sm mb-8 whitespace-pre-line leading-relaxed">
             {t('bossInformedGetWell')}
           </p>
-          <button
-            onClick={onComplete}
-            className="btn-primary px-6"
-          >
+          <button onClick={onComplete} className="btn-primary px-6">
             {t('backToOverview')}
           </button>
         </div>
@@ -126,7 +144,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
 
       <h1 className="text-2xl font-bold text-ink-900 mb-8 tracking-tight">{t('sickReport')}</h1>
 
-      <div className="space-y-3 mb-8">
+      <div className="space-y-3 mb-6">
         <label className={`flex items-center gap-3.5 p-4 rounded-2xl border cursor-pointer transition-all duration-200 ${day === 'today' ? 'border-brand-500 bg-brand-50/50' : 'border-surface-200 hover:bg-surface-50'}`}>
           <input
             type="radio"
@@ -138,7 +156,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
           <div>
             <p className="text-sm font-semibold text-ink-900">{t('today')}</p>
             <p className="text-xs text-ink-300 mt-0.5">
-              {today.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' })}
+              {today.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'long' })}
             </p>
           </div>
         </label>
@@ -154,7 +172,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
           <div>
             <p className="text-sm font-semibold text-ink-900">{t('tomorrow')}</p>
             <p className="text-xs text-ink-300 mt-0.5">
-              {tomorrow.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long' })}
+              {tomorrow.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'long' })}
             </p>
           </div>
         </label>
@@ -185,6 +203,44 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
         )}
       </div>
 
+      {/* Multi-day end date */}
+      <div className="mb-8">
+        {!hasEndDate ? (
+          <button
+            type="button"
+            onClick={() => { setHasEndDate(true); setEndDate(minEndDate); }}
+            className="flex items-center gap-2 text-sm text-brand-600 font-semibold hover:text-brand-700 transition-colors py-2"
+          >
+            <Plus size={16} /> {t('addEndDate')}
+          </button>
+        ) : (
+          <div className="bg-surface-50 border border-surface-200 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-ink-900">{t('endDate')}</p>
+              <button
+                type="button"
+                onClick={() => { setHasEndDate(false); setEndDate(''); }}
+                className="p-1 rounded-lg hover:bg-surface-200 transition-colors text-ink-300 hover:text-ink-700"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <input
+              type="date"
+              value={endDate}
+              onChange={e => setEndDate(e.target.value)}
+              min={minEndDate}
+              className="input-field"
+            />
+            {endDate && (
+              <p className="text-xs text-ink-400 mt-2">
+                {t('sickReportedFrom')} {formatDateDisplay(dateStr)} {t('sickUntil')} {formatDateDisplay(endDate)}
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="mb-8">
         <label className="block text-sm font-medium text-ink-900 mb-1.5">{t('reasonOptional')}</label>
         <textarea
@@ -195,7 +251,6 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
         />
       </div>
 
-      {/* Confirmation dialog when employee has assignment */}
       {showConfirm && hasAssignment && (
         <div className="bg-danger-50 border border-danger-200/60 rounded-2xl p-5 mb-5 animate-scale-in">
           <div className="flex items-start gap-3.5">

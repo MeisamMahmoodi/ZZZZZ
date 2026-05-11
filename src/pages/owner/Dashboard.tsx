@@ -57,7 +57,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
         supabase.from('employees').select('*').eq('company_id', company.id),
         supabase.from('properties').select('*').eq('company_id', company.id),
         supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').eq('date', todayStr),
-        supabase.from('sick_reports').select('*, employee:employees(*)').eq('date', todayStr),
+        supabase.from('sick_reports').select('*, employee:employees(*)').lte('date', todayStr).or(`date_to.is.null,date_to.gte.${todayStr}`),
         supabase.from('employee_properties').select('*'),
       ]);
       setEmployees(empRes.data || []);
@@ -89,6 +89,13 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
     if (hour < 12) return 'Guten Morgen';
     if (hour < 18) return 'Guten Tag';
     return 'Guten Abend';
+  };
+
+  const formatSickDate = (sr: SickReport) => {
+    const from = new Date(sr.date + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    if (!sr.date_to) return from;
+    const to = new Date(sr.date_to + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return `${from} – ${to}`;
   };
 
   const getPropertyAssignments = (propertyId: string) =>
@@ -192,7 +199,12 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                       <AlertTriangle size={15} className="text-[#F87171] shrink-0 mt-0.5" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-[#0F172A]">{sr.employee?.first_name} {sr.employee?.last_name} ist krank</p>
-                        <p className="text-xs text-[#94A3B8] mt-0.5">{new Date(sr.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}{sr.reason ? ` — ${sr.reason}` : ''}</p>
+                        <p className="text-xs text-[#94A3B8] mt-0.5">
+                          {sr.date_to
+                            ? `${new Date(sr.date + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })} – ${new Date(sr.date_to + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}`
+                            : new Date(sr.date + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                          }{sr.reason ? ` — ${sr.reason}` : ''}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -219,7 +231,8 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                   <div className="flex-1 min-w-0">
                     <p className="text-lg font-bold text-[#0F172A]">{sr.employee?.first_name} {sr.employee?.last_name}</p>
                     <span className="badge-danger mt-1.5">Krankgemeldet</span>
-                    {sr.reason && <p className="text-sm text-[#64748B] mt-2">Grund: {sr.reason}</p>}
+                    <p className="text-xs text-[#94A3B8] mt-1.5">{formatSickDate(sr)}</p>
+                    {sr.reason && <p className="text-sm text-[#64748B] mt-1">Grund: {sr.reason}</p>}
                     {empAssignments.map(a => (
                       <div key={a.id} className="mt-3 bg-white/70 rounded-xl p-3">
                         <p className="text-sm font-semibold text-[#0F172A] flex items-center gap-1.5"><MapPin size={14} className="text-[#94A3B8]" /> {a.property?.name}</p>
@@ -260,8 +273,9 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                   <div className="flex-1 min-w-0">
                     <p className="text-base font-bold text-[#0F172A]">{sr.employee?.first_name} {sr.employee?.last_name}</p>
                     <span className="badge-warning mt-1.5">Krankgemeldet</span>
-                    {sr.reason && <p className="text-sm text-[#64748B] mt-1.5">Grund: {sr.reason}</p>}
-                    <p className="text-xs text-[#94A3B8] mt-2">Kein Einsatz heute</p>
+                    <p className="text-xs text-[#94A3B8] mt-1.5">{formatSickDate(sr)}</p>
+                    {sr.reason && <p className="text-sm text-[#64748B] mt-1">Grund: {sr.reason}</p>}
+                    <p className="text-xs text-[#94A3B8] mt-1">Kein Einsatz heute</p>
                   </div>
                 </div>
               </div>
