@@ -50,7 +50,10 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
 
   useEffect(() => {
     if (!menuOpen) return;
-    function handleClickOutside() { setMenuOpen(null); }
+    function handleClickOutside(e: MouseEvent) {
+      const target = e.target as Element;
+      if (!target.closest('[data-menu]')) setMenuOpen(null);
+    }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [menuOpen]);
@@ -215,7 +218,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
           <div className="flex items-center gap-2 shrink-0">
             {emp.status === 'sick' ? <span className="badge-danger">Krank</span> : <span className="badge-success">Aktiv</span>}
             {emp.user_id ? <Shield size={14} className="text-[#3B82F6]" /> : <ShieldOff size={14} className="text-[#CBD5E1]" />}
-            <div className="relative">
+            <div className="relative" data-menu>
               <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors">
                 <MoreVertical size={16} className="text-[#94A3B8]" />
               </button>
@@ -283,7 +286,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
         </td>
         <td className="px-5 py-4">{renderPropertyChipsOverflow(knownProps)}</td>
         <td className="px-5 py-4">
-          <div className="relative">
+          <div className="relative" data-menu>
             <button onClick={() => setMenuOpen(menuOpen === emp.id ? null : emp.id)} className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors">
               <MoreVertical size={16} className="text-[#94A3B8]" />
             </button>
