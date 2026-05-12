@@ -206,7 +206,7 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
           const completedAssignments = assignments.filter(a => a.status === 'completed' || a.status === 'checked_in');
 
           return (
-            <div key={employee.id} className="card overflow-hidden">
+            <div key={employee.id} className="card">
               <button onClick={() => setExpandedEmployee(isExpanded ? null : employee.id)}
                 className="w-full text-left px-5 sm:px-6 py-4 flex items-center gap-4 hover:bg-[#F8FAFC]/50 transition-colors">
                 <Avatar firstName={employee.first_name} lastName={employee.last_name} id={employee.id} size="md" />

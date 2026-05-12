@@ -226,7 +226,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
             const displayFrom = firstA?.time_from ?? property.time_from;
             const displayTo = firstA?.time_to ?? property.time_to;
             return (
-            <div key={property.id} className="card overflow-hidden">
+            <div key={property.id} className="card">
               <div className="px-5 sm:px-6 py-4 border-b border-[#F1F5F9] bg-[#F8FAFC]">
                 <p className="text-sm font-semibold text-[#0F172A]">{property.name}</p>
                 <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {property.address}</p>

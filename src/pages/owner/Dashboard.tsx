@@ -399,7 +399,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
               else if (hasSick) statusColor = 'bg-[#FB923C]';
 
               return (
-                <div key={`${group.property.id}_${group.timeFrom}_${group.timeTo}`} className="card overflow-hidden">
+                <div key={`${group.property.id}_${group.timeFrom}_${group.timeTo}`} className="card">
                   <div className="p-5 sm:p-6 flex items-start gap-4">
                     <div className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${statusColor}`} />
                     <div className="flex-1 min-w-0">

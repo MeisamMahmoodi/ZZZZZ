@@ -354,7 +354,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
         {filteredEmployees.length === 0 && <div className="card p-10 text-center"><p className="text-sm text-[#94A3B8]">Keine Mitarbeiter gefunden</p></div>}
       </div>
 
-      <div className="hidden lg:block card overflow-hidden">
+      <div className="hidden lg:block card">
         <table className="w-full">
           <thead>
             <tr className="border-b border-[#F1F5F9]">
