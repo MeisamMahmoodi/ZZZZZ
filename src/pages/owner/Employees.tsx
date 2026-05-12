@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, MoreVertical, Phone, Pencil, Trash2, Mail, Shield, ShieldOff, AlertCircle, Euro, Lock } from 'lucide-react';
+import { Plus, Search, MoreVertical, Phone, Pencil, Trash2, Mail, Shield, ShieldOff, AlertCircle, Euro, Lock, Users, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
@@ -27,10 +27,16 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const [loginEnabled, setLoginEnabled] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<Employee | null>(null);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [limitReachedOpen, setLimitReachedOpen] = useState(false);
   const { addToast } = useToast();
 
   const plan = ((company.contract as Plan) || 'Starter') as Plan;
   const isPremium = plan === 'Premium';
+
+  const employeeLimits: Record<Plan, number> = { 'Starter': 10, 'Business': 30, 'Premium': 99 };
+  const currentLimit = employeeLimits[plan];
+  const nextPlan: Record<Plan, Plan> = { 'Starter': 'Business', 'Business': 'Premium', 'Premium': 'Premium' };
+  const nextPlanName = nextPlan[plan];
 
   const [newFirst, setNewFirst] = useState('');
   const [newLast, setNewLast] = useState('');
@@ -324,8 +330,17 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Mitarbeiter</h1>
-        <button onClick={() => setAddModal(true)} className="btn-primary flex items-center justify-center gap-2">
+        <div>
+          <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Mitarbeiter</h1>
+          <p className="text-xs text-[#94A3B8] mt-1">
+            <Users size={12} className="inline mr-1" />
+            {employees.length} / {currentLimit}
+          </p>
+        </div>
+        <button
+          onClick={() => employees.length >= currentLimit ? setLimitReachedOpen(true) : setAddModal(true)}
+          className="btn-primary flex items-center justify-center gap-2"
+        >
           <Plus size={16} /> Mitarbeiter hinzufügen
         </button>
       </div>
@@ -507,6 +522,35 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
           featureName="Erweiterte Mitarbeiterprofile"
         />
       )}
+
+      {/* Limit Reached Modal */}
+      <Modal open={limitReachedOpen} onClose={() => setLimitReachedOpen(false)} width="max-w-sm">
+        <div className="p-8">
+          <div className="w-12 h-12 rounded-2xl bg-[#FFF7ED] flex items-center justify-center mb-5">
+            <Users size={22} className="text-[#F97316]" />
+          </div>
+          <h2 className="text-lg font-bold text-[#0F172A] mb-2">Limit erreicht!</h2>
+          <p className="text-sm text-[#64748B] leading-relaxed mb-6">
+            Du verwaltest aktuell <span className="font-semibold text-[#0F172A]">{employees.length} Mitarbeiter</span>. Um weitere Teammitglieder hinzuzufügen, erweitere dein Paket auf <span className="font-semibold text-[#0F172A]">{nextPlanName}</span>.
+          </p>
+          <div className="bg-[#FFF7ED] rounded-xl p-4 mb-6">
+            <div className="flex items-center gap-2 text-sm text-[#92400E]">
+              <AlertCircle size={16} />
+              <span>Dein aktuelles Limit: <strong>{currentLimit} Mitarbeiter</strong></span>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setLimitReachedOpen(false)} className="btn-ghost">Schließen</button>
+            <button
+              onClick={() => window.location.href = '/pricing'}
+              className="btn-primary flex items-center gap-2"
+            >
+              <span>Jetzt Paket upgraden</span>
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        </div>
+      </Modal>
 
       {/* Delete Confirmation */}
       <Modal open={!!deleteConfirm} onClose={() => setDeleteConfirm(null)} width="max-w-sm">
