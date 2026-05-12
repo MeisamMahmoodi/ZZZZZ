@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Euro, TrendingUp, TrendingDown, Minus, Clock, Check, CalendarDays, AlertCircle, Pencil, X, Lock, Crown } from 'lucide-react';
+import { Euro, TrendingUp, TrendingDown, Minus, Clock, Check, CalendarDays, AlertCircle, Pencil, X, Lock, Crown, Download } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
@@ -160,6 +160,62 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
     setEditingWageValue('');
   };
 
+  const handleExportCSV = () => {
+    const rows: string[][] = [];
+    rows.push(['Personal-Nr', 'Name', 'Datum', 'Objekt', 'Beginn', 'Ende', 'Netto-Stunden', 'Lohn_pro_Std', 'Gesamtverdienst', 'Nachweis']);
+
+    const standardWage = employees.find(e => e.hourly_wage != null)?.hourly_wage;
+
+    for (const emp of employees) {
+      const empAssignments = monthAssignments.filter(a => a.employee_id === emp.id);
+      const empWage = isPremium ? emp.hourly_wage : standardWage;
+
+      for (const a of empAssignments) {
+        if (a.status !== 'completed' && a.status !== 'checked_in') continue;
+
+        const prop = a.property;
+        const aTimeFrom = a.time_from ?? prop.time_from;
+        const aTimeTo = a.time_to ?? prop.time_to;
+        const [fromH, fromM] = aTimeFrom.split(':').map(Number);
+        const [toH, toM] = aTimeTo.split(':').map(Number);
+        const durationMin = (toH * 60 + toM) - (fromH * 60 + fromM);
+        const durationH = durationMin / 60;
+
+        const dateObj = new Date(a.date);
+        const dateFormatted = `${String(dateObj.getDate()).padStart(2, '0')}.${String(dateObj.getMonth() + 1).padStart(2, '0')}.${dateObj.getFullYear()}`;
+
+        const hasProof = a.checkin_photo_url && a.checkin_lat && a.checkin_lng ? 'GPS verifiziert & Foto vorhanden' : 'Fehlt';
+        const totalEarnings = empWage != null ? (durationH * empWage).toFixed(2) : '0.00';
+        const wage = empWage != null ? empWage.toFixed(2) : '0.00';
+
+        rows.push([
+          emp.id,
+          `${emp.first_name} ${emp.last_name}`,
+          dateFormatted,
+          prop.name,
+          aTimeFrom,
+          aTimeTo,
+          durationH.toFixed(2),
+          wage,
+          totalEarnings,
+          hasProof
+        ]);
+      }
+    }
+
+    const csvContent = rows.map(row => row.map(cell => `"${cell}"`).join(';')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `Abrechnung_${selectedMonth}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    addToast('Abrechnung exportiert');
+  };
+
   const monthLabel = new Date(selYear, selMonth - 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
 
   const monthOptions = [];
@@ -184,6 +240,18 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
             className="input-field !w-auto !pr-8">
             {monthOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
+          <button
+            onClick={hasBusiness ? handleExportCSV : () => setUpgradeOpen(true)}
+            disabled={!hasBusiness}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
+              hasBusiness
+                ? 'bg-[#F3F4F6] text-[#0F172A] hover:bg-[#E5E7EB]'
+                : 'bg-[#F3F4F6] text-[#94A3B8] cursor-not-allowed'
+            }`}
+            title={!hasBusiness ? 'Upgrade auf Business für CSV-Export' : 'Abrechnung als CSV exportieren'}
+          >
+            <Download size={16} /> CSV
+          </button>
           <button onClick={() => hasBusiness ? setWageModal(true) : setUpgradeOpen(true)} className="btn-primary flex items-center gap-2">
             {!hasBusiness && <Lock size={14} />}
             <Euro size={16} /> Stundenlohn setzen
