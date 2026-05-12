@@ -272,7 +272,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
   })();
 
   return (
-    <div className={`min-h-screen bg-surface-50 px-5 sm:px-6 py-6 sm:py-8 max-w-md mx-auto ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
+    <div className={`min-h-screen bg-surface-50 px-5 sm:px-6 pt-12 pb-8 sm:py-8 max-w-md mx-auto ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
