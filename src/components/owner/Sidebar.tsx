@@ -149,7 +149,7 @@ export function Sidebar({ active, onNavigate, ownerName, plan }: SidebarProps) {
   return (
     <>
       {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 bg-ink-900/95 backdrop-blur-sm flex items-center px-4 z-40 border-b border-white/[0.06]">
+      <div className="lg:hidden fixed top-0 left-0 right-0 bg-ink-900/95 backdrop-blur-sm flex items-center px-4 z-40 border-b border-white/[0.06]" style={{ paddingTop: 'max(0.875rem, env(safe-area-inset-top))', paddingBottom: '0.875rem' }}>
         <button onClick={() => setMobileOpen(true)} className="text-slate-400 hover:text-white p-1.5 rounded-lg transition-colors mr-3">
           <Menu size={22} />
         </button>
