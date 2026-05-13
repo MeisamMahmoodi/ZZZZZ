@@ -32,7 +32,10 @@ export function usePushNotifications(employeeId: string | null) {
       .select('id')
       .eq('employee_id', employeeId)
       .maybeSingle()
-      .then(({ data }) => setSubscribed(!!data));
+      .then(({ data, error }) => {
+        if (error) console.error('Push subscription check failed:', error);
+        setSubscribed(!!data);
+      });
   }, [employeeId]);
 
   const subscribe = useCallback(async (): Promise<boolean> => {
