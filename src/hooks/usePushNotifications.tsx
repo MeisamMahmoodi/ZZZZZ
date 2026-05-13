@@ -17,25 +17,52 @@ export function usePushNotifications(employeeId: string | null) {
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Check current state on mount
+  // Check current state on mount and sync browser subscription to DB
   useEffect(() => {
     if (!employeeId) return;
     if (!('Notification' in window) || !('serviceWorker' in navigator)) {
       setPermission('unsupported');
       return;
     }
-    setPermission(Notification.permission as PushPermission);
+    const currentPermission = Notification.permission as PushPermission;
+    setPermission(currentPermission);
 
-    // Check if already subscribed in DB
-    supabase
-      .from('push_subscriptions')
-      .select('id')
-      .eq('employee_id', employeeId)
-      .maybeSingle()
-      .then(({ data, error }) => {
-        if (error) console.error('Push subscription check failed:', error);
-        setSubscribed(!!data);
-      });
+    // If permission already granted, re-sync the browser's current subscription to DB
+    // This handles stale/expired endpoints by always keeping DB up to date
+    if (currentPermission === 'granted' && VAPID_PUBLIC_KEY) {
+      (async () => {
+        try {
+          const reg = await navigator.serviceWorker.ready;
+          const pushSub = await reg.pushManager.getSubscription();
+          if (pushSub) {
+            const json = pushSub.toJSON();
+            await supabase.from('push_subscriptions').upsert(
+              { employee_id: employeeId, endpoint: json.endpoint!, p256dh: json.keys!.p256dh!, auth: json.keys!.auth!, updated_at: new Date().toISOString() },
+              { onConflict: 'employee_id' }
+            );
+            setSubscribed(true);
+          } else {
+            // Browser has no subscription despite permission granted — check DB
+            const { data } = await supabase.from('push_subscriptions').select('id').eq('employee_id', employeeId).maybeSingle();
+            setSubscribed(!!data);
+          }
+        } catch {
+          const { data } = await supabase.from('push_subscriptions').select('id').eq('employee_id', employeeId).maybeSingle();
+          setSubscribed(!!data);
+        }
+      })();
+    } else {
+      // Check if already subscribed in DB
+      supabase
+        .from('push_subscriptions')
+        .select('id')
+        .eq('employee_id', employeeId)
+        .maybeSingle()
+        .then(({ data, error }) => {
+          if (error) console.error('Push subscription check failed:', error);
+          setSubscribed(!!data);
+        });
+    }
   }, [employeeId]);
 
   const subscribe = useCallback(async (): Promise<boolean> => {

@@ -70,9 +70,9 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
     return () => { supabase.removeChannel(channel); };
   }, [employee?.id]);
 
-  // Show push prompt once when employee loaded and permission not yet decided
+  // Show push prompt when employee loaded and not yet subscribed (or permission not yet decided)
   useEffect(() => {
-    if (employee && permission === 'default' && !subscribed) {
+    if (employee && !subscribed && (permission === 'default' || permission === 'granted')) {
       const timer = setTimeout(() => setShowPushPrompt(true), 1500);
       return () => clearTimeout(timer);
     }
@@ -330,7 +330,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
       </div>
 
       {/* Push Permission Prompt */}
-      {showPushPrompt && permission === 'default' && !subscribed && (
+      {showPushPrompt && (permission === 'default' || permission === 'granted') && !subscribed && (
         <div className="mb-5 rounded-2xl border border-[#BFDBFE] bg-[#EFF6FF] p-4">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-xl bg-[#3B82F6] flex items-center justify-center shrink-0">
