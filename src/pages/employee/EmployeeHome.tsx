@@ -25,7 +25,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
   const { lang, setLang, t, rtl } = useLang();
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [showPushPrompt, setShowPushPrompt] = useState(false);
-  const { permission, subscribed, loading: pushLoading, subscribe } = usePushNotifications(employee?.id ?? null);
+  const { permission, subscribed, loading: pushLoading, subscribe, unsubscribe } = usePushNotifications(employee?.id ?? null);
   const [todayAssignment, setTodayAssignment] = useState<AssignmentWithProperty | null>(null);
   const [upcomingAssignments, setUpcomingAssignments] = useState<AssignmentWithProperty[]>([]);
   const [replacementRequest, setReplacementRequest] = useState<(ReplacementRequest & { property: Property; sickEmployee: Employee }) | null>(null);
@@ -297,6 +297,17 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
               </div>
             )}
           </div>
+          <button
+            onClick={() => subscribed && permission === 'granted' ? unsubscribe() : subscribe()}
+            disabled={pushLoading || permission === 'denied' || permission === 'unsupported'}
+            title={subscribed && permission === 'granted' ? 'Benachrichtigungen deaktivieren' : t('enableNotifications')}
+            className="p-2.5 rounded-xl hover:bg-surface-100 transition-colors disabled:opacity-40"
+          >
+            {subscribed && permission === 'granted'
+              ? <Bell size={20} className="text-brand-500" />
+              : <BellOff size={20} className="text-ink-400" />
+            }
+          </button>
           <div className="relative" ref={notifRef}>
             <button onClick={() => setShowNotifications(!showNotifications)} className="relative p-2.5 rounded-xl hover:bg-surface-100 transition-colors">
               <Bell size={20} className="text-ink-500" />
