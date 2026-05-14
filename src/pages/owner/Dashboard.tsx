@@ -7,6 +7,7 @@ import { ReplacementModal } from '../../components/owner/ReplacementModal';
 import { Modal } from '../../components/shared/Modal';
 import { Avatar } from '../../components/shared/Avatar';
 import { useToast } from '../../components/shared/Toast';
+import { sendPushToEmployee } from '../../hooks/usePushNotifications';
 import { UpgradeModal } from '../../components/shared/UpgradeModal';
 import type { Plan } from '../../components/shared/UpgradeModal';
 import type { Company } from '../../lib/types';
@@ -35,7 +36,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const [sickReports, setSickReports] = useState<SickReportWithEmployee[]>([]);
   const [employeeProperties, setEmployeeProperties] = useState<EmployeeProperty[]>([]);
   const [replacementModal, setReplacementModal] = useState<{ sickReport: SickReportWithEmployee; property: Property; assignment: AssignmentWithDetails } | null>(null);
-  const [removeConfirm, setRemoveConfirm] = useState<string | null>(null);
+  const [removeConfirm, setRemoveConfirm] = useState<AssignmentWithDetails | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const notifRef = useRef<HTMLDivElement>(null);
@@ -171,10 +172,12 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
     addToast('Ersatz wurde benachrichtigt');
   };
 
-  const handleRemoveAssignment = async (id: string) => {
-    const { error } = await supabase.from('assignments').delete().eq('id', id);
+  const handleRemoveAssignment = async (assignment: AssignmentWithDetails) => {
+    const { error } = await supabase.from('assignments').delete().eq('id', assignment.id);
     if (error) { addToast('Fehler beim Entfernen', 'error'); return; }
     setRemoveConfirm(null);
+    const dateLabel = new Date(assignment.date + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    sendPushToEmployee(assignment.employee_id, 'Einsatz abgesagt', `${assignment.property.name} am ${dateLabel} wurde entfernt`, { type: 'info' });
     onRefresh();
     addToast('Zuweisung entfernt');
   };
@@ -456,7 +459,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                             {a.status === 'assigned' && !isSick && (
                               <div className="flex items-center gap-1">
                                 <button onClick={() => handleCheckIn(a.id)} className="p-1.5 rounded-lg hover:bg-[#F0FDF4] transition-colors text-[#22C55E]" title="Einchecken"><Check size={15} /></button>
-                                <button onClick={() => setRemoveConfirm(a.id)} className="p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors text-[#F87171]" title="Entfernen"><X size={15} /></button>
+                                <button onClick={() => setRemoveConfirm(a)} className="p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors text-[#F87171]" title="Entfernen"><X size={15} /></button>
                               </div>
                             )}
                           </div>
@@ -504,6 +507,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
           <div className="flex justify-end gap-3">
             <button onClick={() => setRemoveConfirm(null)} className="btn-ghost">Abbrechen</button>
             <button onClick={() => removeConfirm && handleRemoveAssignment(removeConfirm)} className="btn-danger">Entfernen</button>
+
           </div>
         </div>
       </Modal>

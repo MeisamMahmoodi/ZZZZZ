@@ -133,6 +133,8 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
     const { error } = await supabase.from('assignments').delete().eq('id', assignment.id);
     if (error) { addToast('Fehler beim Entfernen', 'error'); return; }
     setRemoveConfirm(null);
+    const dateLabel = new Date(assignment.date + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    sendPushToEmployee(assignment.employee_id, 'Einsatz abgesagt', `${assignment.property.name} am ${dateLabel} wurde entfernt`, { type: 'info' });
     onRefresh(); addToast('Zuweisung entfernt');
   };
 
