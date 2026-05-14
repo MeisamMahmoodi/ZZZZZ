@@ -142,7 +142,8 @@ export async function sendPushToEmployee(
       body: JSON.stringify({ employee_id: employeeId, title, body, data }),
     });
     const json = await res.json();
-    return json.ok === true;
+    console.log('Push response:', json);
+return json.ok === true;
   } catch {
     return false;
   }
