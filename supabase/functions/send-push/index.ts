@@ -83,16 +83,17 @@ async function encryptPayload(
   const enc = new TextEncoder();
   const plaintext = enc.encode(payload);
 
-  // Client's public key
+  // Client's public key (receiver)
+  const clientPublicKeyBytes = b64urlDecode(p256dhB64);
   const clientPublicKey = await crypto.subtle.importKey(
     "raw",
-    b64urlDecode(p256dhB64),
+    clientPublicKeyBytes,
     { name: "ECDH", namedCurve: "P-256" },
     false,
     []
   );
 
-  // Generate ephemeral server key pair
+  // Generate ephemeral server (sender) key pair
   const serverKeyPair = await crypto.subtle.generateKey(
     { name: "ECDH", namedCurve: "P-256" },
     true,
@@ -103,45 +104,46 @@ async function encryptPayload(
     await crypto.subtle.exportKey("raw", serverKeyPair.publicKey)
   );
 
-  // ECDH shared secret
-  const sharedBits = new Uint8Array(
+  // ECDH shared secret (256-bit)
+  const sharedSecret = new Uint8Array(
     await crypto.subtle.deriveBits({ name: "ECDH", public: clientPublicKey }, serverKeyPair.privateKey, 256)
   );
 
   const authSecret = b64urlDecode(authB64);
   const salt = crypto.getRandomValues(new Uint8Array(16));
 
-  // HKDF auth (RFC 8291)
+  // RFC 8291 §3.3: derive pseudorandom key via HKDF-Extract(salt=authSecret, IKM=sharedSecret)
+  // then HKDF-Expand with info = "WebPush: info\x00" || receiverPub(65) || senderPub(65)
   const authInfo = enc.encode("WebPush: info\x00");
   const authContext = new Uint8Array(authInfo.length + 65 + 65);
-  authContext.set(authInfo);
-  authContext.set(b64urlDecode(p256dhB64), authInfo.length);
-  authContext.set(serverPublicKeyRaw, authInfo.length + 65);
+  authContext.set(authInfo, 0);
+  authContext.set(clientPublicKeyBytes, authInfo.length);        // receiver public key
+  authContext.set(serverPublicKeyRaw, authInfo.length + 65);     // sender public key
 
-  const prk = await crypto.subtle.importKey("raw", sharedBits, { name: "HKDF" }, false, ["deriveBits"]);
-  const ikmBits = new Uint8Array(await crypto.subtle.deriveBits(
+  // HKDF-Extract: importKey with the authSecret as the HKDF "salt", sharedSecret as key material
+  const hkdfKey = await crypto.subtle.importKey("raw", sharedSecret, { name: "HKDF" }, false, ["deriveBits"]);
+  const ikm = new Uint8Array(await crypto.subtle.deriveBits(
     { name: "HKDF", hash: "SHA-256", salt: authSecret, info: authContext },
-    prk,
+    hkdfKey,
     256
   ));
 
-  // HKDF for content encryption key and nonce
+  // RFC 8188 §2.2 + RFC 8291 §3.4: derive CEK (128-bit) and nonce (96-bit) from salt + ikm
   const keyInfo = enc.encode("Content-Encoding: aes128gcm\x00");
   const nonceInfo = enc.encode("Content-Encoding: nonce\x00");
 
-  const ikm = await crypto.subtle.importKey("raw", ikmBits, { name: "HKDF" }, false, ["deriveBits"]);
+  const ikmKey = await crypto.subtle.importKey("raw", ikm, { name: "HKDF" }, false, ["deriveBits"]);
   const [keyBits, nonceBits] = await Promise.all([
-    crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info: keyInfo }, ikm, 128),
-    crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info: nonceInfo }, ikm, 96),
+    crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info: keyInfo }, ikmKey, 128),
+    crypto.subtle.deriveBits({ name: "HKDF", hash: "SHA-256", salt, info: nonceInfo }, ikmKey, 96),
   ]);
 
   const contentKey = await crypto.subtle.importKey("raw", keyBits, { name: "AES-GCM" }, false, ["encrypt"]);
 
-  // Pad plaintext: 2-byte big-endian padding length + padding + content
-  const paddedLen = plaintext.length + 1;
-  const padded = new Uint8Array(paddedLen);
-  padded[0] = 0;
-  padded.set(plaintext, 1);
+  // RFC 8188 §2: pad with delimiter byte 0x02 appended at end of plaintext
+  const padded = new Uint8Array(plaintext.length + 1);
+  padded.set(plaintext, 0);
+  padded[plaintext.length] = 0x02; // delimiter — marks end of data, no padding
 
   const ciphertext = new Uint8Array(await crypto.subtle.encrypt(
     { name: "AES-GCM", iv: nonceBits },
@@ -149,12 +151,13 @@ async function encryptPayload(
     padded
   ));
 
-  // aes128gcm content-coding header: salt(16) + record_size(4) + key_id_len(1) + server_public_key(65)
-  const recordSize = ciphertext.length + 2;
+  // RFC 8188 §2.1: aes128gcm header = salt(16) + rs(4, big-endian) + idlen(1) + keyid(65)
+  // rs = record size = ciphertext length (already includes 16-byte GCM tag)
+  const rs = ciphertext.length;
   const header = new Uint8Array(16 + 4 + 1 + 65);
   header.set(salt, 0);
-  new DataView(header.buffer).setUint32(16, recordSize, false);
-  header[20] = 65;
+  new DataView(header.buffer).setUint32(16, rs, false);
+  header[20] = 65; // key id length = uncompressed P-256 public key size
   header.set(serverPublicKeyRaw, 21);
 
   const body = new Uint8Array(header.length + ciphertext.length);
