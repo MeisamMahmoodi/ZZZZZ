@@ -131,7 +131,8 @@ export async function sendPushToEmployee(
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
     const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
     const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token ?? anonKey;
+const token = session?.access_token;
+if (!token) return false;
 
     const res = await fetch(`${supabaseUrl}/functions/v1/send-push`, {
       method: 'POST',
