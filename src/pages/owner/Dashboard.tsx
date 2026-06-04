@@ -35,6 +35,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const [assignments, setAssignments] = useState<AssignmentWithDetails[]>([]);
   const [sickReports, setSickReports] = useState<SickReportWithEmployee[]>([]);
   const [employeeProperties, setEmployeeProperties] = useState<EmployeeProperty[]>([]);
+  const [replacementRequests, setReplacementRequests] = useState<{ sick_report_id: string; property_id: string; status: string }[]>([]);
   const [replacementModal, setReplacementModal] = useState<{ sickReport: SickReportWithEmployee; property: Property; assignment: AssignmentWithDetails } | null>(null);
   const [removeConfirm, setRemoveConfirm] = useState<AssignmentWithDetails | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -67,18 +68,20 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, () => loadData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sick_reports' }, () => loadData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'replacement_requests' }, () => loadData())
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [company.id]);
 
   async function loadData() {
     try {
-      const [empRes, propRes, assignRes, sickRes, epRes] = await Promise.all([
+      const [empRes, propRes, assignRes, sickRes, epRes, rrRes] = await Promise.all([
         supabase.from('employees').select('*').eq('company_id', company.id),
         supabase.from('properties').select('*').eq('company_id', company.id),
         supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').eq('date', todayStr),
         supabase.from('sick_reports').select('*, employee:employees(*)'),
         supabase.from('employee_properties').select('*'),
+        supabase.from('replacement_requests').select('sick_report_id, property_id, status'),
       ]);
       setEmployees(empRes.data || []);
       setProperties(propRes.data || []);
@@ -92,6 +95,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       });
       setSickReports(filtered);
       setEmployeeProperties(epRes.data || []);
+      setReplacementRequests((rrRes.data || []) as { sick_report_id: string; property_id: string; status: string }[]);
     } catch {
       // Component renders with existing state
     }
@@ -421,6 +425,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
               const hasSick = sickReportsForCompany.some(sr => propAssignments.some(a => a.employee_id === sr.employee_id));
               const sickForProp = sickReportsForCompany.filter(sr => propAssignments.some(a => a.employee_id === sr.employee_id));
               const activeAssignments = propAssignments.filter(a => !sickReportsForCompany.some(sr => sr.employee_id === a.employee_id));
+              const hasReplacementRequest = sickForProp.some(sr => replacementRequests.some(rr => rr.sick_report_id === sr.id && rr.property_id === group.property.id));
               const hasLateNoCheckIn = activeAssignments.some(a => isLateNoCheckIn(a));
 
               let statusColor = 'bg-[#CBD5E1]';
@@ -445,14 +450,21 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                           <span key={sr.id} className="chip !bg-[#FEF2F2] !text-[#EF4444]"><User size={11} /> {sr.employee?.first_name} {sr.employee?.last_name?.charAt(0)}. (krank)</span>
                         ))}
                         {activeAssignments.length === 0 && !hasSick && <span className="text-xs text-[#94A3B8]">Kein Personal zugewiesen</span>}
-                        {hasSick && activeAssignments.length === 0 && <span className="text-xs text-[#EF4444] font-semibold">Ersatz fehlt noch</span>}
+                        {hasSick && activeAssignments.length === 0 && !hasReplacementRequest && <span className="text-xs text-[#EF4444] font-semibold">Ersatz fehlt noch</span>}
+                        {hasSick && activeAssignments.length === 0 && hasReplacementRequest && <span className="text-xs text-[#16A34A] font-semibold">Ersatz gefunden</span>}
                       </div>
                     </div>
-                    {hasSick && activeAssignments.length === 0 && sickForProp.length > 0 && (
+                    {hasSick && activeAssignments.length === 0 && sickForProp.length > 0 && !hasReplacementRequest && (
                       <button onClick={() => handleFindReplacement(sickForProp[0])} className="bg-[#EF4444] text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-[#DC2626] transition-colors shrink-0 flex items-center gap-1.5">
                         {!hasBusiness && <Lock size={12} />}
                         <span className="hidden sm:inline">Ersatz finden</span><span className="sm:hidden">Ersatz</span>
                       </button>
+                    )}
+                    {hasSick && activeAssignments.length === 0 && hasReplacementRequest && (
+                      <div className="bg-[#F0FDF4] text-[#16A34A] px-4 py-2.5 rounded-xl text-sm font-semibold shrink-0 flex items-center gap-1.5">
+                        <UserCheck size={15} />
+                        <span className="hidden sm:inline">Ersatz gefunden</span><span className="sm:hidden">Ersatz</span>
+                      </div>
                     )}
                   </div>
                   {propAssignments.length > 0 && (
