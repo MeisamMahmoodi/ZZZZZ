@@ -39,8 +39,14 @@ export function ReplacementModal({
     const sickEmployeeId = sickReport.employee_id;
     const todayStr = new Date().toISOString().split('T')[0];
 
+    const alreadyAssignedToProperty = new Set(
+      assignments
+        .filter(a => a.property_id === property.id && a.date === todayStr)
+        .map(a => a.employee_id)
+    );
+
     return employees
-      .filter(e => e.id !== sickEmployeeId && e.status === 'active')
+      .filter(e => e.id !== sickEmployeeId && e.status === 'active' && !alreadyAssignedToProperty.has(e.id))
       .map(e => {
         const knowsProperty = employeeProperties.some(
           ep => ep.employee_id === e.id && ep.property_id === property.id
