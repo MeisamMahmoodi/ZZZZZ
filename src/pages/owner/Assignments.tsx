@@ -262,12 +262,12 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
                           'badge-danger'
                         }>{statusLabel(a.status)}</span>
                       )}
-                      {a.status === 'assigned' && !isSick && (
-                        <div className="flex items-center gap-1">
+                      <div className="flex items-center gap-1">
+                        {a.status === 'assigned' && !isSick && (
                           <button onClick={() => handleStatusChange(a, 'checked_in')} className="p-1.5 rounded-lg hover:bg-[#F0FDF4] transition-colors text-[#22C55E]" title="Einchecken"><Check size={16} /></button>
-                          <button onClick={() => setRemoveConfirm(a)} className="p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors text-[#F87171]" title="Entfernen"><X size={16} /></button>
-                        </div>
-                      )}
+                        )}
+                        <button onClick={() => setRemoveConfirm(a)} className="p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors text-[#F87171]" title="Entfernen"><X size={16} /></button>
+                      </div>
                     </div>
                   );
                 })}
