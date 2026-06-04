@@ -173,12 +173,16 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
     setMenuOpen(null); onRefresh(); addToast(`${emp.first_name} ${emp.last_name} als krank markiert`);
   };
 
-  const handleMarkActive = async (emp: Employee) => {
-    const { error } = await supabase.from('employees').update({ status: 'active' }).eq('id', emp.id);
-    if (error) { addToast('Fehler', 'error'); return; }
-    await supabase.from('sick_reports').delete().eq('employee_id', emp.id);
-    setMenuOpen(null); onRefresh(); addToast(`${emp.first_name} ${emp.last_name} als gesund markiert`);
-  };
+const handleMarkActive = async (emp: Employee) => {
+  const { error } = await supabase.from('employees').update({ status: 'active' }).eq('id', emp.id);
+  if (error) { addToast('Fehler', 'error'); return; }
+  const todayStr = new Date().toISOString().split('T')[0];
+  await supabase.from('sick_reports').delete()
+    .eq('employee_id', emp.id)
+    .lte('date', todayStr)
+    .or(`date_to.gte.${todayStr},date_to.is.null`);
+  setMenuOpen(null); onRefresh(); addToast(`${emp.first_name} ${emp.last_name} als gesund markiert`);
+};
 
 const handleDelete = async (emp: Employee) => {
   await supabase.from('sick_reports').delete().eq('employee_id', emp.id);
