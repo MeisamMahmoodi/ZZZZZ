@@ -108,13 +108,13 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
         setTodayAssignment(null);
       }
 
-      const { data: upcoming } = await supabase
-        .from('assignments')
-        .select('*, property:properties(*)')
-        .eq('employee_id', emp.id)
-        .gte('date', todayStr)
-        .eq('status', 'assigned')
-        .order('date', { ascending: true });
+const { data: upcoming } = await supabase
+  .from('assignments')
+  .select('*, property:properties(*)')
+  .eq('employee_id', emp.id)
+  .gt('date', todayStr)
+  .eq('status', 'assigned')
+  .order('date', { ascending: true });
 
       setUpcomingAssignments((upcoming as unknown as AssignmentWithProperty[]) || []);
 
