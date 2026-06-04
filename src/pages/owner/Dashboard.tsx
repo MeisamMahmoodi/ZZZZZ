@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays, AlertCircle, AlarmClock, Lock } from 'lucide-react';
+import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays, AlertCircle, AlarmClock, Lock, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDateLong, formatTime, getTodayDayAbbrev } from '../../lib/utils';
 import type { Employee, Property, Assignment, SickReport, EmployeeProperty } from '../../lib/types';
@@ -39,6 +39,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const [removeConfirm, setRemoveConfirm] = useState<AssignmentWithDetails | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [replacementDetailsOpen, setReplacementDetailsOpen] = useState<string | null>(null);
   const notifRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
 
@@ -302,11 +303,38 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                     {hasBusiness ? <><Search size={16} /> Ersatz finden</> : <><Lock size={14} /> Ersatz finden (Business)</>}
                   </button>
                 )}
-                {hasReplacement && (
-                  <div className="mt-5 py-2.5 rounded-xl text-sm font-semibold bg-[#F0FDF4] text-[#16A34A] text-center flex items-center justify-center gap-2">
-                    <UserCheck size={16} /> Ersatz gefunden
-                  </div>
-                )}
+                {hasReplacement && (() => {
+                  const replacementAssignment = empAssignments
+                    .flatMap(a => todayAssignments.filter(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id))
+                    [0];
+                  const detailsOpen = replacementDetailsOpen === sr.employee_id;
+                  return (
+                    <div className="mt-5 space-y-2">
+                      <div className="py-2.5 rounded-xl text-sm font-semibold bg-[#F0FDF4] text-[#16A34A] text-center flex items-center justify-center gap-2">
+                        <UserCheck size={16} /> Ersatz gefunden
+                      </div>
+                      <button
+                        onClick={() => setReplacementDetailsOpen(detailsOpen ? null : sr.employee_id)}
+                        className="w-full py-2 rounded-xl text-xs font-medium text-[#64748B] bg-white/70 hover:bg-white border border-[#E2E8F0] transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        {detailsOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                        Details einsehen
+                      </button>
+                      {detailsOpen && replacementAssignment && (
+                        <div className="bg-white/80 border border-[#E2E8F0] rounded-xl px-4 py-3 space-y-1.5 text-sm">
+                          <div className="flex items-center gap-2 text-[#0F172A]">
+                            <User size={13} className="text-[#94A3B8] shrink-0" />
+                            <span className="font-semibold">{replacementAssignment.employee?.first_name} {replacementAssignment.employee?.last_name}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-[#64748B]">
+                            <Clock size={13} className="text-[#94A3B8] shrink-0" />
+                            <span>{new Date(replacementAssignment.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, {new Date(replacementAssignment.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             ))}
           </div>
