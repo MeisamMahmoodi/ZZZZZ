@@ -55,12 +55,18 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
         supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').eq('date', selectedDate).order('created_at'),
         supabase.from('properties').select('*').eq('company_id', company.id).order('name'),
         supabase.from('employees').select('*').eq('company_id', company.id),
-        supabase.from('sick_reports').select('*').eq('date', selectedDate),
+        supabase.from('sick_reports').select('*')
+          .lte('date', selectedDate)
+          .or(`date_to.gte.${selectedDate},date_to.is.null`),
       ]);
       setAssignments((assignRes.data as unknown as AssignmentWithDetails[]) || []);
       setProperties(propRes.data || []);
       setEmployees(empRes.data || []);
-      setSickReports(sickRes.data || []);
+      const filtered = (sickRes.data || []).filter((sr: { date: string; date_to: string | null }) => {
+        const end = sr.date_to ?? sr.date;
+        return sr.date <= selectedDate && selectedDate <= end;
+      });
+      setSickReports(filtered);
     } catch {
       // Component renders with existing state
     }
