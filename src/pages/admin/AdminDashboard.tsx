@@ -926,7 +926,7 @@ export function AdminDashboard() {
     <div className="min-h-screen bg-slate-50">
       <header className="bg-white border-b border-slate-200 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-20">
         <div className="flex items-center gap-3">
-          <img src="/meizoLogo.png" alt="Meizo" className="h-8 w-auto" />
+          <img src="/meizoLogo.jpeg" alt="Meizo" className="h-8 w-auto" />
           <div>
             <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-600">Admin Cockpit</span>
             <h1 className="text-sm font-bold text-slate-900 leading-tight">Plattform-Steuerung</h1>

@@ -86,7 +86,7 @@ function ChangePasswordScreen() {
     <div className={`min-h-screen bg-surface-50 flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <img src="/meizoLogo.png" alt="Meizo" className="h-16 w-auto mx-auto mb-5" />
+          <img src="/meizoLogoL.jpeg" alt="Meizo" className="h-16 w-auto mx-auto mb-5" />
           <h1 className="text-2xl font-bold text-ink-900 tracking-tight">{t('setPassword')}</h1>
           <p className="text-ink-500 text-sm mt-1.5">{t('chooseOwnPassword')}</p>
         </div>
@@ -137,7 +137,7 @@ function AccountSuspendedScreen() {
   return (
     <div className="min-h-screen bg-surface-50 flex items-center justify-center px-6">
       <div className="w-full max-w-sm text-center space-y-6">
-        <img src="/meizoLogo.png" alt="Meizo" className="h-14 w-auto mx-auto" />
+        <img src="/meizoLogoL.jpeg" alt="Meizo" className="h-14 w-auto mx-auto" />
         <div className="card p-8 space-y-4">
           <div className="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center mx-auto">
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-600">
@@ -342,7 +342,7 @@ function UnifiedLogin() {
     <div className={`min-h-screen bg-surface-50 flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <img src="/meizoLogo.png" alt="Meizo" className="h-16 w-auto mx-auto mb-5" />
+          <img src="/meizoLogoL.jpeg" alt="Meizo" className="h-16 w-auto mx-auto mb-5" />
           <h1 className="text-2xl font-bold text-ink-900 tracking-tight">meizo</h1>
           <p className="text-ink-500 text-sm mt-1.5">{t('login')}</p>
         </div>

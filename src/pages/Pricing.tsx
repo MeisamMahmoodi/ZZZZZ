@@ -54,7 +54,7 @@ export function Pricing({ onContinue }: PricingProps) {
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
       {/* Header */}
       <header className="pt-10 pb-6 px-6 text-center">
-        <img src="/meizoLogo.png" alt="meizo" className="h-12 w-auto mx-auto mb-6 bg-white rounded-xl px-3 py-1.5 shadow-sm" />
+        <img src="/meizoLogoL.jpeg" alt="meizo" className="h-12 w-auto mx-auto mb-6 bg-white rounded-xl px-3 py-1.5 shadow-sm" />
         <h1 className="text-3xl sm:text-4xl font-bold text-[#0F172A] tracking-tight">
           Wählen Sie Ihr Paket
         </h1>
