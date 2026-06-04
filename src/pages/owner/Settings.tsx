@@ -74,7 +74,7 @@ export function Settings({ company, onRefresh }: SettingsProps) {
       bg: 'bg-[#EFF6FF]',
       border: 'border-[#BFDBFE]',
       badge: 'bg-[#DBEAFE] text-[#1D4ED8]',
-      features: ['Bis zu 25 Mitarbeiter', 'Objekte & Einsätze', 'Krankmeldungen', 'Push-Benachrichtigungen'],
+      features: ['Bis zu 10 Mitarbeiter', 'Objekte & Einsätze', 'Krankmeldungen', 'Push-Benachrichtigungen'],
     },
     Business: {
       icon: Star,
@@ -82,7 +82,7 @@ export function Settings({ company, onRefresh }: SettingsProps) {
       bg: 'bg-[#FFF7ED]',
       border: 'border-[#FED7AA]',
       badge: 'bg-[#FFEDD5] text-[#C2410C]',
-      features: ['Bis zu 49 Mitarbeiter', 'Alles aus Starter', 'Abrechnung', 'Zeitstempel', 'Ersatz finden'],
+      features: ['Bis zu 30 Mitarbeiter', 'Alles aus Starter', 'Abrechnung', 'Zeitstempel', 'Ersatz finden'],
     },
     Premium: {
       icon: Crown,
