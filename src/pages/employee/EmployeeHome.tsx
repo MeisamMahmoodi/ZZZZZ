@@ -182,7 +182,11 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
   const handleMarkAsHealthy = async () => {
     if (!employee) return;
     try {
-      await supabase.from('sick_reports').delete().eq('employee_id', employee.id);
+      const todayStr = new Date().toISOString().split('T')[0];
+await supabase.from('sick_reports').delete()
+  .eq('employee_id', employee.id)
+  .lte('date', todayStr)
+  .or(`date_to.gte.${todayStr},date_to.is.null`);
 
       await supabase
         .from('employees')
