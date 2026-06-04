@@ -34,6 +34,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // Cache app shell + static assets
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         // Inject the push event handler into the generated SW
