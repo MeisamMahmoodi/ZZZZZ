@@ -193,29 +193,44 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   };
 
   const sickCount = sickEmployees.length;
+  const srHasReplacement = (sr: SickReportWithEmployee) => {
+    const empAssignments = todayAssignments.filter(a => a.employee_id === sr.employee_id);
+    const hasActiveReplacement = empAssignments.some(a =>
+      todayAssignments.some(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id)
+    );
+    const hasRequest = empAssignments.some(a =>
+      replacementRequests.some(rr => rr.sick_report_id === sr.id && rr.property_id === a.property_id)
+    );
+    return hasActiveReplacement || hasRequest;
+  };
+
   const openSickCount = sickReportsByEmployee.filter(sr => {
     const empAssignments = todayAssignments.filter(a => a.employee_id === sr.employee_id);
     if (empAssignments.length === 0) return false;
-    const hasReplacement = empAssignments.some(a => todayAssignments.some(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id));
-    return !hasReplacement;
+    return !srHasReplacement(sr);
   }).length;
 
   const coveredSickCount = sickReportsByEmployee.filter(sr => {
     const empAssignments = todayAssignments.filter(a => a.employee_id === sr.employee_id);
     if (empAssignments.length === 0) return false;
-    const hasReplacement = empAssignments.some(a => todayAssignments.some(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id));
-    return hasReplacement;
+    return srHasReplacement(sr);
   }).length;
 
   const sickWithAssignments = useMemo(() => {
     return sickReportsByEmployee
       .map(sr => {
         const empAssignments = todayAssignments.filter(a => a.employee_id === sr.employee_id);
-        const hasReplacement = empAssignments.some(a => todayAssignments.some(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id));
+        const hasActiveReplacement = empAssignments.some(a =>
+          todayAssignments.some(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id)
+        );
+        const hasRequest = empAssignments.some(a =>
+          replacementRequests.some(rr => rr.sick_report_id === sr.id && rr.property_id === a.property_id)
+        );
+        const hasReplacement = hasActiveReplacement || hasRequest;
         return { sickReport: sr, assignments: empAssignments, hasReplacement };
       })
       .filter(item => item.assignments.length > 0);
-  }, [sickReportsByEmployee, todayAssignments]);
+  }, [sickReportsByEmployee, todayAssignments, replacementRequests]);
 
   const sickWithoutAssignments = useMemo(() => {
     return sickReportsByEmployee
