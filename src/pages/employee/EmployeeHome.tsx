@@ -199,12 +199,14 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
     if (!replacementRequest || !employee) return;
     const { error: e1 } = await supabase.from('replacement_requests').update({ status: 'accepted' }).eq('id', replacementRequest.id);
     if (e1) return;
-    await supabase.from('assignments').insert({
-      property_id: replacementRequest.property_id,
-      employee_id: employee.id,
-      date: todayStr,
-      status: 'assigned',
-    });
+await supabase.from('assignments').insert({
+  property_id: replacementRequest.property_id,
+  employee_id: employee.id,
+  date: todayStr,
+  status: 'assigned',
+  time_from: replacementRequest.property?.time_from ?? null,
+  time_to: replacementRequest.property?.time_to ?? null,
+});
     setRequestResponded(true);
   };
 
