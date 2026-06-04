@@ -35,7 +35,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const [assignments, setAssignments] = useState<AssignmentWithDetails[]>([]);
   const [sickReports, setSickReports] = useState<SickReportWithEmployee[]>([]);
   const [employeeProperties, setEmployeeProperties] = useState<EmployeeProperty[]>([]);
-  const [replacementRequests, setReplacementRequests] = useState<{ sick_report_id: string; property_id: string; status: string }[]>([]);
+  const [replacementRequests, setReplacementRequests] = useState<{ sick_report_id: string; property_id: string; status: string; replacement_employee_id: string; created_at: string; replacement_employee?: Employee }[]>([]);
   const [replacementModal, setReplacementModal] = useState<{ sickReport: SickReportWithEmployee; property: Property; assignment: AssignmentWithDetails } | null>(null);
   const [removeConfirm, setRemoveConfirm] = useState<AssignmentWithDetails | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -81,7 +81,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
         supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').eq('date', todayStr),
         supabase.from('sick_reports').select('*, employee:employees(*)'),
         supabase.from('employee_properties').select('*'),
-        supabase.from('replacement_requests').select('sick_report_id, property_id, status'),
+        supabase.from('replacement_requests').select('sick_report_id, property_id, status, replacement_employee_id, created_at, replacement_employee:employees!replacement_employee_id(*)'),
       ]);
       setEmployees(empRes.data || []);
       setProperties(propRes.data || []);
@@ -95,7 +95,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       });
       setSickReports(filtered);
       setEmployeeProperties(epRes.data || []);
-      setReplacementRequests((rrRes.data || []) as { sick_report_id: string; property_id: string; status: string }[]);
+      setReplacementRequests((rrRes.data || []) as typeof replacementRequests);
     } catch {
       // Component renders with existing state
     }
@@ -194,14 +194,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
 
   const sickCount = sickEmployees.length;
   const srHasReplacement = (sr: SickReportWithEmployee) => {
-    const empAssignments = todayAssignments.filter(a => a.employee_id === sr.employee_id);
-    const hasActiveReplacement = empAssignments.some(a =>
-      todayAssignments.some(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id)
-    );
-    const hasRequest = empAssignments.some(a =>
-      replacementRequests.some(rr => rr.sick_report_id === sr.id && rr.property_id === a.property_id)
-    );
-    return hasActiveReplacement || hasRequest;
+    return replacementRequests.some(rr => rr.sick_report_id === sr.id);
   };
 
   const openSickCount = sickReportsByEmployee.filter(sr => {
@@ -220,13 +213,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
     return sickReportsByEmployee
       .map(sr => {
         const empAssignments = todayAssignments.filter(a => a.employee_id === sr.employee_id);
-        const hasActiveReplacement = empAssignments.some(a =>
-          todayAssignments.some(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id)
-        );
-        const hasRequest = empAssignments.some(a =>
-          replacementRequests.some(rr => rr.sick_report_id === sr.id && rr.property_id === a.property_id)
-        );
-        const hasReplacement = hasActiveReplacement || hasRequest;
+        const hasReplacement = replacementRequests.some(rr => rr.sick_report_id === sr.id);
         return { sickReport: sr, assignments: empAssignments, hasReplacement };
       })
       .filter(item => item.assignments.length > 0);
@@ -323,9 +310,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                   </button>
                 )}
                 {hasReplacement && (() => {
-                  const replacementAssignment = empAssignments
-                    .flatMap(a => todayAssignments.filter(ta => ta.property_id === a.property_id && ta.employee_id !== sr.employee_id))
-                    [0];
+                  const replacementRequest = replacementRequests.find(rr => rr.sick_report_id === sr.id);
                   const detailsOpen = replacementDetailsOpen === sr.employee_id;
                   return (
                     <div className="mt-5 space-y-2">
@@ -339,15 +324,15 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                         {detailsOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                         Details einsehen
                       </button>
-                      {detailsOpen && replacementAssignment && (
+                      {detailsOpen && replacementRequest && (
                         <div className="bg-white/80 border border-[#E2E8F0] rounded-xl px-4 py-3 space-y-1.5 text-sm">
                           <div className="flex items-center gap-2 text-[#0F172A]">
                             <User size={13} className="text-[#94A3B8] shrink-0" />
-                            <span className="font-semibold">{replacementAssignment.employee?.first_name} {replacementAssignment.employee?.last_name}</span>
+                            <span className="font-semibold">{replacementRequest.replacement_employee?.first_name} {replacementRequest.replacement_employee?.last_name}</span>
                           </div>
                           <div className="flex items-center gap-2 text-[#64748B]">
                             <Clock size={13} className="text-[#94A3B8] shrink-0" />
-                            <span>{new Date(replacementAssignment.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, {new Date(replacementAssignment.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</span>
+                            <span>{new Date(replacementRequest.created_at).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}, {new Date(replacementRequest.created_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</span>
                           </div>
                         </div>
                       )}
