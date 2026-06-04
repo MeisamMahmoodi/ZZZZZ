@@ -88,6 +88,19 @@ export function ReplacementModal({
     if (!selectedEmployee) return;
     setSending(true);
 
+    const { data: existing } = await supabase
+  .from('replacement_requests')
+  .select('id')
+  .eq('sick_report_id', sickReport.id)
+  .eq('status', 'pending')
+  .maybeSingle();
+
+if (existing) {
+  setSending(false);
+  onComplete();
+  return;
+}
+
     try {
       const { error } = await supabase.from('replacement_requests').insert({
         sick_report_id: sickReport.id,
