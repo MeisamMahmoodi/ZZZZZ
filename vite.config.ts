@@ -7,7 +7,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['meizoLogo.png', 'apple-touch-icon.png'],
+      includeAssets: ['meizoLogo.jpeg', 'meizoLogoL.jpeg', 'apple-touch-icon.png'],
       manifest: {
         name: 'meizo',
         short_name: 'meizo',
