@@ -208,7 +208,7 @@ function AppRoutes() {
   const [role, setRole] = useState<'owner' | 'employee' | 'admin' | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
-  const [ownerCompany, setOwnerCompany] = useState<{ id: string; trial_ends_at: string | null; paid_until: string | null } | null>(null);
+  const [ownerCompany, setOwnerCompany] = useState<{ id: string; trial_ends_at: string | null; paid_until: string | null } | null | undefined>(undefined);
   const [suspended, setSuspended] = useState(false);
   const prevUserId = React.useRef<string | null>(null);
 
@@ -221,6 +221,7 @@ function AppRoutes() {
       // Don't clear suspended here — suspension screen must persist after signOut
       setRole(null);
       setCompanyId(null);
+      setOwnerCompany(undefined);
       setRoleLoading(false);
       return;
     }
@@ -287,7 +288,7 @@ function AppRoutes() {
     return <AccountSuspendedScreen />;
   }
 
-  if (loading || (user && roleLoading)) {
+  if (loading || (user && roleLoading) || (role === 'owner' && ownerCompany === undefined)) {
     return (
       <div className="min-h-screen bg-surface-50 flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-ink-900 border-t-transparent rounded-full animate-spin" />
