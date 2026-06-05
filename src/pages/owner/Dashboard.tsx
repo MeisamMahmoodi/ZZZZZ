@@ -194,7 +194,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
 
   const sickCount = sickReportsForCompany.length;
   const srHasReplacement = (sr: SickReportWithEmployee) => {
-    return replacementRequests.some(rr => rr.sick_report_id === sr.id);
+    return replacementRequests.some(rr => rr.sick_report_id === sr.id && rr.status === 'accepted');
   };
 
   const openSickCount = sickReportsByEmployee.filter(sr => {
@@ -213,7 +213,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
     return sickReportsByEmployee
       .map(sr => {
         const empAssignments = todayAssignments.filter(a => a.employee_id === sr.employee_id);
-        const hasReplacement = replacementRequests.some(rr => rr.sick_report_id === sr.id);
+        const hasReplacement = replacementRequests.some(rr => rr.sick_report_id === sr.id && rr.status === 'accepted');
         return { sickReport: sr, assignments: empAssignments, hasReplacement };
       })
       .filter(item => item.assignments.length > 0);
@@ -425,7 +425,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
               const hasSick = sickReportsForCompany.some(sr => propAssignments.some(a => a.employee_id === sr.employee_id));
               const sickForProp = sickReportsForCompany.filter(sr => propAssignments.some(a => a.employee_id === sr.employee_id));
               const activeAssignments = propAssignments.filter(a => !sickReportsForCompany.some(sr => sr.employee_id === a.employee_id));
-              const hasReplacementRequest = sickForProp.some(sr => replacementRequests.some(rr => rr.sick_report_id === sr.id && rr.property_id === group.property.id));
+              const hasReplacementRequest = sickForProp.some(sr => replacementRequests.some(rr => rr.sick_report_id === sr.id && rr.property_id === group.property.id && rr.status === 'accepted'));
               const hasLateNoCheckIn = activeAssignments.some(a => isLateNoCheckIn(a));
 
               let statusColor = 'bg-[#CBD5E1]';
