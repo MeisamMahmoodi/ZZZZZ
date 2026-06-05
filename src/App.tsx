@@ -17,15 +17,16 @@ import { EmployeeHome } from './pages/employee/EmployeeHome';
 import { SickLeave } from './pages/employee/SickLeave';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { supabase } from './lib/supabase';
+import type { Company } from './lib/types';
 import { Eye, EyeOff } from 'lucide-react';
 import { Pricing } from './pages/Pricing';
 import { PaywallModal } from './components/shared/PaywallModal';
 
-function OwnerApp() {
+function OwnerApp({ company }: { company: Company & { paid_until: string | null } }) {
   const [page, setPage] = useState('dashboard');
 
   return (
-    <OwnerLayout activePage={page} onNavigate={setPage}>
+    <OwnerLayout company={company} activePage={page} onNavigate={setPage}>
       {(props) => {
         switch (page) {
           case 'dashboard': return <Dashboard {...props} />;
@@ -208,7 +209,7 @@ function AppRoutes() {
   const [role, setRole] = useState<'owner' | 'employee' | 'admin' | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
-  const [ownerCompany, setOwnerCompany] = useState<{ id: string; trial_ends_at: string | null; paid_until: string | null } | null | undefined>(undefined);
+  const [ownerCompany, setOwnerCompany] = useState<(Company & { paid_until: string | null }) | null | undefined>(undefined);
   const [suspended, setSuspended] = useState(false);
   const prevUserId = React.useRef<string | null>(null);
 
@@ -243,11 +244,11 @@ function AppRoutes() {
           if (data.role === 'owner') {
             const { data: company } = await supabase
               .from('companies')
-              .select('id, trial_ends_at, paid_until')
+              .select('*')
               .eq('owner_id', uid)
               .maybeSingle();
             setCompanyId(company?.id ?? null);
-            setOwnerCompany(company ? { id: company.id, trial_ends_at: company.trial_ends_at ?? null, paid_until: company.paid_until ?? null } : null);
+            setOwnerCompany(company ? { ...company, paid_until: (company as unknown as { paid_until: string | null }).paid_until ?? null } : null);
           }
         } else {
           setRole(null);
@@ -324,14 +325,21 @@ function AppRoutes() {
   }
 
   if (role === 'owner') {
+    if (!ownerCompany) {
+      return (
+        <div className="min-h-screen bg-surface-50 flex items-center justify-center px-6">
+          <p className="text-ink-500 text-sm">Kein Unternehmen gefunden.</p>
+        </div>
+      );
+    }
     const today = new Date(); today.setHours(0, 0, 0, 0);
-    const trialActive = ownerCompany?.trial_ends_at ? new Date(ownerCompany.trial_ends_at) >= today : false;
-    const paidActive = ownerCompany?.paid_until ? new Date(ownerCompany.paid_until) >= today : false;
-    const showPaywall = ownerCompany && !trialActive && !paidActive;
+    const trialActive = ownerCompany.trial_ends_at ? new Date(ownerCompany.trial_ends_at) >= today : false;
+    const paidActive = ownerCompany.paid_until ? new Date(ownerCompany.paid_until) >= today : false;
+    const showPaywall = !trialActive && !paidActive;
     return (
       <>
         <Routes>
-          <Route path="/*" element={<OwnerApp />} />
+          <Route path="/*" element={<OwnerApp company={ownerCompany} />} />
         </Routes>
         {showPaywall && <PaywallModal companyId={ownerCompany.id} />}
       </>
