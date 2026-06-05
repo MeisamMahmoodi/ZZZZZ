@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { X, Check, Lock, Zap, Star, Crown, ArrowRight } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 type Plan = 'Starter' | 'Business' | 'Premium';
 
@@ -8,6 +10,7 @@ interface UpgradeModalProps {
   currentPlan: Plan;
   requiredPlan: Plan;
   featureName: string;
+  companyId?: string;
 }
 
 const planOrder: Plan[] = ['Starter', 'Business', 'Premium'];
@@ -19,43 +22,63 @@ const planDetails: Record<Plan, {
   bg: string;
   border: string;
   features: string[];
-  payLink: string;
 }> = {
   Starter: {
     icon: Zap,
-    price: '249',
+    price: '99',
     color: 'text-[#3B82F6]',
     bg: 'bg-[#EFF6FF]',
     border: 'border-[#BFDBFE]',
     features: ['Dashboard & Übersicht', 'Mitarbeiterverwaltung', 'Objekte verwalten', 'Einsätze planen', 'Push-Benachrichtigungen'],
-    payLink: 'https://checkout.revolut.com/pay/ca664746-9487-43fd-92d9-fd40e5b85441',
   },
   Business: {
     icon: Star,
-    price: '399',
+    price: '199',
     color: 'text-[#F97316]',
     bg: 'bg-[#FFF7ED]',
     border: 'border-[#FED7AA]',
     features: ['Alles aus Starter', 'Abrechnung & Lohnübersicht', 'Zeitstempel & Check-in', 'Ersatz finden bei Krankheit', 'Kostenkontrolle'],
-    payLink: 'https://checkout.revolut.com/pay/9c765fba-ac0a-49f5-9657-1f8a35556bec',
   },
   Premium: {
     icon: Crown,
-    price: '499',
+    price: '299',
     color: 'text-[#16A34A]',
     bg: 'bg-[#F0FDF4]',
     border: 'border-[#BBF7D0]',
     features: ['Alles aus Business', 'Individuelle Stundensätze', 'Erweiterte Mitarbeiterprofile', 'Prioritäts-Support', 'Bis zu 99 Mitarbeiter'],
-    payLink: 'https://checkout.revolut.com/pay/48dfba15-279a-4535-95c4-b68808e34dbb',
   },
 };
 
-export function UpgradeModal({ open, onClose, currentPlan, requiredPlan, featureName }: UpgradeModalProps) {
+export function UpgradeModal({ open, onClose, currentPlan, requiredPlan, featureName, companyId }: UpgradeModalProps) {
+  const [loading, setLoading] = useState<Plan | null>(null);
+
   if (!open) return null;
 
   const required = planDetails[requiredPlan];
   const RequiredIcon = required.icon;
   const upgradePlans = planOrder.slice(planOrder.indexOf(currentPlan) + 1);
+
+  const handleUpgrade = async (planName: Plan) => {
+    if (!companyId) return;
+    setLoading(planName);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token ?? '';
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ company_id: companyId, plan: planName }),
+        }
+      );
+      const json = await res.json();
+      if (json.url) window.location.href = json.url;
+    } catch {
+      // silently reset on network error
+    }
+    setLoading(null);
+  };
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
@@ -94,6 +117,7 @@ export function UpgradeModal({ open, onClose, currentPlan, requiredPlan, feature
             {upgradePlans.map(planName => {
               const p = planDetails[planName];
               const PIcon = p.icon;
+              const isLoading = loading === planName;
               return (
                 <div key={planName} className={`rounded-2xl border p-4 ${p.bg} ${p.border}`}>
                   <div className="flex items-center justify-between mb-3">
@@ -106,14 +130,17 @@ export function UpgradeModal({ open, onClose, currentPlan, requiredPlan, feature
                         <p className="text-xs text-ink-400">€{p.price}/Monat</p>
                       </div>
                     </div>
-                    <a
-                      href={p.payLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-1.5 bg-ink-900 text-white text-xs font-semibold px-3.5 py-2 rounded-xl hover:bg-ink-700 transition-colors"
+                    <button
+                      onClick={() => handleUpgrade(planName)}
+                      disabled={!!loading || !companyId}
+                      className="flex items-center gap-1.5 bg-ink-900 text-white text-xs font-semibold px-3.5 py-2 rounded-xl hover:bg-ink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Upgrade <ArrowRight size={13} />
-                    </a>
+                      {isLoading ? (
+                        <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <>Upgrade <ArrowRight size={13} /></>
+                      )}
+                    </button>
                   </div>
                   <div className="space-y-1.5">
                     {p.features.map(f => (
