@@ -45,7 +45,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { owner_name, company_name, email, password, contract, contract_start, paid_until } = await req.json();
+    const { owner_name, company_name, email, password, contract, contract_start, paid_until, trial_ends_at } = await req.json();
 
     if (!owner_name || !company_name || !email || !password) {
       return new Response(JSON.stringify({ error: "Alle Pflichtfelder ausfüllen" }), {
@@ -87,6 +87,7 @@ Deno.serve(async (req: Request) => {
       contract: finalContract,
       contract_start: contract_start ?? new Date().toISOString(),
       paid_until: paid_until ?? null,
+      trial_ends_at: trial_ends_at ?? null,
     });
 
     if (companyError) {

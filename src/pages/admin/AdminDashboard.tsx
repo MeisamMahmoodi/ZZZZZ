@@ -83,6 +83,7 @@ function CreateOwnerModal({ onClose, onCreated, token }: { onClose: () => void; 
     contract: 'Starter' as Plan,
     contract_start: new Date().toISOString().split('T')[0],
     paid_until: '',
+    trial_ends_at: (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split('T')[0]; })(),
   });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -106,6 +107,7 @@ function CreateOwnerModal({ onClose, onCreated, token }: { onClose: () => void; 
           contract: form.contract,
           contract_start: form.contract_start ? new Date(form.contract_start).toISOString() : undefined,
           paid_until: form.paid_until ? new Date(form.paid_until).toISOString() : undefined,
+          trial_ends_at: form.trial_ends_at || undefined,
         }),
       });
       const json = await res.json();
@@ -142,6 +144,9 @@ function CreateOwnerModal({ onClose, onCreated, token }: { onClose: () => void; 
           <Field label="Beginn"><input type="date" value={form.contract_start} onChange={set('contract_start')} className="input-field text-sm" /></Field>
           <Field label="Bezahlt bis"><input type="date" value={form.paid_until} onChange={set('paid_until')} className="input-field text-sm" /></Field>
         </div>
+        <Field label="Testzeitraum endet am">
+          <input type="date" value={form.trial_ends_at} onChange={set('trial_ends_at')} className="input-field text-sm" />
+        </Field>
         {error && <p className="text-sm text-red-600 font-medium">{error}</p>}
         <div className="flex gap-3 pt-1">
           <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-sm font-semibold text-slate-600 hover:bg-slate-50">Abbrechen</button>
