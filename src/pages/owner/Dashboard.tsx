@@ -192,7 +192,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
     if (!error) onRefresh();
   };
 
-  const sickCount = sickEmployees.length;
+  const sickCount = sickReportsForCompany.length;
   const srHasReplacement = (sr: SickReportWithEmployee) => {
     return replacementRequests.some(rr => rr.sick_report_id === sr.id);
   };
