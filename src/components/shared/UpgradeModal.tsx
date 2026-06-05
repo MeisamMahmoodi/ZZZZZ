@@ -49,6 +49,14 @@ const planDetails: Record<Plan, {
   },
 };
 
+async function resolveCompanyId(propCompanyId?: string): Promise<string | null> {
+  if (propCompanyId) return propCompanyId;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return null;
+  const { data } = await supabase.from('companies').select('id').eq('owner_id', user.id).maybeSingle();
+  return data?.id ?? null;
+}
+
 export function UpgradeModal({ open, onClose, currentPlan, requiredPlan, featureName, companyId }: UpgradeModalProps) {
   const [loading, setLoading] = useState<Plan | null>(null);
 
@@ -59,17 +67,20 @@ export function UpgradeModal({ open, onClose, currentPlan, requiredPlan, feature
   const upgradePlans = planOrder.slice(planOrder.indexOf(currentPlan) + 1);
 
   const handleUpgrade = async (planName: Plan) => {
-    if (!companyId) return;
     setLoading(planName);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
+      const [{ data: { session } }, resolvedId] = await Promise.all([
+        supabase.auth.getSession(),
+        resolveCompanyId(companyId),
+      ]);
+      if (!resolvedId) return;
       const token = session?.access_token ?? '';
       const res = await fetch(
         `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-checkout-session`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ company_id: companyId, plan: planName }),
+          body: JSON.stringify({ company_id: resolvedId, plan: planName }),
         }
       );
       const json = await res.json();
@@ -132,7 +143,7 @@ export function UpgradeModal({ open, onClose, currentPlan, requiredPlan, feature
                     </div>
                     <button
                       onClick={() => handleUpgrade(planName)}
-                      disabled={!!loading || !companyId}
+                      disabled={!!loading}
                       className="flex items-center gap-1.5 bg-ink-900 text-white text-xs font-semibold px-3.5 py-2 rounded-xl hover:bg-ink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isLoading ? (
