@@ -73,7 +73,7 @@ export function Datenschutz() {
           <p>
             E-Mail-Adresse:{' '}
             <a href="mailto:meisam.projects@gmail.com" className="text-[#0F172A] underline underline-offset-2 hover:no-underline">
-              meisam.projects@gmail.com
+              meisam@meizo.de
             </a>
           </p>
           <p>Telefon: +49 176 61860432</p>
