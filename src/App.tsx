@@ -254,7 +254,7 @@ function AppRoutes() {
           setCompanyId(null);
         }
       })
-      .catch(() => { setRole(null); setCompanyId(null); })
+      .catch(() => { setRole(null); setCompanyId(null); setOwnerCompany(undefined); })
       .finally(() => {
         clearTimeout(timeout);
         setRoleLoading(false);
