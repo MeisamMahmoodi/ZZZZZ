@@ -19,6 +19,7 @@ import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { supabase } from './lib/supabase';
 import { Eye, EyeOff } from 'lucide-react';
 import { Pricing } from './pages/Pricing';
+import { PaywallModal } from './components/shared/PaywallModal';
 
 function OwnerApp() {
   const [page, setPage] = useState('dashboard');
@@ -207,6 +208,7 @@ function AppRoutes() {
   const [role, setRole] = useState<'owner' | 'employee' | 'admin' | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
+  const [ownerCompany, setOwnerCompany] = useState<{ id: string; trial_ends_at: string | null; paid_until: string | null } | null>(null);
   const [suspended, setSuspended] = useState(false);
   const prevUserId = React.useRef<string | null>(null);
 
@@ -240,10 +242,11 @@ function AppRoutes() {
           if (data.role === 'owner') {
             const { data: company } = await supabase
               .from('companies')
-              .select('id')
+              .select('id, trial_ends_at, paid_until')
               .eq('owner_id', uid)
               .maybeSingle();
             setCompanyId(company?.id ?? null);
+            setOwnerCompany(company ? { id: company.id, trial_ends_at: company.trial_ends_at ?? null, paid_until: company.paid_until ?? null } : null);
           }
         } else {
           setRole(null);
@@ -320,10 +323,17 @@ function AppRoutes() {
   }
 
   if (role === 'owner') {
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const trialActive = ownerCompany?.trial_ends_at ? new Date(ownerCompany.trial_ends_at) >= today : false;
+    const paidActive = ownerCompany?.paid_until ? new Date(ownerCompany.paid_until) >= today : false;
+    const showPaywall = ownerCompany && !trialActive && !paidActive;
     return (
-      <Routes>
-        <Route path="/*" element={<OwnerApp />} />
-      </Routes>
+      <>
+        <Routes>
+          <Route path="/*" element={<OwnerApp />} />
+        </Routes>
+        {showPaywall && <PaywallModal companyId={ownerCompany.id} />}
+      </>
     );
   }
 
