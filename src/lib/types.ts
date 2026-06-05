@@ -12,6 +12,7 @@ export interface Company {
   owner_id: string | null;
   contract: string;
   created_at: string;
+  trial_ends_at: string | null;
 }
 
 export interface Employee {

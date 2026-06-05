@@ -245,8 +245,22 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
     return properties.filter(p => propIds.has(p.id));
   }, [todayAssignments, properties]);
 
+  const trialBadge = (() => {
+    if (!company.trial_ends_at) return null;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const end = new Date(company.trial_ends_at); end.setHours(0, 0, 0, 0);
+    const diff = Math.round((end.getTime() - today.getTime()) / 86400000);
+    if (diff < 0) return null;
+    return diff === 0 ? 'Noch heute kostenlos' : `Kostenlose Testphase — noch ${diff} Tage`;
+  })();
+
   return (
     <div>
+      {trialBadge && (
+        <div className="mb-5 inline-flex items-center px-3.5 py-1.5 rounded-xl bg-orange-100 text-orange-700 text-xs font-semibold">
+          {trialBadge}
+        </div>
+      )}
       {/* Header */}
       <div className="flex items-start justify-between mb-8">
         <div>
