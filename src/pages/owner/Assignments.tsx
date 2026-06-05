@@ -24,6 +24,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const [properties, setProperties] = useState<Property[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [sickReports, setSickReports] = useState<SickReport[]>([]);
+  const [replacementRequests, setReplacementRequests] = useState<{ id: string; sick_report_id: string; property_id: string; status: string; replacement_employee_id: string; replacement_employee?: Employee }[]>([]);
   const [addModal, setAddModal] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
@@ -51,13 +52,14 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   async function loadData() {
     setLoading(true);
     try {
-      const [assignRes, propRes, empRes, sickRes] = await Promise.all([
+      const [assignRes, propRes, empRes, sickRes, rrRes] = await Promise.all([
         supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').eq('date', selectedDate).order('created_at'),
         supabase.from('properties').select('*').eq('company_id', company.id).order('name'),
         supabase.from('employees').select('*').eq('company_id', company.id),
         supabase.from('sick_reports').select('*')
           .lte('date', selectedDate)
           .or(`date_to.gte.${selectedDate},date_to.is.null`),
+        supabase.from('replacement_requests').select('id, sick_report_id, property_id, status, replacement_employee_id, replacement_employee:employees!replacement_employee_id(*)').eq('status', 'accepted'),
       ]);
       setAssignments((assignRes.data as unknown as AssignmentWithDetails[]) || []);
       setProperties(propRes.data || []);
@@ -67,6 +69,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
         return sr.date <= selectedDate && selectedDate <= end;
       });
       setSickReports(filtered);
+      setReplacementRequests((rrRes.data || []) as typeof replacementRequests);
     } catch {
       // Component renders with existing state
     }
@@ -169,17 +172,33 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
     }
   };
 
+  const replacementAssignmentIds = useMemo(() => {
+    const ids = new Set<string>();
+    replacementRequests.forEach(rr => {
+      companyAssignments.forEach(a => {
+        if (a.employee_id === rr.replacement_employee_id && a.property_id === rr.property_id) {
+          ids.add(a.id);
+        }
+      });
+    });
+    return ids;
+  }, [replacementRequests, companyAssignments]);
+
   const groupedAssignments = useMemo(() => {
-    const groups: Record<string, { property: Property; assignments: AssignmentWithDetails[] }> = {};
+    const groups: Record<string, { property: Property; assignments: AssignmentWithDetails[]; replacementEmployee?: Employee }> = {};
     companyAssignments.forEach(a => {
+      if (replacementAssignmentIds.has(a.id)) return;
       const timeFrom = a.time_from ?? a.property?.time_from ?? '';
       const timeTo = a.time_to ?? a.property?.time_to ?? '';
       const key = `${a.property_id}__${timeFrom}__${timeTo}`;
-      if (!groups[key]) groups[key] = { property: a.property, assignments: [] };
+      if (!groups[key]) {
+        const rr = replacementRequests.find(r => r.property_id === a.property_id);
+        groups[key] = { property: a.property, assignments: [], replacementEmployee: rr?.replacement_employee };
+      }
       groups[key].assignments.push(a);
     });
     return Object.values(groups);
-  }, [companyAssignments]);
+  }, [companyAssignments, replacementAssignmentIds, replacementRequests]);
 
   const dateNav = (direction: number) => {
     const d = new Date(selectedDate);
@@ -229,16 +248,22 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
         </div>
       ) : (
         <div className="space-y-4">
-          {groupedAssignments.map(({ property, assignments: propAssignments }) => {
+          {groupedAssignments.map(({ property, assignments: propAssignments, replacementEmployee }) => {
             const firstA = propAssignments[0];
             const displayFrom = firstA?.time_from ?? property.time_from;
             const displayTo = firstA?.time_to ?? property.time_to;
+            const hasSickInGroup = propAssignments.some(a => sickEmployeeIds.has(a.employee_id));
             return (
             <div key={property.id} className="card">
               <div className="px-5 sm:px-6 py-4 border-b border-[#F1F5F9] bg-[#F8FAFC]">
                 <p className="text-sm font-semibold text-[#0F172A]">{property.name}</p>
                 <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {property.address}</p>
                 <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(displayFrom)} – {formatTime(displayTo)} Uhr</p>
+                {hasSickInGroup && replacementEmployee && (
+                  <p className="text-xs text-[#16A34A] font-semibold mt-1.5 flex items-center gap-1.5">
+                    <Check size={12} /> Ersatz: {replacementEmployee.first_name} {replacementEmployee.last_name}
+                  </p>
+                )}
               </div>
               <div className="divide-y divide-[#F1F5F9]">
                 {propAssignments.map(a => {
