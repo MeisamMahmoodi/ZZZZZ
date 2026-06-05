@@ -138,10 +138,25 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
     return `${from} – ${to}`;
   };
 
+  const replacementAssignmentIds = useMemo(() => {
+    const ids = new Set<string>();
+    replacementRequests
+      .filter(rr => rr.status === 'accepted')
+      .forEach(rr => {
+        todayAssignments.forEach(a => {
+          if (a.employee_id === rr.replacement_employee_id && a.property_id === rr.property_id) {
+            ids.add(a.id);
+          }
+        });
+      });
+    return ids;
+  }, [replacementRequests, todayAssignments]);
+
   const groupedPropertyAssignments = useMemo(() => {
     const groups: Record<string, { property: Property; timeFrom: string; timeTo: string; assignments: AssignmentWithDetails[] }> = {};
     todayAssignments.forEach(a => {
       if (a.status === 'cancelled') return;
+      if (replacementAssignmentIds.has(a.id)) return;
       const timeFrom = a.time_from ?? a.property?.time_from ?? '';
       const timeTo = a.time_to ?? a.property?.time_to ?? '';
       const key = `${a.property_id}__${timeFrom}__${timeTo}`;
@@ -151,7 +166,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       groups[key].assignments.push(a);
     });
     return Object.values(groups);
-  }, [todayAssignments]);
+  }, [todayAssignments, replacementAssignmentIds]);
 
   const getPropertyAssignments = (propertyId: string) =>
     todayAssignments.filter(a => a.property_id === propertyId && a.status !== 'cancelled');
