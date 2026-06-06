@@ -49,6 +49,22 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const action = body.action as string;
 
+    // ── list-dashboard-data ────────────────────────────────────
+    if (action === "list-dashboard-data") {
+      const [companiesRes, employeesRes, propertiesRes, assignmentsRes] = await Promise.all([
+        supabaseAdmin.from("companies").select("*").order("created_at", { ascending: false }),
+        supabaseAdmin.from("employees").select("id, company_id, first_name, last_name, status, email, user_id, phone"),
+        supabaseAdmin.from("properties").select("id, company_id"),
+        supabaseAdmin.from("assignments").select("id, property_id"),
+      ]);
+      return json({
+        companies: companiesRes.data ?? [],
+        employees: employeesRes.data ?? [],
+        properties: propertiesRes.data ?? [],
+        assignments: assignmentsRes.data ?? [],
+      });
+    }
+
     // ── list-users ─────────────────────────────────────────────
     if (action === "list-users") {
       const page = body.page ?? 1;

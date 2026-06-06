@@ -1014,36 +1014,27 @@ export function AdminDashboard() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data: companiesData } = await supabase
-      .from('companies')
-      .select('*')
-      .order('created_at', { ascending: false });
+    try {
+      const data = await callAdminAction('list-dashboard-data', {}, token);
+      const companiesData: CompanyRow[] = data.companies ?? [];
+      const employees: { id: string; company_id: string; first_name: string; last_name: string; status: string; email: string | null; user_id: string | null; phone: string }[] = data.employees ?? [];
+      const properties: { id: string; company_id: string }[] = data.properties ?? [];
+      const assignments: { id: string; property_id: string }[] = data.assignments ?? [];
 
-    if (!companiesData) { setLoading(false); return; }
+      const propertyToCompany = new Map<string, string>();
+      properties.forEach(p => propertyToCompany.set(p.id, p.company_id));
 
-    const [empRes, propRes, assRes] = await Promise.all([
-      supabase.from('employees').select('id, company_id, first_name, last_name, status, email, user_id, phone'),
-      supabase.from('properties').select('id, company_id'),
-      supabase.from('assignments').select('id, property_id'),
-    ]);
+      const rows: CompanyRow[] = companiesData.map(c => {
+        const emps = employees.filter(e => e.company_id === c.id);
+        const props = properties.filter(p => p.company_id === c.id);
+        const asss = assignments.filter(a => propertyToCompany.get(a.property_id) === c.id);
+        return { ...c, employee_count: emps.length, property_count: props.length, assignment_count: asss.length, employees: emps };
+      });
 
-    const employees = empRes.data ?? [];
-    const properties = propRes.data ?? [];
-    const assignments = assRes.data ?? [];
-
-    const propertyToCompany = new Map<string, string>();
-    properties.forEach(p => propertyToCompany.set(p.id, p.company_id));
-
-    const rows: CompanyRow[] = companiesData.map(c => {
-      const emps = employees.filter(e => e.company_id === c.id);
-      const props = properties.filter(p => p.company_id === c.id);
-      const asss = assignments.filter(a => propertyToCompany.get(a.property_id) === c.id);
-      return { ...c, employee_count: emps.length, property_count: props.length, assignment_count: asss.length, employees: emps };
-    });
-
-    setCompanies(rows);
+      setCompanies(rows);
+    } catch { /* ignore */ }
     setLoading(false);
-  }, []);
+  }, [token]);
 
   useEffect(() => { load(); }, [load]);
 
