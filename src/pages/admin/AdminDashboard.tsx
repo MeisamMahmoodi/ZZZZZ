@@ -1,12 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
-import { createClient } from '@supabase/supabase-js';
 import { useAuth } from '../../hooks/useAuth';
-
-const adminSupabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY,
-);
 import {
   Building2, Users, ShieldCheck, LogOut, ChevronDown, ChevronUp,
   Plus, X, Eye, EyeOff, AlertTriangle, Calendar, CreditCard,
@@ -1020,7 +1014,7 @@ export function AdminDashboard() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data: companiesData } = await adminSupabase
+    const { data: companiesData } = await supabase
       .from('companies')
       .select('*')
       .order('created_at', { ascending: false });
@@ -1028,9 +1022,9 @@ export function AdminDashboard() {
     if (!companiesData) { setLoading(false); return; }
 
     const [empRes, propRes, assRes] = await Promise.all([
-      adminSupabase.from('employees').select('id, company_id, first_name, last_name, status, email, user_id, phone'),
-      adminSupabase.from('properties').select('id, company_id'),
-      adminSupabase.from('assignments').select('id, property_id'),
+      supabase.from('employees').select('id, company_id, first_name, last_name, status, email, user_id, phone'),
+      supabase.from('properties').select('id, company_id'),
+      supabase.from('assignments').select('id, property_id'),
     ]);
 
     const employees = empRes.data ?? [];
