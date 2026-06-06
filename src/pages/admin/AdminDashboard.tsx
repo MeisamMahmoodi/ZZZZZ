@@ -677,19 +677,36 @@ function UsersTab({ token, companies }: { token?: string; companies: CompanyRow[
 
   useEffect(() => { load(); }, [load]);
 
-  // Map user_id to company name for owners
-  const companyByOwner = useMemo(() => {
-    const m = new Map<string, string>();
-    companies.forEach(c => { if (c.owner_id) m.set(c.owner_id, c.name); });
+  // email -> company (for owner matching)
+  const companyByOwnerEmail = useMemo(() => {
+    const m = new Map<string, CompanyRow>();
+    companies.forEach(c => { if (c.owner_email) m.set(c.owner_email.toLowerCase(), c); });
     return m;
   }, [companies]);
 
-  const filtered = useMemo(() => users.filter(u => {
-    if (roleFilter === 'orphan' && u.role) return false;
-    if (roleFilter !== 'all' && roleFilter !== 'orphan' && u.role !== roleFilter) return false;
-    if (search && !u.email.toLowerCase().includes(search.toLowerCase())) return false;
-    return true;
-  }), [users, search, roleFilter]);
+  // auth user_id -> company (for employee matching)
+  const companyByEmployeeUserId = useMemo(() => {
+    const m = new Map<string, CompanyRow>();
+    companies.forEach(c => {
+      c.employees.forEach(e => { if (e.user_id) m.set(e.user_id, c); });
+    });
+    return m;
+  }, [companies]);
+
+  // Build owner groups: each owner with their company's employees
+  const groups = useMemo(() => {
+    const ownerUsers = users.filter(u => u.role === 'owner');
+    const employeeUsers = users.filter(u => u.role === 'employee');
+    return ownerUsers.map(owner => {
+      const company = companyByOwnerEmail.get(owner.email.toLowerCase()) ?? null;
+      const empUsers = company
+        ? employeeUsers.filter(eu => companyByEmployeeUserId.get(eu.id)?.id === company.id)
+        : [];
+      return { owner, company, employees: empUsers };
+    });
+  }, [users, companyByOwnerEmail, companyByEmployeeUserId]);
+
+  const coveredEmployeeIds = useMemo(() => new Set(groups.flatMap(g => g.employees.map(e => e.id))), [groups]);
 
   const counts = useMemo(() => ({
     all: users.length,
@@ -698,6 +715,63 @@ function UsersTab({ token, companies }: { token?: string; companies: CompanyRow[
     admin: users.filter(u => u.role === 'admin').length,
     orphan: users.filter(u => !u.role).length,
   }), [users]);
+
+  const q = search.toLowerCase();
+
+  // Flat filtered list for admin/orphan views
+  const flatFiltered = useMemo(() => users.filter(u => {
+    if (roleFilter === 'orphan' && u.role) return false;
+    if (roleFilter === 'admin' && u.role !== 'admin') return false;
+    if (roleFilter !== 'orphan' && roleFilter !== 'admin') return false;
+    return !q || u.email.toLowerCase().includes(q);
+  }), [users, roleFilter, q]);
+
+  // Filtered groups for owner/employee/all views
+  const groupsFiltered = useMemo(() => {
+    if (roleFilter === 'admin' || roleFilter === 'orphan') return [];
+    return groups
+      .filter(g => {
+        if (roleFilter === 'owner') return !q || g.owner.email.toLowerCase().includes(q);
+        if (roleFilter === 'employee') return g.employees.some(e => !q || e.email.toLowerCase().includes(q));
+        return !q || g.owner.email.toLowerCase().includes(q) || g.employees.some(e => e.email.toLowerCase().includes(q));
+      })
+      .map(g => {
+        if (roleFilter === 'owner') return { ...g, employees: [] };
+        if (roleFilter === 'employee') return { ...g, employees: g.employees.filter(e => !q || e.email.toLowerCase().includes(q)) };
+        return g;
+      });
+  }, [groups, roleFilter, q]);
+
+  // Ungrouped employees (not matched to any owner's company)
+  const ungroupedEmployees = useMemo(() => {
+    if (roleFilter === 'admin' || roleFilter === 'orphan' || roleFilter === 'owner') return [];
+    return users.filter(u => u.role === 'employee' && !coveredEmployeeIds.has(u.id) && (!q || u.email.toLowerCase().includes(q)));
+  }, [users, coveredEmployeeIds, roleFilter, q]);
+
+  const useGrouped = roleFilter !== 'admin' && roleFilter !== 'orphan';
+  const visibleCount = useGrouped
+    ? groupsFiltered.reduce((s, g) => s + 1 + g.employees.length, 0) + ungroupedEmployees.length
+    : flatFiltered.length;
+
+  const renderUserActions = (u: AuthUser) => (
+    <div className="flex gap-1.5 flex-shrink-0">
+      <button onClick={() => setResetTarget(u)} className="flex items-center gap-1 text-xs font-semibold bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-50" title="Passwort ändern">
+        <Key size={12} /> PW
+      </button>
+      <button onClick={() => setDeleteTarget(u)} className="flex items-center gap-1 text-xs font-semibold bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50" title="Konto löschen">
+        <Trash2 size={12} />
+      </button>
+    </div>
+  );
+
+  const renderRoleBadge = (u: AuthUser) => (
+    <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+      u.role === 'admin' ? 'bg-amber-100 text-amber-700' :
+      u.role === 'owner' ? 'bg-blue-100 text-blue-700' :
+      u.role === 'employee' ? 'bg-emerald-100 text-emerald-700' :
+      'bg-slate-100 text-slate-500'
+    }`}>{u.role ?? 'ohne Profil'}</span>
+  );
 
   return (
     <div className="space-y-5">
@@ -721,53 +795,110 @@ function UsersTab({ token, companies }: { token?: string; companies: CompanyRow[
 
       <div className="card overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-          <h2 className="font-semibold text-slate-900 text-sm">{filtered.length} Benutzer</h2>
+          <h2 className="font-semibold text-slate-900 text-sm">{visibleCount} Benutzer</h2>
           <button onClick={load} className="text-xs font-semibold text-slate-500 hover:text-slate-900 flex items-center gap-1"><RefreshCw size={12} /> Aktualisieren</button>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-16"><div className="w-6 h-6 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" /></div>
-        ) : filtered.length === 0 ? (
+        ) : visibleCount === 0 ? (
           <p className="text-center text-slate-400 text-sm py-12">Keine Benutzer</p>
-        ) : (
+        ) : useGrouped ? (
           <ul className="divide-y divide-slate-100">
-            {filtered.map(u => {
-              const company = companyByOwner.get(u.id);
-              const mustChange = u.user_metadata?.must_change_password === true;
-              return (
-                <li key={u.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
-                  <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
-                    <Mail size={15} className="text-slate-500" />
+            {groupsFiltered.map(g => (
+              <li key={g.owner.id}>
+                {/* Owner row */}
+                <div className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
+                  <div className="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center flex-shrink-0">
+                    <Crown size={15} className="text-blue-500" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-slate-900 text-sm truncate">{u.email}</p>
-                      <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                        u.role === 'admin' ? 'bg-amber-100 text-amber-700' :
-                        u.role === 'owner' ? 'bg-blue-100 text-blue-700' :
-                        u.role === 'employee' ? 'bg-emerald-100 text-emerald-700' :
-                        'bg-slate-100 text-slate-500'
-                      }`}>{u.role ?? 'ohne Profil'}</span>
-                      {mustChange && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">muss PW ändern</span>}
-                      {!u.email_confirmed_at && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">unbestätigt</span>}
+                      <p className="font-semibold text-slate-900 text-sm truncate">{g.owner.email}</p>
+                      {renderRoleBadge(g.owner)}
+                      {g.owner.user_metadata?.must_change_password === true && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">muss PW ändern</span>}
+                      {!g.owner.email_confirmed_at && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">unbestätigt</span>}
                     </div>
                     <p className="text-xs text-slate-500 truncate">
-                      {company && `${company} · `}
-                      Erstellt {new Date(u.created_at).toLocaleDateString('de-DE')} ·
-                      {u.last_sign_in_at ? ` Login ${new Date(u.last_sign_in_at).toLocaleDateString('de-DE')}` : ' Nie eingeloggt'}
+                      {g.company ? `${g.company.name} · ` : ''}
+                      Erstellt {new Date(g.owner.created_at).toLocaleDateString('de-DE')} ·
+                      {g.owner.last_sign_in_at ? ` Login ${new Date(g.owner.last_sign_in_at).toLocaleDateString('de-DE')}` : ' Nie eingeloggt'}
                     </p>
                   </div>
-                  <div className="flex gap-1.5 flex-shrink-0">
-                    <button onClick={() => setResetTarget(u)} className="flex items-center gap-1 text-xs font-semibold bg-white border border-slate-200 text-slate-700 px-3 py-1.5 rounded-lg hover:bg-slate-50" title="Passwort ändern">
-                      <Key size={12} /> PW
-                    </button>
-                    <button onClick={() => setDeleteTarget(u)} className="flex items-center gap-1 text-xs font-semibold bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-50" title="Konto löschen">
-                      <Trash2 size={12} />
-                    </button>
+                  {renderUserActions(g.owner)}
+                </div>
+
+                {/* Indented employee rows */}
+                {g.employees.map(emp => (
+                  <div key={emp.id} className="flex items-center gap-4 hover:bg-slate-50/80 transition-colors border-t border-slate-100 bg-slate-50/40">
+                    <div className="w-px self-stretch bg-slate-200 ml-[52px] flex-shrink-0" />
+                    <div className="flex items-center gap-4 flex-1 py-3 pr-6 min-w-0">
+                      <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                        <Users size={12} className="text-emerald-500" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="font-medium text-slate-800 text-sm truncate">{emp.email}</p>
+                          {renderRoleBadge(emp)}
+                          {emp.user_metadata?.must_change_password === true && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">muss PW ändern</span>}
+                          {!emp.email_confirmed_at && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">unbestätigt</span>}
+                        </div>
+                        <p className="text-xs text-slate-400 truncate">
+                          Erstellt {new Date(emp.created_at).toLocaleDateString('de-DE')} ·
+                          {emp.last_sign_in_at ? ` Login ${new Date(emp.last_sign_in_at).toLocaleDateString('de-DE')}` : ' Nie eingeloggt'}
+                        </p>
+                      </div>
+                      {renderUserActions(emp)}
+                    </div>
                   </div>
-                </li>
-              );
-            })}
+                ))}
+              </li>
+            ))}
+
+            {/* Ungrouped employees */}
+            {ungroupedEmployees.map(u => (
+              <li key={u.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
+                <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                  <Mail size={15} className="text-slate-500" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-slate-900 text-sm truncate">{u.email}</p>
+                    {renderRoleBadge(u)}
+                    {u.user_metadata?.must_change_password === true && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">muss PW ändern</span>}
+                    {!u.email_confirmed_at && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">unbestätigt</span>}
+                  </div>
+                  <p className="text-xs text-slate-500 truncate">
+                    Erstellt {new Date(u.created_at).toLocaleDateString('de-DE')} ·
+                    {u.last_sign_in_at ? ` Login ${new Date(u.last_sign_in_at).toLocaleDateString('de-DE')}` : ' Nie eingeloggt'}
+                  </p>
+                </div>
+                {renderUserActions(u)}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {flatFiltered.map(u => (
+              <li key={u.id} className="px-6 py-4 flex items-center gap-4 hover:bg-slate-50 transition-colors">
+                <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center flex-shrink-0">
+                  <Mail size={15} className="text-slate-500" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-semibold text-slate-900 text-sm truncate">{u.email}</p>
+                    {renderRoleBadge(u)}
+                    {u.user_metadata?.must_change_password === true && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">muss PW ändern</span>}
+                    {!u.email_confirmed_at && <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">unbestätigt</span>}
+                  </div>
+                  <p className="text-xs text-slate-500 truncate">
+                    Erstellt {new Date(u.created_at).toLocaleDateString('de-DE')} ·
+                    {u.last_sign_in_at ? ` Login ${new Date(u.last_sign_in_at).toLocaleDateString('de-DE')}` : ' Nie eingeloggt'}
+                  </p>
+                </div>
+                {renderUserActions(u)}
+              </li>
+            ))}
           </ul>
         )}
       </div>
@@ -885,7 +1016,7 @@ export function AdminDashboard() {
     setLoading(true);
     const { data: companiesData } = await supabase
       .from('companies')
-      .select('id, name, owner_name, owner_email, owner_id, contract, contract_start, contract_end, paid_until, last_payment_at, deleted_at, created_at')
+      .select('*')
       .order('created_at', { ascending: false });
 
     if (!companiesData) { setLoading(false); return; }
