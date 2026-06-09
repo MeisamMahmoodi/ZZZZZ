@@ -181,6 +181,14 @@ function AccountSuspendedScreen() {
 
 function LandingPage() {
   const navigate = useNavigate();
+
+  const isMobile = window.innerWidth < 768;
+  const isPwa = window.matchMedia('(display-mode: standalone)').matches;
+
+  if (isMobile || isPwa) {
+    return <UnifiedLogin />;
+  }
+
   return (
     <div className="bg-white flex flex-col">
       {/* Nav */}
@@ -202,7 +210,6 @@ function LandingPage() {
           allow="autoplay"
         />
       </div>
-
     </div>
   );
 }
