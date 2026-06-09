@@ -182,17 +182,40 @@ function AccountSuspendedScreen() {
 function LandingPage() {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center overflow-hidden">
-      <div className="flex flex-col items-center gap-8">
-        <img src="/meizoLogoL.jpeg" alt="Meizo" className="h-16 w-auto" />
-        <button onClick={() => navigate('/login')} className="btn-primary px-10 py-3">
-          Zum Login
+    <div className="bg-white flex flex-col">
+      {/* Nav */}
+      <nav className="fixed top-0 right-0 z-50 p-4 pr-6">
+        <button
+          onClick={() => navigate('/login')}
+          className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors bg-white/80 backdrop-blur-sm border border-slate-200 rounded-lg px-4 py-2"
+        >
+          Anmelden
         </button>
+      </nav>
+
+      {/* Hero: full-viewport slideshow */}
+      <div className="w-full" style={{ height: '100vh' }}>
+        <iframe
+          src="/hero.html"
+          className="w-full h-full border-0"
+          title="meizo Präsentation"
+          allow="autoplay"
+        />
       </div>
-      <div className="absolute bottom-6">
-        <a href="mailto:meisam.projects@gmail.com" className="text-xs text-[#94A3B8] hover:text-[#64748B] transition-colors">
-          Noch kein Account? Demo anfragen
-        </a>
+
+      {/* Existing content below the fold */}
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center overflow-hidden">
+        <div className="flex flex-col items-center gap-8">
+          <img src="/meizoLogoL.jpeg" alt="Meizo" className="h-16 w-auto" />
+          <button onClick={() => navigate('/login')} className="btn-primary px-10 py-3">
+            Zum Login
+          </button>
+        </div>
+        <div className="absolute bottom-6">
+          <a href="mailto:meisam.projects@gmail.com" className="text-xs text-[#94A3B8] hover:text-[#64748B] transition-colors">
+            Noch kein Account? Demo anfragen
+          </a>
+        </div>
       </div>
     </div>
   );
