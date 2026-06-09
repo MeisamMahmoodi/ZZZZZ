@@ -133,6 +133,15 @@ export function PaywallModal({ companyId }: Props) {
             );
           })}
         </div>
+
+        <div className="mt-5 text-center">
+          <button
+            onClick={() => supabase.auth.signOut()}
+            className="text-xs text-slate-400 hover:text-slate-600 transition-colors"
+          >
+            Abmelden
+          </button>
+        </div>
       </div>
     </div>
   );
