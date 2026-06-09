@@ -107,11 +107,14 @@ p.small { font-size:18px; color:#9ca3af; margin-top:10px; }
   padding:16px 20px; display:flex; align-items:center; gap:14px;
   opacity:0; transform:scale(0.94);
   transition:opacity 0.35s, transform 0.35s;
+  overflow:hidden;
 }
 .lang-card.show { opacity:1; transform:scale(1); }
 .lang-flag { font-size:30px; flex-shrink:0; }
 .lang-name { font-size:18px; font-weight:700; color:#111827; }
 .lang-sub  { font-size:13px; color:#9ca3af; }
+.lang-thumb { width:52px; height:88px; border-radius:8px; overflow:hidden; margin-left:auto; flex-shrink:0; box-shadow:0 3px 10px rgba(0,0,0,0.12); }
+.lang-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
 .divider { width:56px; height:3px; background:#16a34a; border-radius:2px; margin:20px 0; }
 #progress {
   position:fixed; bottom:0; left:0; right:0; height:4px;
@@ -306,7 +309,7 @@ p.small { font-size:18px; color:#9ca3af; margin-top:10px; }
     </div>
     <div style="flex:0 0 300px;">
       <div class="phone up d2" style="width:300px;">
-        <img src="/assets/EinspringenAusgewählt.PNG" alt="Einspringen Ausgewählt" />
+        <img src="/assets/EinspringenAusgew%C3%A4hlt.PNG" alt="Einspringen Ausgewählt" />
       </div>
     </div>
   </div>
@@ -357,13 +360,13 @@ p.small { font-size:18px; color:#9ca3af; margin-top:10px; }
     <div style="display:flex; gap:24px; align-items:flex-end;" class="up d2">
       <div style="text-align:center;">
         <div class="phone" style="width:265px;">
-          <img src="/assets/checkInBestätigung.PNG" alt="Einsatz aktiv" />
+          <img src="/assets/checkInBest%C3%A4tigung.PNG" alt="Einsatz aktiv" />
         </div>
         <div style="font-size:16px; font-weight:600; color:#374151; margin-top:10px;">Einsatz aktiv</div>
       </div>
       <div style="text-align:center;">
         <div class="phone" style="width:265px;">
-          <img src="/assets/CheckInStandortBestätigung.PNG" alt="Standort" />
+          <img src="/assets/CheckInStandortBest%C3%A4tigung.PNG" alt="Standort" />
         </div>
         <div style="font-size:16px; font-weight:600; color:#374151; margin-top:10px;">Standort ✓</div>
       </div>
@@ -395,7 +398,7 @@ p.small { font-size:18px; color:#9ca3af; margin-top:10px; }
         <div class="lang-card" id="lc2" style="transition-delay:0.1s;">
           <span class="lang-flag">🇷🇴</span>
           <div><div class="lang-name">Română</div><div class="lang-sub">Buna ziua</div></div>
-          <div class="lang-thumb"><img src="/assets/Rumänisch.PNG" alt="Rumänisch"/></div>
+          <div class="lang-thumb"><img src="/assets/Rum%C3%A4nisch.PNG" alt="Rumänisch"/></div>
         </div>
         <div class="lang-card" id="lc3" style="transition-delay:0.2s;">
           <span class="lang-flag">🇵🇱</span>
