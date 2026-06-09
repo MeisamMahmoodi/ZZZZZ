@@ -203,20 +203,6 @@ function LandingPage() {
         />
       </div>
 
-      {/* Existing content below the fold */}
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center overflow-hidden">
-        <div className="flex flex-col items-center gap-8">
-          <img src="/meizoLogoL.jpeg" alt="Meizo" className="h-16 w-auto" />
-          <button onClick={() => navigate('/login')} className="btn-primary px-10 py-3">
-            Zum Login
-          </button>
-        </div>
-        <div className="absolute bottom-6">
-          <a href="mailto:meisam.projects@gmail.com" className="text-xs text-[#94A3B8] hover:text-[#64748B] transition-colors">
-            Noch kein Account? Demo anfragen
-          </a>
-        </div>
-      </div>
     </div>
   );
 }
