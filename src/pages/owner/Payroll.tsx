@@ -160,6 +160,212 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
     setEditingWageValue('');
   };
 
+  const handleExportPDF = () => {
+    if (!hasBusiness) { setUpgradeOpen(true); return; }
+
+    const standardWage = employees.find(e => e.hourly_wage != null)?.hourly_wage;
+
+    interface PdfRow {
+      num: number;
+      name: string;
+      date: string;
+      property: string;
+      from: string;
+      to: string;
+      hours: number;
+      wage: number | null;
+      total: number | null;
+      hasProof: boolean;
+    }
+
+    interface EmpGroup {
+      name: string;
+      rows: PdfRow[];
+      totalHours: number;
+      totalAmount: number;
+    }
+
+    const groups: EmpGroup[] = [];
+    let rowNum = 0;
+
+    for (const emp of employees) {
+      const empWage = isPremium ? emp.hourly_wage : standardWage ?? null;
+      const empAssignments = monthAssignments
+        .filter(a => a.employee_id === emp.id && (a.status === 'completed' || a.status === 'checked_in'))
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      if (empAssignments.length === 0) continue;
+
+      const rows: PdfRow[] = [];
+      let totalHours = 0;
+      let totalAmount = 0;
+
+      for (const a of empAssignments) {
+        rowNum++;
+        const prop = a.property;
+        const tf = a.time_from ?? prop.time_from;
+        const tt = a.time_to ?? prop.time_to;
+        const [fh, fm] = tf.split(':').map(Number);
+        const [th, tm] = tt.split(':').map(Number);
+        const mins = (th * 60 + tm) - (fh * 60 + fm);
+        const hrs = mins / 60;
+        const tot = empWage != null ? hrs * empWage : null;
+        const dateObj = new Date(a.date);
+        const dateStr = `${String(dateObj.getDate()).padStart(2,'0')}.${String(dateObj.getMonth()+1).padStart(2,'0')}.${dateObj.getFullYear()}`;
+        totalHours += hrs;
+        if (tot != null) totalAmount += tot;
+        rows.push({
+          num: rowNum,
+          name: `${emp.first_name} ${emp.last_name}`,
+          date: dateStr,
+          property: prop.name,
+          from: tf.substring(0,5),
+          to: tt.substring(0,5),
+          hours: hrs,
+          wage: empWage ?? null,
+          total: tot,
+          hasProof: !!(a.checkin_photo_url && a.checkin_lat && a.checkin_lng),
+        });
+      }
+
+      groups.push({ name: `${emp.first_name} ${emp.last_name}`, rows, totalHours, totalAmount });
+    }
+
+    const totalAll = groups.reduce((s, g) => s + g.totalAmount, 0);
+    const monthLabelPdf = new Date(selYear, selMonth - 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+    const todayStr = new Date().toLocaleDateString('de-DE');
+    const cityStr = company.city ? `${company.city} · ` : '';
+
+    const tableRows = groups.map(g => {
+      const dataRows = g.rows.map((r, i) => `
+        <tr style="background:${i % 2 === 0 ? '#fff' : '#f9fafb'};">
+          <td>${r.num}</td>
+          <td>${r.name}</td>
+          <td>${r.date}</td>
+          <td>${r.property}</td>
+          <td>${r.from}</td>
+          <td>${r.to}</td>
+          <td>${r.hours.toFixed(2)}</td>
+          <td>${r.wage != null ? r.wage.toFixed(2) : '—'}</td>
+          <td>${r.total != null ? r.total.toFixed(2) : '—'}</td>
+          <td>${r.hasProof ? '<span class="badge">GPS + Foto</span>' : '<span style="color:#9ca3af;font-size:10px;">—</span>'}</td>
+        </tr>`).join('');
+
+      const subtotal = `
+        <tr class="subtotal">
+          <td colspan="4"><strong>${g.name} — Gesamt</strong></td>
+          <td></td><td></td>
+          <td><strong>${g.totalHours.toFixed(2)}</strong></td>
+          <td>—</td>
+          <td><strong>${g.totalAmount.toFixed(2)} €</strong></td>
+          <td></td>
+        </tr>`;
+
+      return dataRows + subtotal;
+    }).join('');
+
+    const summaryRows = groups.map(g =>
+      `<tr><td>${g.name}</td><td style="text-align:right;font-weight:600;">${g.totalAmount.toFixed(2)} €</td></tr>`
+    ).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<title>Stundenabrechnung ${monthLabelPdf}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 11px; color: #111; background:#fff; padding: 32px 36px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+  .header-left .company { font-size: 22px; font-weight: 700; color:#111; }
+  .header-left .sub { font-size: 11px; color: #6b7280; margin-top: 4px; }
+  .header-right { text-align: right; }
+  .header-right .label { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; }
+  .header-right .month { font-size: 24px; font-weight: 700; color: #111; margin-top: 2px; }
+  hr { border: none; border-top: 2px solid #111; margin-bottom: 24px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
+  thead tr { background: #111; color: #fff; }
+  thead th { padding: 8px 7px; text-align: left; font-size: 10px; font-weight: 700; }
+  tbody td { padding: 7px 7px; font-size: 10px; color: #111; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }
+  .subtotal { background: #dbeafe !important; }
+  .subtotal td { padding: 7px 7px; font-size: 10px; border-bottom: 2px solid #93c5fd; }
+  .badge { background: #dcfce7; color: #15803d; font-weight: 700; padding: 2px 6px; border-radius: 10px; font-size: 9px; white-space: nowrap; }
+  .summary-box { margin-top: 28px; margin-left: auto; width: 280px; border: 1.5px solid #111; border-radius: 4px; padding: 14px 16px; }
+  .summary-box table { margin: 0; }
+  .summary-box td { border: none; padding: 3px 0; font-size: 11px; }
+  .summary-divider { border-top: 1.5px solid #111; margin: 8px 0; }
+  .summary-total td { font-size: 13px; font-weight: 700; padding-top: 6px; }
+  .footer { margin-top: 48px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .footer-left { font-size: 9px; color: #9ca3af; }
+  .footer-right { text-align: right; }
+  .footer-right .sig-line { width: 180px; border-top: 1px solid #111; margin-left: auto; margin-bottom: 4px; }
+  .footer-right .sig-label { font-size: 9px; color: #6b7280; }
+  @media print { body { padding: 24px 28px; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <div class="company">${company.name}</div>
+      <div class="sub">${cityStr}Erstellt mit meizo.de</div>
+    </div>
+    <div class="header-right">
+      <div class="label">Stundenabrechnung</div>
+      <div class="month">${monthLabelPdf.charAt(0).toUpperCase() + monthLabelPdf.slice(1)}</div>
+    </div>
+  </div>
+  <hr/>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Name</th>
+        <th>Datum</th>
+        <th>Objekt</th>
+        <th>Beginn</th>
+        <th>Ende</th>
+        <th>Std.</th>
+        <th>€/Std.</th>
+        <th>Gesamt</th>
+        <th>Nachweis</th>
+      </tr>
+    </thead>
+    <tbody>${tableRows}</tbody>
+  </table>
+  <div class="summary-box">
+    <table>
+      <tbody>
+        ${summaryRows}
+      </tbody>
+    </table>
+    <div class="summary-divider"></div>
+    <table>
+      <tbody>
+        <tr class="summary-total">
+          <td>Gesamtlohnkosten</td>
+          <td style="text-align:right;">${totalAll.toFixed(2)} €</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="footer">
+    <div class="footer-left">Erstellt automatisch · meizo.de · ${todayStr}</div>
+    <div class="footer-right">
+      <div class="sig-line"></div>
+      <div class="sig-label">Unterschrift Geschäftsführer</div>
+    </div>
+  </div>
+  <script>window.onload = () => { window.print(); };<\/script>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+    addToast('PDF wird geöffnet…');
+  };
+
   const handleExportCSV = () => {
     const rows: string[][] = [];
     rows.push(['Personal-Nr', 'Name', 'Datum', 'Objekt', 'Beginn', 'Ende', 'Netto-Stunden', 'Lohn_pro_Std', 'Gesamtverdienst', 'Nachweis']);
@@ -240,6 +446,18 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
             className="input-field !w-auto !pr-8">
             {monthOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
+          <button
+            onClick={hasBusiness ? handleExportPDF : () => setUpgradeOpen(true)}
+            disabled={!hasBusiness}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
+              hasBusiness
+                ? 'bg-[#111827] text-white hover:bg-[#1f2937]'
+                : 'bg-[#F3F4F6] text-[#94A3B8] cursor-not-allowed'
+            }`}
+            title={!hasBusiness ? 'Upgrade auf Business für PDF-Export' : 'Abrechnung als PDF exportieren'}
+          >
+            <Download size={16} /> PDF
+          </button>
           <button
             onClick={hasBusiness ? handleExportCSV : () => setUpgradeOpen(true)}
             disabled={!hasBusiness}
