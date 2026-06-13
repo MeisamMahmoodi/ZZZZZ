@@ -18,7 +18,6 @@ import { SickLeave } from './pages/employee/SickLeave';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { supabase } from './lib/supabase';
 import { AndroidInstallBanner } from './components/shared/AndroidInstallBanner';
-import { IosInstallGuide } from './components/shared/IosInstallGuide';
 import type { Company } from './lib/types';
 import { Eye, EyeOff } from 'lucide-react';
 import { Pricing } from './pages/Pricing';
@@ -464,7 +463,6 @@ export default function App() {
           <ToastProvider>
             <AppRoutes />
             <AndroidInstallBanner />
-            <IosInstallGuide />
           </ToastProvider>
         </LangProvider>
       </AuthProvider>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { MapPin, Clock, LogIn, Mail, LogOut, Heart, Bell, CheckCircle, CalendarDays, Globe, AlertTriangle, LogOut as CheckOutIcon, BellRing, BellOff, AlarmClock } from 'lucide-react';
+import { IosInstallButton } from '../../components/shared/IosInstallGuide';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useLang } from '../../hooks/useLang';
@@ -542,6 +543,9 @@ await supabase.from('assignments').insert({
             <Heart size={16} /> {t('sickLeave')}
           </button>
         )}
+        <div className="flex justify-center py-1">
+          <IosInstallButton />
+        </div>
         <button onClick={signOut} className="w-full flex items-center justify-center gap-2 text-sm text-ink-500 hover:bg-surface-100 transition-colors py-3.5 rounded-xl font-medium">
           <LogOut size={16} /> {t('logOut')}
         </button>

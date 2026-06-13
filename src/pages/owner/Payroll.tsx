@@ -234,7 +234,7 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
     const totalAll = groups.reduce((s, g) => s + g.totalAmount, 0);
     const monthLabelPdf = new Date(selYear, selMonth - 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
     const todayStr = new Date().toLocaleDateString('de-DE');
-    const cityStr = company.city ? `${company.city} · ` : '';
+    const cityStr = '';
 
     const tableRows = groups.map(g => {
       const dataRows = g.rows.map((r, i) => `
