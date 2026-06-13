@@ -18,6 +18,7 @@ import { SickLeave } from './pages/employee/SickLeave';
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { supabase } from './lib/supabase';
 import { AndroidInstallBanner } from './components/shared/AndroidInstallBanner';
+import { IosInstallButton } from './components/shared/IosInstallGuide';
 import type { Company } from './lib/types';
 import { Eye, EyeOff } from 'lucide-react';
 import { Pricing } from './pages/Pricing';
@@ -434,6 +435,9 @@ function UnifiedLogin() {
           >
             {loading ? t('sending') : t('login')}
           </button>
+          <div className="flex justify-center pt-1">
+            <IosInstallButton />
+          </div>
         </form>
 
         {/* Language switcher on login page */}
