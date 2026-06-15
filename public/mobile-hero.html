@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>meizo – Mobile Hero</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+html, body {
+  width:100%; height:100%;
+  background:#fff;
+  font-family:'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  color:#111827;
+  overflow:hidden;
+  position:fixed;
+}
+
+/* ── TOP NAV ── */
+#topnav {
+  position:fixed;
+  top:0; left:0; right:0;
+  z-index:1000;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:14px 20px;
+  background:rgba(255,255,255,0.92);
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid rgba(0,0,0,0.06);
+}
+
+.nav-logo {
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.nav-logo-icon {
+  width:30px; height:30px;
+  background:#000;
+  border-radius:7px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:900; color:#16a34a;
+}
+.nav-logo-text {
+  font-size:18px;
+  font-weight:800;
+  color:#111827;
+  letter-spacing:-0.4px;
+}
+
+.nav-right {
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.btn-login {
+  font-size:14px;
+  font-weight:600;
+  color:#374151;
+  text-decoration:none;
+  padding:8px 14px;
+  border-radius:8px;
+  border:1.5px solid #e5e7eb;
+  background:#fff;
+}
+
+.btn-cta {
+  font-size:13px;
+  font-weight:700;
+  color:#fff;
+  background:#16a34a;
+  text-decoration:none;
+  padding:8px 14px;
+  border-radius:8px;
+  box-shadow:0 2px 8px rgba(22,163,74,0.3);
+  white-space:nowrap;
+}
+
+/* ── SLIDES ── */
+#slides {
+  position:fixed;
+  inset:0;
+  top:57px;
+}
+
+.scene {
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  padding:24px 24px 80px;
+  opacity:0;
+  pointer-events:none;
+  transition:opacity 0.4s ease;
+  overflow:hidden;
+}
+.scene.active {
+  opacity:1;
+  pointer-events:all;
+}
+
+/* ── ANIMATIONS ── */
+.up {
+  opacity:0;
+  transform:translateY(20px);
+  transition:opacity 0.45s ease, transform 0.45s ease;
+}
+.up.go { opacity:1; transform:translateY(0); }
+.up.d1 { transition-delay:0.10s; }
+.up.d2 { transition-delay:0.20s; }
+.up.d3 { transition-delay:0.32s; }
+.up.d4 { transition-delay:0.44s; }
+
+/* ── TYPOGRAPHY ── */
+.eyebrow {
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:0.13em;
+  text-transform:uppercase;
+  color:#16a34a;
+  margin-bottom:10px;
+}
+.eyebrow.red { color:#dc2626; }
+
+h1 {
+  font-size:48px;
+  font-weight:900;
+  line-height:1.0;
+  letter-spacing:-2px;
+  color:#111827;
+}
+
+h2 {
+  font-size:36px;
+  font-weight:900;
+  line-height:1.05;
+  letter-spacing:-1.2px;
+  color:#111827;
+}
+
+.lead {
+  font-size:16px;
+  line-height:1.65;
+  color:#4b5563;
+  margin-top:12px;
+}
+
+.divider {
+  width:40px; height:3px;
+  background:#16a34a;
+  border-radius:2px;
+  margin:16px 0;
+}
+
+/* ── PHONE MOCKUP ── */
+.phone {
+  border-radius:28px;
+  overflow:hidden;
+  box-shadow:0 16px 48px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.07);
+  background:#f3f4f6;
+  flex-shrink:0;
+}
+.phone img { width:100%; display:block; }
+
+/* ── BROWSER MOCKUP ── */
+.browser {
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 8px 32px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.06);
+}
+.browser-bar {
+  background:#f3f4f6;
+  padding:8px 12px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  border-bottom:1px solid #e5e7eb;
+}
+.browser-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+.browser-url {
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:5px;
+  padding:4px 10px;
+  font-size:11px;
+  color:#9ca3af;
+  margin-left:6px;
+  flex:1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.browser img { width:100%; display:block; }
+
+/* ── WHATSAPP BUBBLES ── */
+.wa-chat {
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  margin-top:16px;
+  overflow:hidden;
+}
+.wa-bubble {
+  max-width:82%;
+  padding:10px 14px;
+  border-radius:12px;
+  font-size:14px;
+  line-height:1.45;
+  color:#111827;
+  opacity:0;
+  transform:translateY(8px);
+  transition:opacity 0.25s, transform 0.25s;
+}
+.wa-bubble.in  { background:#f3f4f6; align-self:flex-start; border-radius:4px 12px 12px 12px; }
+.wa-bubble.out { background:#dcfce7; align-self:flex-end; border-radius:12px 4px 12px 12px; }
+.wa-bubble.alert { background:#fee2e2; color:#991b1b; font-weight:600; align-self:flex-end; border-radius:12px 4px 12px 12px; }
+.wa-bubble.show { opacity:1; transform:translateY(0); }
+.wa-time { font-size:10px; color:#9ca3af; margin-top:3px; display:block; }
+
+/* ── LANG CARDS ── */
+.lang-grid {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:16px;
+}
+.lang-card {
+  background:#f9fafb;
+  border:1.5px solid #e5e7eb;
+  border-radius:12px;
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  opacity:0;
+  transform:scale(0.94);
+  transition:opacity 0.3s, transform 0.3s;
+}
+.lang-card.show { opacity:1; transform:scale(1); }
+.lang-card.green { border-color:#bbf7d0; background:#f0fdf4; }
+.lang-flag { font-size:26px; }
+.lang-name { font-size:15px; font-weight:700; color:#111827; }
+.lang-sub  { font-size:12px; color:#9ca3af; }
+
+/* ── CHECK ITEMS ── */
+.check-list {
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:16px;
+}
+.check-item {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:15px;
+  color:#374151;
+}
+.check-mark {
+  width:24px; height:24px;
+  background:#16a34a;
+  border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  color:#fff;
+  font-size:13px;
+  font-weight:700;
+  flex-shrink:0;
+}
+
+/* ── STAT BOXES ── */
+.stat-row {
+  display:flex;
+  gap:10px;
+  margin-top:16px;
+}
+.stat-box {
+  flex:1;
+  background:#f9fafb;
+  border:1px solid #e5e7eb;
+  border-radius:12px;
+  padding:14px 10px;
+  text-align:center;
+}
+.stat-num { font-size:30px; font-weight:900; color:#16a34a; letter-spacing:-1px; line-height:1; }
+.stat-label { font-size:12px; color:#6b7280; margin-top:4px; font-weight:500; }
+
+/* ── CSV TABLE ── */
+.csv-wrap {
+  margin-top:16px;
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 2px 12px rgba(0,0,0,0.07);
+  border:1px solid #e5e7eb;
+}
+.csv-header {
+  background:#f3f4f6;
+  padding:8px 12px;
+  display:flex;
+  align-items:center;
+  gap:5px;
+  border-bottom:1px solid #e5e7eb;
+}
+.csv-dot { width:7px; height:7px; border-radius:50%; }
+.csv-filename {
+  font-size:11px; color:#9ca3af; margin-left:6px;
+}
+.csv-export {
+  margin-left:auto;
+  background:#16a34a;
+  color:#fff;
+  font-size:11px;
+  font-weight:700;
+  padding:4px 10px;
+  border-radius:6px;
+}
+.csv-table { width:100%; border-collapse:collapse; font-size:11px; }
+.csv-table th { background:#f9fafb; color:#374151; font-weight:700; padding:8px 10px; text-align:left; border-bottom:1px solid #e5e7eb; }
+.csv-table td { padding:7px 10px; border-bottom:1px solid #f3f4f6; color:#374151; }
+.csv-table tr:last-child td { border-bottom:none; }
+.badge { background:#dcfce7; color:#15803d; font-weight:700; padding:2px 7px; border-radius:20px; font-size:10px; white-space:nowrap; }
+
+/* ── CTA SCENE ── */
+.cta-box {
+  background:#16a34a;
+  border-radius:18px;
+  padding:32px 28px;
+  text-align:center;
+  box-shadow:0 16px 40px rgba(22,163,74,0.25);
+  margin-top:16px;
+}
+.cta-price {
+  font-size:72px;
+  font-weight:900;
+  color:#fff;
+  letter-spacing:-3px;
+  line-height:1;
+}
+.cta-sub { font-size:17px; color:rgba(255,255,255,0.8); margin-top:6px; }
+.cta-btn-big {
+  display:block;
+  background:#fff;
+  color:#16a34a;
+  font-size:17px;
+  font-weight:800;
+  padding:16px 24px;
+  border-radius:10px;
+  margin-top:20px;
+  text-decoration:none;
+}
+.cta-link-small { font-size:12px; color:rgba(255,255,255,0.45); margin-top:10px; }
+
+/* ── ALERT BOX ── */
+.alert-box {
+  background:#fef2f2;
+  border:2px solid #fecaca;
+  border-radius:18px;
+  padding:28px 24px;
+  text-align:center;
+  margin-top:16px;
+}
+.alert-time {
+  font-size:64px;
+  font-weight:900;
+  color:#dc2626;
+  letter-spacing:-2px;
+  line-height:1;
+}
+.alert-label {
+  font-size:15px;
+  color:#ef4444;
+  font-weight:600;
+  margin-top:10px;
+}
+.alert-msg {
+  background:#fee2e2;
+  border-radius:10px;
+  padding:12px 16px;
+  font-size:14px;
+  color:#991b1b;
+  line-height:1.5;
+  margin-top:14px;
+}
+
+/* ── GREEN TAG PILLS ── */
+.tag-row {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:14px;
+}
+.tag {
+  background:#f0fdf4;
+  border:1px solid #bbf7d0;
+  color:#15803d;
+  font-size:13px;
+  font-weight:600;
+  padding:6px 12px;
+  border-radius:20px;
+}
+
+/* ── PROGRESS ── */
+#progress {
+  position:fixed;
+  bottom:0; left:0; right:0;
+  height:3px;
+  background:#e5e7eb;
+  z-index:1000;
+}
+#prog-fill {
+  height:100%;
+  background:#16a34a;
+  width:0%;
+  transition:width 0.15s linear;
+}
+
+#counter {
+  position:fixed;
+  bottom:10px;
+  right:16px;
+  font-size:11px;
+  font-weight:600;
+  color:#d1d5db;
+  z-index:1000;
+  letter-spacing:1px;
+}
+
+/* ── PIVOT SCENE LOGO ── */
+.big-logo {
+  font-size:72px;
+  font-weight:900;
+  color:#111827;
+  letter-spacing:-3px;
+  line-height:1;
+  margin-top:8px;
+}
+
+/* ── SPRINGER BUTTON ── */
+.springer-btn {
+  background:#16a34a;
+  color:#fff;
+  font-size:18px;
+  font-weight:700;
+  padding:14px 28px;
+  border-radius:10px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  box-shadow:0 4px 16px rgba(22,163,74,0.3);
+  margin-top:16px;
+}
+
+/* ── GPS ROW ── */
+.gps-row {
+  display:flex;
+  gap:10px;
+  margin-top:16px;
+  overflow:hidden;
+}
+.gps-item {
+  flex:1;
+  text-align:center;
+}
+.gps-label {
+  font-size:12px;
+  font-weight:600;
+  color:#374151;
+  margin-top:8px;
+}
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav id="topnav">
+  <div class="nav-logo">
+    <div class="nav-logo-icon">m</div>
+    <span class="nav-logo-text">meizo</span>
+  </div>
+  <div class="nav-right">
+    <a href="#login" class="btn-login">Anmelden</a>
+    <a href="https://calendly.com/meisam-meizo/30min" target="_blank" class="btn-cta">Gratis testen →</a>
+  </div>
+</nav>
+
+<div id="slides">
+
+<!-- S1 HOOK -->
+<div class="scene active" id="s1">
+  <div class="eyebrow red up">Reinigungsfirmen kennen das</div>
+  <h1 class="up d1">Es ist<br/>06:47 Uhr.</h1>
+  <p class="lead up d2">Anis schreibt:<br/><strong style="color:#111827;">"Chef, ich bin heute krank."</strong></p>
+  <p class="up d3" style="font-size:18px;color:#9ca3af;margin-top:10px;">Was jetzt?</p>
+  <div class="alert-box up d3">
+    <div class="alert-time">06:47</div>
+    <div class="alert-label">⚠ Krankmeldung eingegangen</div>
+    <div class="alert-msg">Wer übernimmt Objekt Müller?<br/>Schicht beginnt um 07:30 Uhr</div>
+  </div>
+</div>
+
+<!-- S2 WHATSAPP CHAOS -->
+<div class="scene" id="s2" style="background:#f9fafb;">
+  <div class="eyebrow red up">Das kennen Sie</div>
+  <h2 class="up d1">Die Gruppe<br/>explodiert.</h2>
+  <p class="lead up d2">Stunden verloren. Nerven verloren.</p>
+  <div class="wa-chat up d2">
+    <div class="wa-bubble in" id="wm1">Chef, ich bin krank heute 🤒<span class="wa-time">06:47</span></div>
+    <div class="wa-bubble out" id="wm2">Wer kann Objekt Müller übernehmen??<span class="wa-time">06:49</span></div>
+    <div class="wa-bubble in" id="wm3">Kann nicht, habe schon Schicht<span class="wa-time">06:51</span></div>
+    <div class="wa-bubble in" id="wm4">Was ist das Objekt nochmal?<span class="wa-time">06:52</span></div>
+    <div class="wa-bubble out" id="wm5">BITTE JEMAND MELDEN 🙏🙏<span class="wa-time">06:55</span></div>
+    <div class="wa-bubble in" id="wm6">Vielleicht kann ich... weiß noch nicht<span class="wa-time">07:01</span></div>
+    <div class="wa-bubble alert" id="wm7">Noch kein Springer — 07:20 ⚠️<span class="wa-time" style="color:#f87171;">07:20</span></div>
+  </div>
+</div>
+
+<!-- S3 PIVOT -->
+<div class="scene" id="s3">
+  <p class="up" style="font-size:16px;color:#9ca3af;font-weight:500;line-height:1.6;">Während Sie das lesen, sucht irgendwo ein Chef gerade einen Springer.</p>
+  <div class="divider up d1"></div>
+  <h2 class="up d2" style="font-size:42px;">Das muss<br/>nicht so sein.</h2>
+  <p class="lead up d3">meizo löst das — in unter 2 Minuten.<br/>Kein Anruf. Keine Gruppe.</p>
+  <div class="big-logo up d3">meizo</div>
+  <p class="up d4" style="font-size:14px;color:#6b7280;margin-top:4px;">Ihr digitaler Disponent</p>
+</div>
+
+<!-- S4 KRANKMELDUNG -->
+<div class="scene" id="s4" style="background:#f9fafb;">
+  <div class="eyebrow up">Schritt 1 von 4</div>
+  <h2 class="up d1">Mitarbeiter meldet<br/>sich krank.</h2>
+  <p class="lead up d2">Direkt in der App — kein Anruf, keine WhatsApp. Chef wird sofort informiert.</p>
+  <div class="tag-row up d3">
+    <span class="tag">✓ Kein Anruf nötig</span>
+    <span class="tag">✓ Chef sofort informiert</span>
+  </div>
+  <div class="up d3" style="margin-top:20px;display:flex;justify-content:center;">
+    <div class="phone" style="width:200px;">
+      <img src="/KrankHomeScreen.PNG" alt="Krankmeldung"/>
+    </div>
+  </div>
+</div>
+
+<!-- S5 CHEF ERSATZ -->
+<div class="scene" id="s5">
+  <div class="eyebrow red up">Schritt 2 von 4</div>
+  <h2 class="up d1">Chef sieht sofort:<br/>Ersatz nötig.</h2>
+  <p class="lead up d2">Roter Alert direkt auf dem Dashboard.</p>
+  <div class="up d2" style="margin-top:16px;">
+    <div class="browser">
+      <div class="browser-bar">
+        <div class="browser-dot" style="background:#ff5f57;"></div>
+        <div class="browser-dot" style="background:#febc2e;"></div>
+        <div class="browser-dot" style="background:#28c840;"></div>
+        <div class="browser-url">meizo.de · Dashboard</div>
+      </div>
+      <img src="/Ersatz_finden.png" alt="Ersatz finden" style="width:100%;display:block;"/>
+    </div>
+  </div>
+</div>
+
+<!-- S6 BESTE WAHL -->
+<div class="scene" id="s6" style="background:#f9fafb;">
+  <div class="eyebrow up">Schritt 3 von 4</div>
+  <h2 class="up d1">"Beste Wahl" —<br/>ein Klick. Erledigt.</h2>
+  <p class="lead up d2">meizo zeigt den besten verfügbaren Mitarbeiter — qualifiziert, frei, kennt das Objekt.</p>
+  <div class="up d2" style="margin-top:16px;">
+    <div class="browser">
+      <div class="browser-bar">
+        <div class="browser-dot" style="background:#ff5f57;"></div>
+        <div class="browser-dot" style="background:#febc2e;"></div>
+        <div class="browser-dot" style="background:#28c840;"></div>
+        <div class="browser-url">meizo.de · Springer zuweisen</div>
+      </div>
+      <img src="/Ersatz_finden_zuweisung.png" alt="Beste Wahl" style="width:100%;display:block;"/>
+    </div>
+  </div>
+</div>
+
+<!-- S7 SPRINGER -->
+<div class="scene" id="s7">
+  <div class="eyebrow up">Schritt 4 von 4</div>
+  <h2 class="up d1">Springer bekommt<br/>die Anfrage.</h2>
+  <p class="lead up d2">Ein Klick auf "Ja, ich komme" — der Chef weiß es sofort.</p>
+  <div class="up d3" style="display:flex;justify-content:center;margin-top:16px;">
+    <div class="phone" style="width:200px;">
+      <img src="/EinspringenFrage.PNG" alt="Einspringen Frage"/>
+    </div>
+  </div>
+  <div class="springer-btn up d3">✓ Ja, ich komme</div>
+</div>
+
+<!-- S8 GPS CHECK-IN -->
+<div class="scene" id="s8" style="background:#f9fafb;">
+  <div class="eyebrow up">Zeiterfassung</div>
+  <h2 class="up d1">Eingecheckt.<br/>Sie sehen es sofort.</h2>
+  <p class="lead up d2">GPS geprüft, Foto gemacht — alles automatisch in der Abrechnung.</p>
+  <div class="up d2" style="margin-top:6px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;">
+    <div style="font-size:13px;font-weight:600;color:#15803d;">✓ GPS-Nachweis · Foto · Fälschungssicher</div>
+  </div>
+  <div class="gps-row up d3">
+    <div class="gps-item">
+      <div class="phone" style="width:100%;max-width:110px;margin:0 auto;">
+        <img src="/checkInBestatigung.PNG" alt="Einsatz aktiv"/>
+      </div>
+      <div class="gps-label">Einsatz aktiv</div>
+    </div>
+    <div class="gps-item">
+      <div class="phone" style="width:100%;max-width:110px;margin:0 auto;">
+        <img src="/CheckInStandortBestatigung.PNG" alt="Standort"/>
+      </div>
+      <div class="gps-label">Standort ✓</div>
+    </div>
+    <div class="gps-item">
+      <div class="phone" style="width:100%;max-width:110px;margin:0 auto;">
+        <img src="/CheckOutFertig.PNG" alt="Ausgecheckt"/>
+      </div>
+      <div class="gps-label">Ausgecheckt ✓</div>
+    </div>
+  </div>
+</div>
+
+<!-- S9 SPRACHEN -->
+<div class="scene" id="s9">
+  <div class="eyebrow up">Mehrsprachig</div>
+  <h2 class="up d1">Sie reden Deutsch.<br/>Ihr Team nicht.<br/>meizo versteht beide.</h2>
+  <p class="lead up d2">Automatisch. Kein Stress, kein Missverständnis.</p>
+  <div class="lang-grid up d2">
+    <div class="lang-card" id="lc1">
+      <span class="lang-flag">🇸🇦</span>
+      <div><div class="lang-name">عربي</div><div class="lang-sub">RTL-Layout</div></div>
+    </div>
+    <div class="lang-card" id="lc2">
+      <span class="lang-flag">🇷🇴</span>
+      <div><div class="lang-name">Română</div><div class="lang-sub">Buna ziua</div></div>
+    </div>
+    <div class="lang-card" id="lc3">
+      <span class="lang-flag">🇵🇱</span>
+      <div><div class="lang-name">Polski</div><div class="lang-sub">Dzień dobry</div></div>
+    </div>
+    <div class="lang-card green" id="lc4">
+      <span class="lang-flag">🇩🇪</span>
+      <div><div class="lang-name">Deutsch</div><div class="lang-sub">+ English</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- S10 CSV EXPORT -->
+<div class="scene" id="s10" style="background:#f9fafb;">
+  <div class="eyebrow up">Abrechnung</div>
+  <h2 class="up d1" style="font-size:32px;">Monatsende.<br/>Ein Klick — fertig.</h2>
+  <p class="lead up d2">GPS-Nachweis und Foto bei jedem Eintrag. Direkt für den Steuerberater.</p>
+  <div class="stat-row up d2">
+    <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">Fehler</div></div>
+    <div class="stat-box"><div class="stat-num">100%</div><div class="stat-label">Auto</div></div>
+    <div class="stat-box"><div class="stat-num">1×</div><div class="stat-label">Klick</div></div>
+  </div>
+  <div class="csv-wrap up d3">
+    <div class="csv-header">
+      <div class="csv-dot" style="background:#ff5f57;"></div>
+      <div class="csv-dot" style="background:#febc2e;"></div>
+      <div class="csv-dot" style="background:#28c840;"></div>
+      <span class="csv-filename">Abrechnung_2026-05.csv</span>
+      <div class="csv-export">↓ CSV</div>
+    </div>
+    <div style="overflow:auto;max-height:200px;">
+      <table class="csv-table">
+        <thead>
+          <tr><th>Name</th><th>Datum</th><th>Std.</th><th>Gesamt</th><th>Nachweis</th></tr>
+        </thead>
+        <tbody id="csv-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- S11 CTA -->
+<div class="scene" id="s11">
+  <div class="eyebrow up">Jetzt starten</div>
+  <h2 class="up d1" style="font-size:44px;">Erster Monat<br/>kostenlos.</h2>
+  <p class="lead up d2">Keine Kreditkarte. Keine Einrichtungsgebühr.</p>
+  <div class="check-list up d3">
+    <div class="check-item"><div class="check-mark">✓</div><span>Kein WhatsApp-Chaos mehr</span></div>
+    <div class="check-item"><div class="check-mark">✓</div><span>GPS-Nachweis & Abrechnung</span></div>
+    <div class="check-item"><div class="check-mark">✓</div><span>Mehrsprachig für Ihr Team</span></div>
+    <div class="check-item"><div class="check-mark">✓</div><span>Springer in unter 2 Minuten</span></div>
+  </div>
+  <div class="cta-box up d3">
+    <div class="cta-price">0€</div>
+    <div class="cta-sub">Erster Monat gratis</div>
+    <a href="https://calendly.com/meisam-meizo/30min" target="_blank" class="cta-btn-big">Jetzt Termin buchen →</a>
+    <div class="cta-link-small">calendly.com/meisam-meizo/30min</div>
+  </div>
+</div>
+
+</div><!-- /slides -->
+
+<div id="progress"><div id="prog-fill"></div></div>
+<div id="counter">01 / 11</div>
+
+<script>
+// ── PWA CHECK — hide everything and redirect if standalone
+(function() {
+  var isPWA = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  if (isPWA) {
+    document.body.style.display = 'none';
+    // Let the app handle routing — just don't show hero
+    window.location.href = '/login';
+  }
+})();
+
+const TOTAL = 11;
+let cur = 1, busy = false, timer = null;
+
+const DUR = {
+  1:5500, 2:8000, 3:5500, 4:6500,
+  5:6000, 6:6000, 7:6500, 8:7000,
+  9:6500, 10:8000, 11:99999
+};
+
+const CSV_ROWS = [
+  ['Ionut Popescu','27.05','2.50','37.50 €'],
+  ['Mustafa Yilmaz','26.05','2.50','35.00 €'],
+  ['Anna Kowalski','26.05','2.00','30.00 €'],
+  ['Fatima Al-Hassan','27.05','3.00','42.00 €'],
+  ['Ionut Popescu','28.05','2.50','32.50 €'],
+];
+
+function upd() {
+  document.getElementById('prog-fill').style.width = ((cur-1)/(TOTAL-1)*100)+'%';
+  document.getElementById('counter').textContent =
+    String(cur).padStart(2,'0')+' / '+String(TOTAL).padStart(2,'0');
+}
+
+function reset(n) {
+  document.querySelectorAll('#s'+n+' .up').forEach(e=>e.classList.remove('go'));
+  if(n===2) document.querySelectorAll('.wa-bubble').forEach(e=>e.classList.remove('show'));
+  if(n===9) document.querySelectorAll('.lang-card').forEach(e=>e.classList.remove('show'));
+  if(n===10) document.getElementById('csv-body').innerHTML='';
+}
+
+function animate(n) {
+  setTimeout(()=>document.querySelectorAll('#s'+n+' .up').forEach(e=>e.classList.add('go')), 60);
+
+  if(n===2) {
+    ['wm1','wm2','wm3','wm4','wm5','wm6','wm7'].forEach((id,i)=>
+      setTimeout(()=>document.getElementById(id)?.classList.add('show'), 350+i*600));
+  }
+  if(n===9) {
+    ['lc1','lc2','lc3','lc4'].forEach((id,i)=>
+      setTimeout(()=>document.getElementById(id)?.classList.add('show'), 400+i*180));
+  }
+  if(n===10) {
+    const tbody = document.getElementById('csv-body');
+    CSV_ROWS.forEach((row,i)=>{
+      setTimeout(()=>{
+        const tr = document.createElement('tr');
+        tr.style.opacity='0'; tr.style.transition='opacity 0.3s';
+        tr.innerHTML=`<td style="font-weight:600">${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td style="font-weight:700;color:#16a34a">${row[3]}</td><td><span class="badge">GPS ✓</span></td>`;
+        tbody.appendChild(tr);
+        requestAnimationFrame(()=>setTimeout(()=>tr.style.opacity='1',20));
+      }, 300+i*280);
+    });
+  }
+}
+
+function goTo(n) {
+  if(n<1||n>TOTAL||busy) return;
+  busy=true; clearTimeout(timer);
+  document.getElementById('s'+cur).classList.remove('active');
+  reset(cur);
+  setTimeout(()=>{
+    document.getElementById('s'+n).classList.add('active');
+    cur=n; upd(); animate(n);
+    setTimeout(()=>{ busy=false; if(n<TOTAL) timer=setTimeout(()=>goTo(n+1),DUR[n]); },500);
+  },350);
+}
+
+upd(); animate(1);
+timer = setTimeout(()=>goTo(2), DUR[1]);
+
+// Tap to advance
+document.getElementById('slides').addEventListener('click', ()=>{
+  if(cur<TOTAL) goTo(cur+1);
+});
+
+// Swipe support
+let tx=0, ty=0;
+document.addEventListener('touchstart', e=>{ tx=e.touches[0].clientX; ty=e.touches[0].clientY; }, {passive:true});
+document.addEventListener('touchend', e=>{
+  const dx = e.changedTouches[0].clientX - tx;
+  const dy = e.changedTouches[0].clientY - ty;
+  if(Math.abs(dx)>Math.abs(dy) && Math.abs(dx)>40) {
+    dx<0 ? goTo(cur+1) : goTo(cur-1);
+  }
+}, {passive:true});
+</script>
+</body>
+</html>
