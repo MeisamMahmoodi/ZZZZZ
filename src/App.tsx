@@ -182,8 +182,6 @@ function AccountSuspendedScreen() {
 }
 
 function LandingPage() {
-  const navigate = useNavigate();
-
   const isPwa = window.matchMedia('(display-mode: standalone)').matches
     || (window.navigator as any).standalone === true;
   const isMobile = window.innerWidth < 768;
@@ -191,6 +189,20 @@ function LandingPage() {
   if (isPwa) {
     return <UnifiedLogin />;
   }
+
+  return (
+    <div className="bg-white flex flex-col">
+      <div className="w-full" style={{ height: '100vh' }}>
+        <iframe
+          src={isMobile ? '/mobile-hero.html' : '/hero.html'}
+          className="w-full h-full border-0"
+          title="meizo Präsentation"
+          allow="autoplay"
+        />
+      </div>
+    </div>
+  );
+}
 
   
 
