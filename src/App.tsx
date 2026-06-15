@@ -184,16 +184,16 @@ function AccountSuspendedScreen() {
 function LandingPage() {
   const navigate = useNavigate();
 
+  const isPwa = window.matchMedia('(display-mode: standalone)').matches
+    || (window.navigator as any).standalone === true;
   const isMobile = window.innerWidth < 768;
-  const isPwa = window.matchMedia('(display-mode: standalone)').matches;
 
-  if (isMobile || isPwa) {
+  if (isPwa) {
     return <UnifiedLogin />;
   }
 
   return (
     <div className="bg-white flex flex-col">
-      {/* Nav */}
       <nav className="fixed top-0 right-0 z-50 p-4 pr-6">
         <button
           onClick={() => navigate('/login')}
@@ -203,10 +203,9 @@ function LandingPage() {
         </button>
       </nav>
 
-      {/* Hero: full-viewport slideshow */}
       <div className="w-full" style={{ height: '100vh' }}>
         <iframe
-          src="/hero.html"
+          src={isMobile ? '/mobile-hero.html' : '/hero.html'}
           className="w-full h-full border-0"
           title="meizo Präsentation"
           allow="autoplay"
