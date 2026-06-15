@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Calendar, MapPin, Clock, Check, X, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Calendar, MapPin, Clock, Check, X, AlertTriangle, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Modal } from '../../components/shared/Modal';
 import { Avatar } from '../../components/shared/Avatar';
@@ -37,6 +37,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const [newTimeTo, setNewTimeTo] = useState('');
   const [saving, setSaving] = useState(false);
   const [removeConfirm, setRemoveConfirm] = useState<AssignmentWithDetails | null>(null);
+  const [deleteGroupConfirm, setDeleteGroupConfirm] = useState<AssignmentWithDetails[] | null>(null);
 
   useEffect(() => { loadData(); }, [company.id, refreshKey, selectedDate]);
 
@@ -145,6 +146,18 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
     const dateLabel = new Date(assignment.date + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
     sendPushToEmployee(assignment.employee_id, 'Einsatz abgesagt', `${assignment.property.name} am ${dateLabel} wurde entfernt`, { type: 'info' });
     onRefresh(); addToast('Zuweisung entfernt');
+  };
+
+  const handleDeleteGroup = async (groupAssignments: AssignmentWithDetails[]) => {
+    const ids = groupAssignments.map(a => a.id);
+    const { error } = await supabase.from('assignments').delete().in('id', ids);
+    if (error) { addToast('Fehler beim Löschen', 'error'); return; }
+    setDeleteGroupConfirm(null);
+    groupAssignments.forEach(a => {
+      const dateLabel = new Date(a.date + 'T00:00:00').toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      sendPushToEmployee(a.employee_id, 'Einsatz abgesagt', `${a.property.name} am ${dateLabel} wurde entfernt`, { type: 'info' });
+    });
+    onRefresh(); addToast('Einsatz gelöscht');
   };
 
   const handleStatusChange = async (assignment: AssignmentWithDetails, status: string) => {
@@ -256,14 +269,21 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
             return (
             <div key={property.id} className="card">
               <div className="px-5 sm:px-6 py-4 border-b border-[#F1F5F9] bg-[#F8FAFC]">
-                <p className="text-sm font-semibold text-[#0F172A]">{property.name}</p>
-                <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {property.address}</p>
-                <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(displayFrom)} – {formatTime(displayTo)} Uhr</p>
-                {hasSickInGroup && replacementEmployee && (
-                  <p className="text-xs text-[#16A34A] font-semibold mt-1.5 flex items-center gap-1.5">
-                    <Check size={12} /> Ersatz: {replacementEmployee.first_name} {replacementEmployee.last_name}
-                  </p>
-                )}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-[#0F172A]">{property.name}</p>
+                    <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {property.address}</p>
+                    <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><Clock size={12} className="text-[#94A3B8]" /> {formatTime(displayFrom)} – {formatTime(displayTo)} Uhr</p>
+                    {hasSickInGroup && replacementEmployee && (
+                      <p className="text-xs text-[#16A34A] font-semibold mt-1.5 flex items-center gap-1.5">
+                        <Check size={12} /> Ersatz: {replacementEmployee.first_name} {replacementEmployee.last_name}
+                      </p>
+                    )}
+                  </div>
+                  <button onClick={() => setDeleteGroupConfirm(propAssignments)} className="p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors text-[#F87171] shrink-0" title="Einsatz löschen">
+                    <Trash2 size={15} />
+                  </button>
+                </div>
               </div>
               <div className="divide-y divide-[#F1F5F9]">
                 {propAssignments.map(a => {
@@ -356,6 +376,23 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
             <button onClick={handleAddAssignment} disabled={saving || !newPropertyId || !newDate || newEmployeeIds.length === 0} className="btn-primary">
               {saving ? 'Wird erstellt...' : 'Einsatz erstellen'}
             </button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Delete Group Confirmation */}
+      <Modal open={!!deleteGroupConfirm} onClose={() => setDeleteGroupConfirm(null)} width="max-w-sm">
+        <div className="p-8">
+          <div className="w-12 h-12 rounded-2xl bg-[#FEF2F2] flex items-center justify-center mb-5">
+            <Trash2 size={22} className="text-[#EF4444]" />
+          </div>
+          <h2 className="text-lg font-bold text-[#0F172A] mb-2">Einsatz löschen?</h2>
+          <p className="text-sm text-[#64748B] leading-relaxed mb-8">
+            {deleteGroupConfirm && `Der gesamte Einsatz bei ${deleteGroupConfirm[0].property.name} am ${new Date(deleteGroupConfirm[0].date).toLocaleDateString('de-DE')} wird mit allen ${deleteGroupConfirm.length} Zuweisung${deleteGroupConfirm.length !== 1 ? 'en' : ''} gelöscht.`}
+          </p>
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setDeleteGroupConfirm(null)} className="btn-ghost">Abbrechen</button>
+            <button onClick={() => deleteGroupConfirm && handleDeleteGroup(deleteGroupConfirm)} className="btn-danger">Löschen</button>
           </div>
         </div>
       </Modal>
