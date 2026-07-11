@@ -10,14 +10,15 @@
 SELECT cron.unschedule('checkin-reminder');
 
 -- Re-create with the actual project credentials
-SELECT cron.schedule(
-  'checkin-reminder',
-  '*/5 * * * *',
-  $$
-  SELECT net.http_post(
-    url := 'YOUR_NEW_SUPABASE_URL/functions/v1/check-in-reminder',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer YOUR_NEW_ANON_KEY"}'::jsonb,
-    body := '{}'::jsonb
+select
+  cron.schedule(
+    'checkin-reminder',
+    '*/5 * * * *',
+    $$
+    select net.http_post(
+      url := 'https://omnuxnaxqjxsygvrgzjn.supabase.co/functions/v1/check-in-reminder',
+      headers := jsonb_build_object('Content-Type', 'application/json', 'Authorization', 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9tbnV4bmF4cWp4c3lndnJnempuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM3ODU2MzQsImV4cCI6MjA5OTM2MTYzNH0.gHKDGLpgaJykIABU8hWTgrLgk43WjLcP6SGwIFBdeLQ'),
+      body := '{}'::jsonb
+    );
+    $$
   );
-  $$
-);

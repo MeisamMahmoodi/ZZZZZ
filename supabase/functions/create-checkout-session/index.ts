@@ -8,9 +8,9 @@ const corsHeaders = {
 };
 
 const PRICE_IDS: Record<string, string> = {
-  Starter: "price_STARTER_PLACEHOLDER",
-  Business: "price_BUSINESS_PLACEHOLDER",
-  Premium: "price_PREMIUM_PLACEHOLDER",
+  Starter: "price_1TeyZJ2K9nqVoLEmjtdyDtpQ",
+  Business: "price_1TeyaC2K9nqVoLEmOtPZ3iM8",
+  Premium: "price_1TeyaS2K9nqVoLEmvHLJjJxt",
 };
 
 Deno.serve(async (req: Request) => {
