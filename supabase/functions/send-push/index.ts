@@ -50,8 +50,8 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "BP7dGwwS5VmjyTIQsjvqKYQWJNXFdkalsN8t2JKPOt7497HEzNrFhfxHQhnEQAjmmOYThd8N-PzIZdphGhWDjNk";
-    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "iEIeD4L_4dLDQgfG6XHCSvcvDeBWXroDlKLxP26CCs4";
+    const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY") ?? "YOUR_NEW_VAPID_PUBLIC_KEY";
+    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY") ?? "YOUR_NEW_VAPID_PRIVATE_KEY";
     const vapidSubject = "mailto:meisam.projects@gmail.com";
 
     webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
