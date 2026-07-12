@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Camera, MapPin, Check, X, RotateCcw, Loader2, AlertTriangle, Navigation } from 'lucide-react';
+import { Camera, MapPin, Check, X, RotateCcw, Loader2, AlertTriangle, Navigation, CloudOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { addPendingAction, isLikelyNetworkError } from '../../lib/offlineQueue';
 
 interface CheckInFlowProps {
   assignmentId: string;
@@ -11,11 +12,12 @@ interface CheckInFlowProps {
   propertyLng?: number | null;
   propertyRadiusM?: number | null;
   onSuccess: () => void;
+  onQueued: () => void;
   onCancel: () => void;
   rtl?: boolean;
 }
 
-type Step = 'gps' | 'camera' | 'preview' | 'uploading' | 'done';
+type Step = 'gps' | 'camera' | 'preview' | 'uploading' | 'done' | 'queued';
 type GpsState = 'idle' | 'geocoding' | 'locating' | 'ok' | 'too_far' | 'error';
 
 // Haversine distance in meters
@@ -45,7 +47,7 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
 export function CheckInFlow({
   assignmentId, propertyId, propertyName, propertyAddress,
   propertyLat, propertyLng, propertyRadiusM,
-  onSuccess, onCancel, rtl,
+  onSuccess, onQueued, onCancel, rtl,
 }: CheckInFlowProps) {
   const [step, setStep] = useState<Step>('gps');
   const [gpsState, setGpsState] = useState<GpsState>('idle');
@@ -183,10 +185,29 @@ export function CheckInFlow({
       setStep('done');
       setTimeout(onSuccess, 1200);
     } catch (err) {
+      if (isLikelyNetworkError(err)) {
+        try {
+          const blob = await (await fetch(photoDataUrl)).blob();
+          await addPendingAction({
+            id: `checkin-${assignmentId}-${Date.now()}`,
+            type: 'checkin',
+            assignmentId,
+            photoBlob: blob,
+            lat: employeeCoords?.lat ?? null,
+            lng: employeeCoords?.lng ?? null,
+            createdAt: new Date().toISOString(),
+          });
+          setStep('queued');
+          setTimeout(onQueued, 1800);
+          return;
+        } catch {
+          // IndexedDB unavailable too — fall through to the regular error below
+        }
+      }
       setUploadError(err instanceof Error ? err.message : 'Fehler beim Einchecken');
       setStep('preview');
     }
-  }, [photoDataUrl, assignmentId, employeeCoords, onSuccess]);
+  }, [photoDataUrl, assignmentId, employeeCoords, onSuccess, onQueued]);
 
   const handleCancel = () => { stopCamera(); onCancel(); };
 
@@ -365,6 +386,19 @@ export function CheckInFlow({
             </div>
             <p className="text-lg font-bold text-[#0F172A]">Eingecheckt!</p>
             <p className="text-sm text-[#64748B] mt-1">{new Date().toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })} Uhr</p>
+          </div>
+        )}
+
+        {/* Queued — no network, will sync automatically */}
+        {step === 'queued' && (
+          <div className="p-10 flex flex-col items-center justify-center text-center" style={{ minHeight: '40dvh' }}>
+            <div className="w-20 h-20 rounded-3xl bg-[#FFF7ED] flex items-center justify-center mb-5">
+              <CloudOff size={40} className="text-[#F97316]" />
+            </div>
+            <p className="text-lg font-bold text-[#0F172A]">Eingecheckt!</p>
+            <p className="text-sm text-[#64748B] mt-1 max-w-[240px]">
+              Kein Internet gerade — dein Check-in wird automatisch gesendet, sobald du wieder online bist.
+            </p>
           </div>
         )}
       </div>

@@ -1,0 +1,85 @@
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '../lib/supabase';
+import { getPendingActions, removePendingAction, type PendingAction } from '../lib/offlineQueue';
+
+// Retries queued check-in/check-out actions (see offlineQueue.ts) whenever the
+// app loads and whenever the browser regains connectivity. Successfully
+// synced actions are removed from the queue and `onSynced` is called so the
+// caller can refresh its data from the server.
+export function useOfflineSync(onSynced?: () => void) {
+  const [pendingCount, setPendingCount] = useState(0);
+  const [syncing, setSyncing] = useState(false);
+
+  const refresh = useCallback(async () => {
+    const actions = await getPendingActions();
+    setPendingCount(actions.length);
+    return actions;
+  }, []);
+
+  const syncOne = useCallback(async (action: PendingAction): Promise<boolean> => {
+    try {
+      const folder = action.type === 'checkin' ? 'checkin' : 'checkout';
+      const filename = `${folder}/${action.assignmentId}_${Date.now()}.jpg`;
+      const { error: storageErr } = await supabase.storage
+        .from('assignment-photos')
+        .upload(filename, action.photoBlob, { contentType: 'image/jpeg', upsert: true });
+      if (storageErr) return false;
+
+      const { data: urlData } = supabase.storage.from('assignment-photos').getPublicUrl(filename);
+
+      const update = action.type === 'checkin'
+        ? {
+            status: 'checked_in' as const,
+            checked_in_at: action.createdAt,
+            checkin_photo_url: urlData.publicUrl,
+            checkin_lat: action.lat,
+            checkin_lng: action.lng,
+          }
+        : {
+            status: 'completed' as const,
+            completed_at: action.createdAt,
+            checkout_photo_url: urlData.publicUrl,
+            checkout_lat: action.lat,
+            checkout_lng: action.lng,
+          };
+
+      const { error: dbErr } = await supabase.from('assignments').update(update).eq('id', action.assignmentId);
+      if (dbErr) return false;
+
+      await removePendingAction(action.id);
+      return true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  const syncAll = useCallback(async () => {
+    setSyncing(true);
+    try {
+      const actions = await getPendingActions();
+      let anySucceeded = false;
+      for (const action of actions) {
+        const ok = await syncOne(action);
+        if (ok) anySucceeded = true;
+      }
+      await refresh();
+      if (anySucceeded) onSynced?.();
+    } finally {
+      setSyncing(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [syncOne, refresh]);
+
+  useEffect(() => {
+    refresh();
+    if (typeof navigator === 'undefined' || navigator.onLine !== false) {
+      syncAll();
+    }
+    const handleOnline = () => syncAll();
+    window.addEventListener('online', handleOnline);
+    return () => window.removeEventListener('online', handleOnline);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return { pendingCount, syncing, refresh, syncAll };
+}

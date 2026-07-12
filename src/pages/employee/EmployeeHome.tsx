@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Clock, LogIn, Mail, LogOut, Heart, Bell, CheckCircle, CalendarDays, Globe, AlertTriangle, LogOut as CheckOutIcon, BellRing, BellOff, AlarmClock } from 'lucide-react';
+import { MapPin, Clock, LogIn, Mail, LogOut, Heart, Bell, CheckCircle, CalendarDays, Globe, AlertTriangle, LogOut as CheckOutIcon, BellRing, BellOff, AlarmClock, CloudOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useLang } from '../../hooks/useLang';
@@ -8,6 +8,7 @@ import { langNames, langFlags, langLocale, type Lang } from '../../lib/i18n';
 import { CheckInFlow } from '../../components/employee/CheckInFlow';
 import { CheckOutFlow } from '../../components/employee/CheckOutFlow';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
+import { useOfflineSync } from '../../hooks/useOfflineSync';
 import type { Employee, Property, Assignment, ReplacementRequest, Notification, SickReport } from '../../lib/types';
 
 interface EmployeeHomeProps {
@@ -26,6 +27,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [showPushPrompt, setShowPushPrompt] = useState(false);
   const { permission, subscribed, loading: pushLoading, subscribe, unsubscribe } = usePushNotifications(employee?.id ?? null);
+  const { pendingCount } = useOfflineSync(() => loadData());
   const [todayAssignment, setTodayAssignment] = useState<AssignmentWithProperty | null>(null);
   const [upcomingAssignments, setUpcomingAssignments] = useState<AssignmentWithProperty[]>([]);
   const [replacementRequest, setReplacementRequest] = useState<(ReplacementRequest & { property: Property; sickEmployee: Employee }) | null>(null);
@@ -177,6 +179,20 @@ const { data: upcoming } = await supabase
     setShowCheckOutFlow(false);
     setTodayAssignment(null);
     loadData();
+  };
+
+  // Queued offline: reflect the check-in/-out locally right away, but don't
+  // loadData() yet — the DB hasn't actually been updated. useOfflineSync will
+  // call loadData() itself once the queued action syncs successfully.
+  const handleCheckInQueued = () => {
+    setCheckedIn(true);
+    setCheckedInAt(new Date().toISOString());
+    setShowCheckInFlow(false);
+  };
+
+  const handleCheckOutQueued = () => {
+    setShowCheckOutFlow(false);
+    setTodayAssignment(null);
   };
 
   const handleMarkAsHealthy = async () => {
@@ -392,6 +408,16 @@ await supabase.from('assignments').insert({
         </div>
       )}
 
+      {/* Offline queue indicator */}
+      {pendingCount > 0 && (
+        <div className="mb-5 rounded-2xl border border-[#FED7AA] bg-[#FFF7ED] px-4 py-3 flex items-center gap-2.5">
+          <CloudOff size={15} className="text-[#F97316] shrink-0" />
+          <p className="text-xs font-semibold text-[#9A3412]">
+            {pendingCount === 1 ? '1 Eintrag wird synchronisiert' : `${pendingCount} Einträge werden synchronisiert`}, sobald du wieder online bist
+          </p>
+        </div>
+      )}
+
       {/* SICK STATUS PINNED BANNER */}
       {isSick && sickReports.length > 0 && (
         <div className="bg-danger-50 border border-danger-200/60 rounded-2xl p-5 mb-6">
@@ -558,6 +584,7 @@ await supabase.from('assignments').insert({
           propertyLng={todayAssignment.property?.lng}
           propertyRadiusM={todayAssignment.property?.gps_radius_m}
           onSuccess={handleCheckInSuccess}
+          onQueued={handleCheckInQueued}
           onCancel={() => setShowCheckInFlow(false)}
           rtl={rtl}
         />
@@ -570,6 +597,7 @@ await supabase.from('assignments').insert({
           propertyName={todayAssignment.property?.name || ''}
           checkedInAt={checkedInAt}
           onSuccess={handleCheckOutSuccess}
+          onQueued={handleCheckOutQueued}
           onCancel={() => setShowCheckOutFlow(false)}
           rtl={rtl}
         />

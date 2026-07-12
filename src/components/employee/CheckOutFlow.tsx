@@ -1,17 +1,19 @@
 import { useState, useRef, useCallback } from 'react';
-import { Camera, Check, X, RotateCcw, Loader2, Clock } from 'lucide-react';
+import { Camera, Check, X, RotateCcw, Loader2, Clock, CloudOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { addPendingAction, isLikelyNetworkError } from '../../lib/offlineQueue';
 
 interface CheckOutFlowProps {
   assignmentId: string;
   propertyName: string;
   checkedInAt: string;
   onSuccess: () => void;
+  onQueued: () => void;
   onCancel: () => void;
   rtl?: boolean;
 }
 
-type Step = 'intro' | 'camera' | 'preview' | 'uploading' | 'done';
+type Step = 'intro' | 'camera' | 'preview' | 'uploading' | 'done' | 'queued';
 
 function formatDuration(ms: number): string {
   const totalMin = Math.round(ms / 60000);
@@ -20,7 +22,7 @@ function formatDuration(ms: number): string {
   return h > 0 ? `${h}h ${m}min` : `${m}min`;
 }
 
-export function CheckOutFlow({ assignmentId, propertyName, checkedInAt, onSuccess, onCancel, rtl }: CheckOutFlowProps) {
+export function CheckOutFlow({ assignmentId, propertyName, checkedInAt, onSuccess, onQueued, onCancel, rtl }: CheckOutFlowProps) {
   const [step, setStep] = useState<Step>('intro');
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState('');
@@ -116,10 +118,31 @@ export function CheckOutFlow({ assignmentId, propertyName, checkedInAt, onSucces
       setStep('done');
       setTimeout(onSuccess, 1800);
     } catch (err) {
+      if (isLikelyNetworkError(err)) {
+        try {
+          const blob = await (await fetch(photoDataUrl)).blob();
+          const coords = await getGPS();
+          await addPendingAction({
+            id: `checkout-${assignmentId}-${Date.now()}`,
+            type: 'checkout',
+            assignmentId,
+            photoBlob: blob,
+            lat: coords?.lat ?? null,
+            lng: coords?.lng ?? null,
+            createdAt: completedAt.toISOString(),
+          });
+          setDoneTime(completedAt);
+          setStep('queued');
+          setTimeout(onQueued, 2200);
+          return;
+        } catch {
+          // IndexedDB unavailable too — fall through to the regular error below
+        }
+      }
       setUploadError(err instanceof Error ? err.message : 'Fehler beim Auschecken');
       setStep('preview');
     }
-  }, [photoDataUrl, assignmentId, onSuccess]);
+  }, [photoDataUrl, assignmentId, onSuccess, onQueued]);
 
   const handleCancel = () => { stopCamera(); onCancel(); };
 
@@ -248,6 +271,23 @@ export function CheckOutFlow({ assignmentId, propertyName, checkedInAt, onSucces
               <p className="text-sm text-[#64748B]">Dauer: <span className="font-bold text-[#0F172A]">{finalDuration}</span></p>
             </div>
             <p className="text-xs text-[#94A3B8] mt-2">Wird in der Abrechnung erfasst</p>
+          </div>
+        )}
+
+        {/* Queued — no network, will sync automatically */}
+        {step === 'queued' && (
+          <div className="p-10 flex flex-col items-center justify-center text-center" style={{ minHeight: '40dvh' }}>
+            <div className="w-20 h-20 rounded-3xl bg-[#FFF7ED] flex items-center justify-center mb-5">
+              <CloudOff size={40} className="text-[#F97316]" />
+            </div>
+            <p className="text-lg font-bold text-[#0F172A]">Fertig!</p>
+            <div className="flex items-center gap-2 mt-2 bg-[#F8FAFC] rounded-xl px-4 py-2">
+              <Clock size={14} className="text-[#94A3B8]" />
+              <p className="text-sm text-[#64748B]">Dauer: <span className="font-bold text-[#0F172A]">{finalDuration}</span></p>
+            </div>
+            <p className="text-xs text-[#94A3B8] mt-2 max-w-[240px]">
+              Kein Internet gerade — wird automatisch gesendet, sobald du wieder online bist.
+            </p>
           </div>
         )}
       </div>
