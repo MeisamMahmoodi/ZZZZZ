@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, MapPin, Users, MoreVertical, Pencil, Trash2, Building2, GraduationCap, ShoppingCart, HeartPulse, AlertCircle, CalendarPlus } from 'lucide-react';
+import { Plus, MapPin, MoreVertical, Pencil, Trash2, Building2, GraduationCap, ShoppingCart, HeartPulse, CalendarPlus } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Modal } from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
 import { AddressAutocomplete } from '../../components/shared/AddressAutocomplete';
 import type { AddressValue } from '../../components/shared/AddressAutocomplete';
-import type { Employee, Property, EmployeeProperty, Company } from '../../lib/types';
+import type { Property, Company } from '../../lib/types';
 
 interface PropertiesProps {
   company: Company;
@@ -24,8 +24,6 @@ const typeOptions = [
 
 export function Properties({ company, refreshKey, onRefresh, onNavigate }: PropertiesProps) {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [employeeProperties, setEmployeeProperties] = useState<EmployeeProperty[]>([]);
   const [addModal, setAddModal] = useState(false);
   const [editModal, setEditModal] = useState<Property | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
@@ -53,21 +51,12 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
 
   async function loadData() {
     try {
-      const [propRes, empRes, epRes] = await Promise.all([
-        supabase.from('properties').select('*').eq('company_id', company.id).order('name'),
-        supabase.from('employees').select('*').eq('company_id', company.id),
-        supabase.from('employee_properties').select('*'),
-      ]);
-      setProperties(propRes.data || []);
-      setEmployees(empRes.data || []);
-      setEmployeeProperties(epRes.data || []);
+      const { data } = await supabase.from('properties').select('*').eq('company_id', company.id).order('name');
+      setProperties(data || []);
     } catch {
       // Component renders with existing state
     }
   }
-
-  const getPropertyEmployees = (propId: string) =>
-    employeeProperties.filter(ep => ep.property_id === propId).map(ep => employees.find(e => e.id === ep.employee_id)).filter(Boolean) as Employee[];
 
   const openEditModal = (prop: Property) => {
     setEditName(prop.name);
@@ -143,11 +132,8 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {properties.map(prop => {
-          const propEmployees = getPropertyEmployees(prop.id);
-          const noStaff = propEmployees.length === 0;
-
           return (
-            <div key={prop.id} className={`card p-5 relative ${noStaff ? 'border-[#FFEDD5]/60' : ''}`}>
+            <div key={prop.id} className="card p-5 relative">
               <div className="flex items-start gap-3.5">
                 <div className="w-11 h-11 rounded-xl bg-[#F8FAFC] flex items-center justify-center shrink-0">
                   <TypeIcon type={prop.type} />
@@ -155,20 +141,6 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#0F172A]">{prop.name}</p>
                   <p className="text-xs text-[#64748B] mt-1 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {prop.address}</p>
-                  <div className="flex items-center gap-1.5 mt-3 flex-wrap">
-                    <Users size={12} className="text-[#94A3B8]" />
-                    {propEmployees.map(e => (
-                      <span key={e.id} className="chip">{e.first_name} {e.last_name.charAt(0)}.</span>
-                    ))}
-                    {noStaff && (
-                      <span className="badge-warning">
-                        <AlertCircle size={11} /> Kein Personal
-                      </span>
-                    )}
-                  </div>
-                  {noStaff && (
-                    <p className="text-[11px] text-[#F97316] mt-1.5 font-medium">Objekt ohne Personal — im Mitarbeiter-Bereich zuweisen</p>
-                  )}
                 </div>
                 <div className="relative" ref={menuOpen === prop.id ? menuRef : null}>
                   <button onClick={() => setMenuOpen(menuOpen === prop.id ? null : prop.id)} className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors">
