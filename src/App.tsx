@@ -510,8 +510,8 @@ function UnifiedLogin() {
         )}
 
         {/* Language switcher on login page */}
-        <div className="flex justify-center gap-2 mt-8">
-          {(['de', 'ro', 'ar', 'pl', 'en'] as const).map(l => (
+        <div className="flex flex-wrap justify-center gap-2 mt-8">
+          {(['de', 'ro', 'ar', 'pl', 'en', 'uk', 'tr', 'bg'] as const).map(l => (
             <button
               key={l}
               onClick={() => setLang(l)}

@@ -15,7 +15,7 @@ interface EmployeeHomeProps {
   onSickLeave: () => void;
 }
 
-const availableLangs: Lang[] = ['de', 'ro', 'ar', 'pl', 'en'];
+const availableLangs: Lang[] = ['de', 'ro', 'ar', 'pl', 'en', 'uk', 'tr', 'bg'];
 
 interface AssignmentWithProperty extends Assignment {
   property: Property;

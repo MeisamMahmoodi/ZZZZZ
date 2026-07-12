@@ -16,7 +16,7 @@ const LANG_KEY = 'putzo_lang';
 export function LangProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() => {
     const saved = localStorage.getItem(LANG_KEY);
-    if (saved && ['de', 'ro', 'ar', 'pl', 'en'].includes(saved)) return saved as Lang;
+    if (saved && ['de', 'ro', 'ar', 'pl', 'en', 'uk', 'tr', 'bg'].includes(saved)) return saved as Lang;
     return 'de';
   });
 

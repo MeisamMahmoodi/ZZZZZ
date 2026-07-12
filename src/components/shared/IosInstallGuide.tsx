@@ -28,14 +28,29 @@ const steps: Record<string, [string, string, string]> = {
     '2. Przewiń do "Dodaj do ekranu głównego"',
     '3. Dotknij "Dodaj"',
   ],
+  uk: [
+    '1. Натисни на іконку "Поділитися" внизу Safari',
+    '2. Прокрути до "На екран Домівка"',
+    '3. Натисни "Додати"',
+  ],
+  tr: [
+    "1. Safari'nin altındaki Paylaş simgesine dokun",
+    '2. "Ana Ekrana Ekle" seçeneğine kaydır',
+    '3. "Ekle" ye dokun',
+  ],
+  bg: [
+    '1. Докосни иконата "Сподели" в долната част на Safari',
+    '2. Превърти до "Към начален екран"',
+    '3. Докосни "Добави"',
+  ],
 };
 
 const dismissLabel: Record<string, string> = {
-  de: 'Verstanden', en: 'Got it', ar: 'فهمت', ro: 'Am înțeles', pl: 'Rozumiem',
+  de: 'Verstanden', en: 'Got it', ar: 'فهمت', ro: 'Am înțeles', pl: 'Rozumiem', uk: 'Зрозуміло', tr: 'Anladım', bg: 'Разбрах',
 };
 
 const installLabel: Record<string, string> = {
-  de: 'App installieren', en: 'Install App', ar: 'تثبيت التطبيق', ro: 'Instalează App', pl: 'Zainstaluj App',
+  de: 'App installieren', en: 'Install App', ar: 'تثبيت التطبيق', ro: 'Instalează App', pl: 'Zainstaluj App', uk: 'Встановити застосунок', tr: 'Uygulamayı yükle', bg: 'Инсталирай приложението',
 };
 
 function IosInstallModal({ onClose }: { onClose: () => void }) {
