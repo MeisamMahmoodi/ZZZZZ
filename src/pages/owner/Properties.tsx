@@ -5,7 +5,6 @@ import { Modal } from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
 import { AddressAutocomplete } from '../../components/shared/AddressAutocomplete';
 import type { AddressValue } from '../../components/shared/AddressAutocomplete';
-import { formatTime, getTodayDayAbbrev } from '../../lib/utils';
 import type { Employee, Property, EmployeeProperty, Company } from '../../lib/types';
 
 interface PropertiesProps {
@@ -15,7 +14,6 @@ interface PropertiesProps {
   onNavigate?: (page: string) => void;
 }
 
-const dayOptions = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 const typeOptions = [
   { value: 'office', label: 'Büro', icon: Building2 },
   { value: 'school', label: 'Schule', icon: GraduationCap },
@@ -38,20 +36,10 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   const [newName, setNewName] = useState('');
   const [newAddress, setNewAddress] = useState<AddressValue>({ formatted: '', lat: null, lng: null });
   const [newType, setNewType] = useState('office');
-  const [newDays, setNewDays] = useState<string[]>(['Mo', 'Di', 'Mi', 'Do', 'Fr']);
-  const [newTimeFrom, setNewTimeFrom] = useState('08:00');
-  const [newTimeTo, setNewTimeTo] = useState('12:00');
-  const [newEmployeeIds, setNewEmployeeIds] = useState<string[]>([]);
 
   const [editName, setEditName] = useState('');
   const [editAddress, setEditAddress] = useState<AddressValue>({ formatted: '', lat: null, lng: null });
   const [editType, setEditType] = useState('office');
-  const [editDays, setEditDays] = useState<string[]>([]);
-  const [editTimeFrom, setEditTimeFrom] = useState('08:00');
-  const [editTimeTo, setEditTimeTo] = useState('12:00');
-  const [editEmployeeIds, setEditEmployeeIds] = useState<string[]>([]);
-
-  const todayDay = getTodayDayAbbrev();
 
   useEffect(() => { loadData(); }, [company.id, refreshKey]);
 
@@ -81,38 +69,24 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   const getPropertyEmployees = (propId: string) =>
     employeeProperties.filter(ep => ep.property_id === propId).map(ep => employees.find(e => e.id === ep.employee_id)).filter(Boolean) as Employee[];
 
-  const toggleDay = (day: string, setter: typeof setNewDays) => {
-    setter(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
-  };
-
-  const toggleEmployee = (empId: string, setter: typeof setNewEmployeeIds) => {
-    setter(prev => prev.includes(empId) ? prev.filter(id => id !== empId) : [...prev, empId]);
-  };
-
   const openEditModal = (prop: Property) => {
     setEditName(prop.name);
     setEditAddress({ formatted: prop.address, lat: prop.lat ?? null, lng: prop.lng ?? null });
     setEditType(prop.type);
-    setEditDays(prop.cleaning_days || []); setEditTimeFrom(prop.time_from || '08:00'); setEditTimeTo(prop.time_to || '12:00');
-    setEditEmployeeIds(employeeProperties.filter(ep => ep.property_id === prop.id).map(ep => ep.employee_id));
     setEditModal(prop); setMenuOpen(null);
   };
 
   const handleAddProperty = async () => {
     if (!newName) return;
-    const { data, error } = await supabase.from('properties').insert({
-      company_id: company.id, name: newName, address: newAddress.formatted, type: newType, cleaning_days: newDays, time_from: newTimeFrom, time_to: newTimeTo,
+    // Objekte legen nur noch die Stammdaten fest (Name, Adresse, Typ).
+    // Reinigungstage, Uhrzeiten und Mitarbeiterzuweisung passieren bewusst
+    // getrennt im Einsätze-Bereich (Einzel- oder wiederkehrender Auftrag).
+    const { error } = await supabase.from('properties').insert({
+      company_id: company.id, name: newName, address: newAddress.formatted, type: newType,
       lat: newAddress.lat, lng: newAddress.lng,
-    }).select().maybeSingle();
+    });
 
     if (error) { addToast('Fehler beim Speichern', 'error'); return; }
-
-    if (data && newEmployeeIds.length > 0) {
-      // Objekte legen nur noch fest, wer daran arbeiten DARF (employee_properties).
-      // Die eigentlichen Einsätze — einzeln oder als wiederkehrende Serie —
-      // werden bewusst getrennt im Einsätze-Bereich erstellt.
-      await supabase.from('employee_properties').insert(newEmployeeIds.map(eid => ({ employee_id: eid, property_id: data.id })));
-    }
 
     setAddModal(false); resetForm(); onRefresh(); addToast('Objekt hinzugefügt');
   };
@@ -120,17 +94,11 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   const handleEditProperty = async () => {
     if (!editModal || !editName) return;
     const { error } = await supabase.from('properties').update({
-      name: editName, address: editAddress.formatted, type: editType, cleaning_days: editDays, time_from: editTimeFrom, time_to: editTimeTo,
+      name: editName, address: editAddress.formatted, type: editType,
       lat: editAddress.lat, lng: editAddress.lng,
     }).eq('id', editModal.id);
 
     if (error) { addToast('Fehler beim Speichern', 'error'); return; }
-
-    const currentEmpIds = employeeProperties.filter(ep => ep.property_id === editModal.id).map(ep => ep.employee_id);
-    const toAdd = editEmployeeIds.filter(id => !currentEmpIds.includes(id));
-    const toRemove = currentEmpIds.filter(id => !editEmployeeIds.includes(id));
-    if (toRemove.length > 0) await supabase.from('employee_properties').delete().eq('property_id', editModal.id).in('employee_id', toRemove);
-    if (toAdd.length > 0) await supabase.from('employee_properties').insert(toAdd.map(eid => ({ employee_id: eid, property_id: editModal.id })));
 
     setEditModal(null); onRefresh(); addToast('Objekt aktualisiert');
   };
@@ -145,7 +113,6 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
 
   const resetForm = () => {
     setNewName(''); setNewAddress({ formatted: '', lat: null, lng: null }); setNewType('office');
-    setNewDays(['Mo', 'Di', 'Mi', 'Do', 'Fr']); setNewTimeFrom('08:00'); setNewTimeTo('12:00'); setNewEmployeeIds([]);
   };
 
   const TypeIcon = ({ type }: { type: string }) => {
@@ -154,30 +121,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
     return <Icon size={20} className="text-[#334155]" />;
   };
 
-  const renderEmployeeChips = (selectedIds: string[], setter: typeof setNewEmployeeIds) => (
-    <div className="flex flex-wrap gap-2">
-      {employees.filter(e => e.status === 'active').map(emp => (
-        <button key={emp.id} onClick={() => toggleEmployee(emp.id, setter)}
-          className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${selectedIds.includes(emp.id) ? 'bg-[#22C55E] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
-          {emp.first_name} {emp.last_name}
-        </button>
-      ))}
-      {employees.filter(e => e.status === 'active').length === 0 && <span className="text-sm text-[#94A3B8]">Keine aktiven Mitarbeiter</span>}
-    </div>
-  );
-
-  const renderDayPicker = (selectedDays: string[], setter: typeof setNewDays) => (
-    <div className="flex gap-2">
-      {dayOptions.map(day => (
-        <button key={day} onClick={() => toggleDay(day, setter)}
-          className={`w-10 h-10 rounded-xl text-sm font-medium transition-all duration-200 ${selectedDays.includes(day) ? 'bg-[#22C55E] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
-          {day}
-        </button>
-      ))}
-    </div>
-  );
-
-  const renderTypePicker = (selectedType: string, setter: typeof setNewType) => (
+  const renderTypePicker = (selectedType: string, setter: (v: string) => void) => (
     <div className="flex flex-wrap gap-2">
       {typeOptions.map(opt => (
         <button key={opt.value} onClick={() => setter(opt.value)}
@@ -200,7 +144,6 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {properties.map(prop => {
           const propEmployees = getPropertyEmployees(prop.id);
-          const isToday = prop.cleaning_days?.includes(todayDay);
           const noStaff = propEmployees.length === 0;
 
           return (
@@ -211,10 +154,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#0F172A]">{prop.name}</p>
-                  <p className={`text-xs mt-1 font-medium ${isToday ? 'text-[#16A34A]' : 'text-[#64748B]'}`}>
-                    {prop.cleaning_days?.join(' · ')} · {formatTime(prop.time_from)}–{formatTime(prop.time_to)} Uhr
-                  </p>
-                  <p className="text-xs text-[#64748B] mt-0.5 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {prop.address}</p>
+                  <p className="text-xs text-[#64748B] mt-1 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {prop.address}</p>
                   <div className="flex items-center gap-1.5 mt-3 flex-wrap">
                     <Users size={12} className="text-[#94A3B8]" />
                     {propEmployees.map(e => (
@@ -227,7 +167,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
                     )}
                   </div>
                   {noStaff && (
-                    <p className="text-[11px] text-[#F97316] mt-1.5 font-medium">Objekt ohne Personal — Einsatz nicht möglich</p>
+                    <p className="text-[11px] text-[#F97316] mt-1.5 font-medium">Objekt ohne Personal — im Mitarbeiter-Bereich zuweisen</p>
                   )}
                 </div>
                 <div className="relative" ref={menuOpen === prop.id ? menuRef : null}>
@@ -269,14 +209,9 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
               />
             </div>
             <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Typ</label>{renderTypePicker(newType, setNewType)}</div>
-            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Reinigungstage</label>{renderDayPicker(newDays, setNewDays)}</div>
-            <div className="flex gap-3">
-              <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit von</label><input type="time" value={newTimeFrom} onChange={e => setNewTimeFrom(e.target.value)} className="input-field" /></div>
-              <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit bis</label><input type="time" value={newTimeTo} onChange={e => setNewTimeTo(e.target.value)} className="input-field" /></div>
-            </div>
-            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Zugewiesene Mitarbeiter</label>{renderEmployeeChips(newEmployeeIds, setNewEmployeeIds)}</div>
           </div>
-          <div className="flex justify-end gap-3 mt-8">
+          <p className="text-xs text-[#94A3B8] mt-5">Reinigungstage, Uhrzeiten und Mitarbeiter legst du im Einsätze-Bereich fest, sobald du für dieses Objekt einen Einzel- oder wiederkehrenden Auftrag erstellst.</p>
+          <div className="flex justify-end gap-3 mt-6">
             <button onClick={() => { setAddModal(false); resetForm(); }} className="btn-ghost">Abbrechen</button>
             <button onClick={handleAddProperty} disabled={!newName || !newAddress.lat} className="btn-primary">Speichern</button>
           </div>
@@ -297,12 +232,6 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
               />
             </div>
             <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Typ</label>{renderTypePicker(editType, setEditType)}</div>
-            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Reinigungstage</label>{renderDayPicker(editDays, setEditDays)}</div>
-            <div className="flex gap-3">
-              <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit von</label><input type="time" value={editTimeFrom} onChange={e => setEditTimeFrom(e.target.value)} className="input-field" /></div>
-              <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit bis</label><input type="time" value={editTimeTo} onChange={e => setEditTimeTo(e.target.value)} className="input-field" /></div>
-            </div>
-            <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Zugewiesene Mitarbeiter</label>{renderEmployeeChips(editEmployeeIds, setEditEmployeeIds)}</div>
           </div>
           <div className="flex justify-end gap-3 mt-8">
             <button onClick={() => setEditModal(null)} className="btn-ghost">Abbrechen</button>
