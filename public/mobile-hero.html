@@ -126,9 +126,10 @@ html, body {
   margin-bottom:10px;
 }
 .eyebrow.red { color:#dc2626; }
+.eyebrow.purple { color:#7c3aed; }
 
 h1 {
-  font-size:48px;
+  font-size:44px;
   font-weight:900;
   line-height:1.0;
   letter-spacing:-2px;
@@ -136,18 +137,18 @@ h1 {
 }
 
 h2 {
-  font-size:36px;
+  font-size:32px;
   font-weight:900;
-  line-height:1.05;
-  letter-spacing:-1.2px;
+  line-height:1.08;
+  letter-spacing:-1.1px;
   color:#111827;
 }
 
 .lead {
-  font-size:16px;
-  line-height:1.65;
+  font-size:15px;
+  line-height:1.6;
   color:#4b5563;
-  margin-top:12px;
+  margin-top:10px;
 }
 
 .divider {
@@ -158,14 +159,16 @@ h2 {
 }
 
 /* ── PHONE MOCKUP ── */
-.phone {
-  border-radius:28px;
-  overflow:hidden;
-  box-shadow:0 16px 48px rgba(0,0,0,0.13), 0 0 0 1px rgba(0,0,0,0.07);
-  background:#f3f4f6;
-  flex-shrink:0;
+.phone-shell {
+  background:#0b0b0f; border-radius:30px; padding:8px;
+  box-shadow:0 12px 32px rgba(0,0,0,0.16), 0 0 0 1px rgba(0,0,0,0.07);
+  flex-shrink:0; position:relative;
 }
-.phone img { width:100%; display:block; }
+.phone-notch {
+  position:absolute; top:8px; left:50%; transform:translateX(-50%);
+  width:70px; height:14px; background:#0b0b0f; border-radius:0 0 10px 10px; z-index:2;
+}
+.phone-screen { background:#fff; border-radius:22px; overflow:hidden; position:relative; }
 
 /* ── BROWSER MOCKUP ── */
 .browser {
@@ -195,22 +198,21 @@ h2 {
   overflow:hidden;
   text-overflow:ellipsis;
 }
-.browser img { width:100%; display:block; }
 
 /* ── WHATSAPP BUBBLES ── */
 .wa-chat {
   display:flex;
   flex-direction:column;
   gap:8px;
-  margin-top:16px;
+  margin-top:14px;
   overflow:hidden;
 }
 .wa-bubble {
-  max-width:82%;
-  padding:10px 14px;
+  max-width:84%;
+  padding:9px 13px;
   border-radius:12px;
-  font-size:14px;
-  line-height:1.45;
+  font-size:13px;
+  line-height:1.4;
   color:#111827;
   opacity:0;
   transform:translateY(8px);
@@ -220,54 +222,61 @@ h2 {
 .wa-bubble.out { background:#dcfce7; align-self:flex-end; border-radius:12px 4px 12px 12px; }
 .wa-bubble.alert { background:#fee2e2; color:#991b1b; font-weight:600; align-self:flex-end; border-radius:12px 4px 12px 12px; }
 .wa-bubble.show { opacity:1; transform:translateY(0); }
-.wa-time { font-size:10px; color:#9ca3af; margin-top:3px; display:block; }
+.wa-time { font-size:9px; color:#9ca3af; margin-top:2px; display:block; }
+
+.impact-stat {
+  opacity:0; transform:translateY(6px); transition:opacity 0.4s, transform 0.4s;
+  margin-top:12px; background:#fef2f2; border:1.5px solid #fecaca; border-radius:12px;
+  padding:12px 14px; font-size:13px; font-weight:700; color:#991b1b; line-height:1.4;
+}
+.impact-stat.show { opacity:1; transform:translateY(0); }
 
 /* ── LANG CARDS ── */
 .lang-grid {
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:10px;
-  margin-top:16px;
+  gap:8px;
+  margin-top:14px;
 }
 .lang-card {
   background:#f9fafb;
   border:1.5px solid #e5e7eb;
   border-radius:12px;
-  padding:14px 16px;
+  padding:10px 12px;
   display:flex;
   align-items:center;
-  gap:10px;
+  gap:8px;
   opacity:0;
   transform:scale(0.94);
   transition:opacity 0.3s, transform 0.3s;
 }
 .lang-card.show { opacity:1; transform:scale(1); }
 .lang-card.green { border-color:#bbf7d0; background:#f0fdf4; }
-.lang-flag { font-size:26px; }
-.lang-name { font-size:15px; font-weight:700; color:#111827; }
-.lang-sub  { font-size:12px; color:#9ca3af; }
+.lang-flag { font-size:20px; }
+.lang-name { font-size:12.5px; font-weight:700; color:#111827; }
+.lang-sub  { font-size:10px; color:#9ca3af; }
 
-/* ── CHECK ITEMS ── */
+/* ── CHECK ITEMS (CTA scene) ── */
 .check-list {
   display:flex;
   flex-direction:column;
-  gap:10px;
-  margin-top:16px;
+  gap:9px;
+  margin-top:14px;
 }
 .check-item {
   display:flex;
   align-items:center;
-  gap:10px;
-  font-size:15px;
+  gap:9px;
+  font-size:14px;
   color:#374151;
 }
 .check-mark {
-  width:24px; height:24px;
+  width:22px; height:22px;
   background:#16a34a;
   border-radius:50%;
   display:flex; align-items:center; justify-content:center;
   color:#fff;
-  font-size:13px;
+  font-size:12px;
   font-weight:700;
   flex-shrink:0;
 }
@@ -275,23 +284,23 @@ h2 {
 /* ── STAT BOXES ── */
 .stat-row {
   display:flex;
-  gap:10px;
-  margin-top:16px;
+  gap:8px;
+  margin-top:14px;
 }
 .stat-box {
   flex:1;
   background:#f9fafb;
   border:1px solid #e5e7eb;
   border-radius:12px;
-  padding:14px 10px;
+  padding:12px 8px;
   text-align:center;
 }
-.stat-num { font-size:30px; font-weight:900; color:#16a34a; letter-spacing:-1px; line-height:1; }
-.stat-label { font-size:12px; color:#6b7280; margin-top:4px; font-weight:500; }
+.stat-num { font-size:26px; font-weight:900; color:#16a34a; letter-spacing:-1px; line-height:1; }
+.stat-label { font-size:11px; color:#6b7280; margin-top:3px; font-weight:500; }
 
 /* ── CSV TABLE ── */
 .csv-wrap {
-  margin-top:16px;
+  margin-top:12px;
   border-radius:10px;
   overflow:hidden;
   box-shadow:0 2px 12px rgba(0,0,0,0.07);
@@ -318,6 +327,8 @@ h2 {
   padding:4px 10px;
   border-radius:6px;
 }
+.dl-bar-track { width:100%; height:6px; background:#e5e7eb; }
+.dl-bar-fill { height:100%; width:0%; background:#16a34a; transition:width 1s ease; }
 .csv-table { width:100%; border-collapse:collapse; font-size:11px; }
 .csv-table th { background:#f9fafb; color:#374151; font-weight:700; padding:8px 10px; text-align:left; border-bottom:1px solid #e5e7eb; }
 .csv-table td { padding:7px 10px; border-bottom:1px solid #f3f4f6; color:#374151; }
@@ -328,149 +339,158 @@ h2 {
 .cta-box {
   background:#16a34a;
   border-radius:18px;
-  padding:32px 28px;
+  padding:28px 24px;
   text-align:center;
   box-shadow:0 16px 40px rgba(22,163,74,0.25);
-  margin-top:16px;
+  margin-top:14px;
 }
 .cta-price {
-  font-size:72px;
+  font-size:60px;
   font-weight:900;
   color:#fff;
   letter-spacing:-3px;
   line-height:1;
 }
-.cta-sub { font-size:17px; color:rgba(255,255,255,0.8); margin-top:6px; }
+.cta-sub { font-size:15px; color:rgba(255,255,255,0.8); margin-top:6px; }
 .cta-btn-big {
   display:block;
   background:#fff;
   color:#16a34a;
-  font-size:17px;
+  font-size:16px;
   font-weight:800;
-  padding:16px 24px;
+  padding:14px 22px;
   border-radius:10px;
-  margin-top:20px;
+  margin-top:16px;
   text-decoration:none;
 }
-.cta-link-small { font-size:12px; color:rgba(255,255,255,0.45); margin-top:10px; }
+.cta-risk { font-size:13px; color:rgba(255,255,255,0.9); margin-top:12px; font-weight:600; }
+.cta-link-small { font-size:11px; color:rgba(255,255,255,0.45); margin-top:8px; }
 
 /* ── ALERT BOX ── */
 .alert-box {
   background:#fef2f2;
   border:2px solid #fecaca;
   border-radius:18px;
-  padding:28px 24px;
+  padding:24px 20px;
   text-align:center;
-  margin-top:16px;
+  margin-top:14px;
 }
 .alert-time {
-  font-size:64px;
+  font-size:56px;
   font-weight:900;
   color:#dc2626;
   letter-spacing:-2px;
   line-height:1;
 }
 .alert-label {
-  font-size:15px;
+  font-size:14px;
   color:#ef4444;
   font-weight:600;
-  margin-top:10px;
+  margin-top:8px;
 }
 .alert-msg {
   background:#fee2e2;
   border-radius:10px;
-  padding:12px 16px;
-  font-size:14px;
+  padding:11px 15px;
+  font-size:13px;
   color:#991b1b;
   line-height:1.5;
-  margin-top:14px;
+  margin-top:12px;
 }
 
-/* ── GREEN TAG PILLS ── */
+/* ── TAG PILLS ── */
 .tag-row {
   display:flex;
   flex-wrap:wrap;
-  gap:8px;
-  margin-top:14px;
+  gap:7px;
+  margin-top:12px;
 }
 .tag {
   background:#f0fdf4;
   border:1px solid #bbf7d0;
   color:#15803d;
-  font-size:13px;
+  font-size:12px;
   font-weight:600;
-  padding:6px 12px;
+  padding:5px 11px;
   border-radius:20px;
 }
+.tag.purple { background:#f5f3ff; border-color:#ddd6fe; color:#6d28d9; }
 
 /* ── PROGRESS ── */
-#progress {
-  position:fixed;
-  bottom:0; left:0; right:0;
-  height:3px;
-  background:#e5e7eb;
-  z-index:1000;
-}
-#prog-fill {
-  height:100%;
-  background:#16a34a;
-  width:0%;
-  transition:width 0.15s linear;
-}
+#progress { position:fixed; bottom:0; left:0; right:0; height:3px; background:#e5e7eb; z-index:1000; }
+#prog-fill { height:100%; background:#16a34a; width:0%; transition:width 0.15s linear; }
+#counter { position:fixed; bottom:10px; right:16px; font-size:11px; font-weight:600; color:#d1d5db; z-index:1000; letter-spacing:1px; }
 
-#counter {
-  position:fixed;
-  bottom:10px;
-  right:16px;
-  font-size:11px;
-  font-weight:600;
-  color:#d1d5db;
-  z-index:1000;
-  letter-spacing:1px;
-}
+/* ── PIVOT SCENE ── */
+.big-logo { font-size:60px; font-weight:900; color:#111827; letter-spacing:-2.5px; line-height:1; margin-top:6px; }
+.vorher-nachher { display:flex; gap:8px; margin-top:14px; }
+.vn-box { flex:1; border-radius:12px; padding:12px 14px; }
+.vn-box.bad { background:#fef2f2; border:1.5px solid #fecaca; }
+.vn-box.good { background:#f0fdf4; border:1.5px solid #bbf7d0; }
+.vn-label { font-size:10px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; }
+.vn-num { font-size:26px; font-weight:900; margin-top:2px; }
+.vn-sub { font-size:11px; margin-top:2px; }
 
-/* ── PIVOT SCENE LOGO ── */
-.big-logo {
-  font-size:72px;
-  font-weight:900;
-  color:#111827;
-  letter-spacing:-3px;
-  line-height:1;
-  margin-top:8px;
+/* ── DISPATCH CARD (Auto Ersatz-Dispatch) ── */
+.dispatch-wrap { background:#fef2f2; border:1.5px solid #fecaca; border-radius:16px; padding:18px; margin-top:14px; }
+.avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; flex-shrink:0; }
+.dispatch-property { margin-top:10px; background:#fff; border-radius:10px; padding:10px 12px; }
+.dispatch-card { margin-top:10px; background:#fff; border:1.5px solid #fed7aa; border-radius:10px; padding:12px; transition:background 0.3s, border-color 0.3s; }
+.dispatch-card.success { background:#f0fdf4; border-color:#bbf7d0; }
+.dispatch-countdown { font-weight:800; color:#f97316; }
+.dispatch-skip { display:block; margin-top:6px; font-size:11px; color:#94a3b8; }
+.toast-m {
+  margin-top:12px; background:#111827; color:#fff; padding:11px 16px; border-radius:10px;
+  font-size:12.5px; font-weight:600; opacity:0; transform:translateY(8px);
+  transition:opacity 0.35s, transform 0.35s;
 }
+.toast-m.show { opacity:1; transform:translateY(0); }
 
-/* ── SPRINGER BUTTON ── */
-.springer-btn {
-  background:#16a34a;
-  color:#fff;
-  font-size:18px;
-  font-weight:700;
-  padding:14px 28px;
-  border-radius:10px;
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  box-shadow:0 4px 16px rgba(22,163,74,0.3);
-  margin-top:16px;
+/* ── CHECKLIST ── */
+.chk-row {
+  display:flex; align-items:center; gap:10px; padding:10px 12px;
+  background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; margin-top:8px;
+  transition:background 0.3s, border-color 0.3s;
+}
+.chk-row.done { background:#fff7ed; border-color:#fed7aa; }
+.chk-box {
+  width:18px; height:18px; border-radius:6px; border:2px solid #cbd5e1; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; transition:all 0.25s;
+}
+.chk-row.done .chk-box { background:#f97316; border-color:#f97316; transform:scale(1.1); }
+.chk-box svg { opacity:0; transition:opacity 0.2s; }
+.chk-row.done .chk-box svg { opacity:1; }
+.chk-label { font-size:13px; color:#475569; font-weight:500; }
+.chk-row.done .chk-label { color:#0f172a; font-weight:700; }
+
+.pdf-mock { background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:16px 18px; margin-top:14px; box-shadow:0 10px 28px rgba(0,0,0,0.08); }
+.photo-placeholder {
+  flex:1; height:44px; border-radius:7px; background:linear-gradient(135deg,#f1f5f9,#e2e8f0);
+  display:flex; align-items:center; justify-content:center; font-size:10px; color:#94a3b8; font-weight:700;
+  border:1.5px dashed #cbd5e1;
 }
 
 /* ── GPS ROW ── */
-.gps-row {
-  display:flex;
-  gap:10px;
-  margin-top:16px;
-  overflow:hidden;
+.gps-row { display:flex; gap:8px; margin-top:14px; }
+.gps-item { flex:1; text-align:center; }
+.gps-label { font-size:11px; font-weight:600; color:#374151; margin-top:6px; }
+.map-mock {
+  width:100%; height:70px; border-radius:10px; position:relative; overflow:hidden;
+  background-color:#eef2f7;
+  background-image:linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+  background-size:14px 14px;
 }
-.gps-item {
-  flex:1;
-  text-align:center;
+.radar-dot { position:absolute; top:50%; left:50%; width:9px; height:9px; margin:-4.5px; border-radius:50%; background:#16a34a; z-index:2; }
+.radar-ring {
+  position:absolute; top:50%; left:50%; width:9px; height:9px; margin:-4.5px; border-radius:50%;
+  border:2px solid #16a34a; animation:radarPulse 1.8s ease-out infinite;
 }
-.gps-label {
-  font-size:12px;
-  font-weight:600;
-  color:#374151;
-  margin-top:8px;
+@keyframes radarPulse { 0% { transform:scale(1); opacity:0.9; } 100% { transform:scale(6); opacity:0; } }
+.check-pop {
+  width:44px; height:44px; border-radius:50%; background:#16a34a; display:flex; align-items:center; justify-content:center;
+  margin:0 auto; transform:scale(0); transition:transform 0.4s cubic-bezier(.34,1.56,.64,1);
 }
+.check-pop.go { transform:scale(1); }
 </style>
 </head>
 <body>
@@ -494,7 +514,7 @@ h2 {
   <div class="eyebrow red up">Reinigungsfirmen kennen das</div>
   <h1 class="up d1">Es ist<br/>06:47 Uhr.</h1>
   <p class="lead up d2">Anis schreibt:<br/><strong style="color:#111827;">"Chef, ich bin heute krank."</strong></p>
-  <p class="up d3" style="font-size:18px;color:#9ca3af;margin-top:10px;">Was jetzt?</p>
+  <p class="up d3" style="font-size:16px;color:#9ca3af;margin-top:8px;">Was jetzt?</p>
   <div class="alert-box up d3">
     <div class="alert-time">06:47</div>
     <div class="alert-label">⚠ Krankmeldung eingegangen</div>
@@ -513,88 +533,123 @@ h2 {
     <div class="wa-bubble in" id="wm3">Kann nicht, habe schon Schicht<span class="wa-time">06:51</span></div>
     <div class="wa-bubble in" id="wm4">Was ist das Objekt nochmal?<span class="wa-time">06:52</span></div>
     <div class="wa-bubble out" id="wm5">BITTE JEMAND MELDEN 🙏🙏<span class="wa-time">06:55</span></div>
-    <div class="wa-bubble in" id="wm6">Vielleicht kann ich... weiß noch nicht<span class="wa-time">07:01</span></div>
-    <div class="wa-bubble alert" id="wm7">Noch kein Springer — 07:20 ⚠️<span class="wa-time" style="color:#f87171;">07:20</span></div>
+    <div class="wa-bubble alert" id="wm6">Noch kein Springer — 07:20 ⚠️<span class="wa-time" style="color:#f87171;">07:20</span></div>
+    <div class="wa-bubble alert" id="wm7">Kunde ruft an: "Wo ist mein Team??" 😳<span class="wa-time" style="color:#f87171;">07:24</span></div>
   </div>
+  <div class="impact-stat" id="impact1">52 Minuten verloren. Kunde verärgert. Objekt unbesetzt.</div>
 </div>
 
 <!-- S3 PIVOT -->
 <div class="scene" id="s3">
-  <p class="up" style="font-size:16px;color:#9ca3af;font-weight:500;line-height:1.6;">Während Sie das lesen, verliert irgendwo ein Chef gerade einen Großkunden. Weil sein Springer nicht auftaucht.</p>
+  <p class="up" style="font-size:14px;color:#9ca3af;font-weight:500;line-height:1.6;">Während Sie das lesen, sucht irgendwo ein Chef gerade einen Springer.</p>
   <div class="divider up d1"></div>
-  <h2 class="up d2" style="font-size:42px;">Das muss<br/>nicht so sein.</h2>
-  <p class="lead up d3">meizo löst das — in unter 2 Minuten.<br/>Kein Anruf. Keine Gruppe.</p>
+  <h2 class="up d2" style="font-size:40px;">Das muss<br/>nicht so sein.</h2>
+  <div class="vorher-nachher up d2">
+    <div class="vn-box bad">
+      <div class="vn-label" style="color:#991b1b;">Vorher</div>
+      <div class="vn-num" style="color:#dc2626;" data-count="52">0</div>
+      <div class="vn-sub" style="color:#991b1b;">Minuten, kein Springer</div>
+    </div>
+    <div class="vn-box good">
+      <div class="vn-label" style="color:#15803d;">Mit meizo</div>
+      <div class="vn-num" style="color:#16a34a;" data-count="90">0</div>
+      <div class="vn-sub" style="color:#15803d;">Sekunden, erledigt</div>
+    </div>
+  </div>
   <div class="big-logo up d3">meizo</div>
-  <p class="up d4" style="font-size:14px;color:#6b7280;margin-top:4px;">Ihr digitaler Disponent</p>
+  <p class="up d4" style="font-size:14px;color:#6b7280;margin-top:4px;font-weight:600;">Nie wieder 06:47-Uhr-Panik.</p>
 </div>
 
 <!-- S4 KRANKMELDUNG -->
 <div class="scene" id="s4" style="background:#f9fafb;">
-  <div class="eyebrow up">Schritt 1 von 4</div>
+  <div class="eyebrow up">Schritt 1</div>
   <h2 class="up d1">Mitarbeiter meldet<br/>sich krank.</h2>
   <p class="lead up d2">Direkt in der App — kein Anruf, keine WhatsApp. Chef wird sofort informiert.</p>
   <div class="tag-row up d3">
     <span class="tag">✓ Kein Anruf nötig</span>
     <span class="tag">✓ Chef sofort informiert</span>
   </div>
-  <div class="up d3" style="margin-top:20px;display:flex;justify-content:center;">
-    <div class="phone" style="width:200px;">
-      <img src="/KrankHomeScreen.PNG" alt="Krankmeldung"/>
+  <div class="up d3" style="margin-top:16px;display:flex;justify-content:center;">
+    <div class="phone-shell" style="width:190px;">
+      <div class="phone-notch"></div>
+      <div class="phone-screen" style="height:280px;padding:26px 16px 16px;">
+        <div style="font-size:11px;color:#94a3b8;font-weight:600;">Krankmeldung</div>
+        <div id="sick-pending" style="margin-top:34px;text-align:center;">
+          <div style="width:52px;height:52px;border-radius:18px;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:22px;">🤒</div>
+          <div style="font-weight:800;font-size:13px;margin-top:12px;">Heute krankmelden?</div>
+          <div style="margin-top:16px;background:#ef4444;color:#fff;font-weight:700;font-size:12px;padding:10px;border-radius:10px;">Ja, krank melden</div>
+        </div>
+        <div id="sick-done" style="margin-top:34px;text-align:center;opacity:0;transition:opacity 0.4s;">
+          <div class="check-pop" id="sick-check" style="background:#f97316;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+          <div style="font-weight:800;font-size:13px;margin-top:12px;">Gemeldet ✓</div>
+          <div style="color:#94a3b8;font-size:10px;margin-top:4px;line-height:1.4;">Chef wurde informiert.<br/>Gute Besserung!</div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
-<!-- S5 CHEF ERSATZ -->
+<!-- S5 AUTOMATISCHER SPRINGER-VERSAND -->
 <div class="scene" id="s5">
-  <div class="eyebrow red up">Schritt 2 von 4</div>
-  <h2 class="up d1">Chef sieht sofort:<br/>Ersatz nötig.</h2>
-  <p class="lead up d2">Roter Alert direkt auf dem Dashboard.</p>
-  <div class="up d2" style="margin-top:16px;">
-    <div class="browser">
-      <div class="browser-bar">
-        <div class="browser-dot" style="background:#ff5f57;"></div>
-        <div class="browser-dot" style="background:#febc2e;"></div>
-        <div class="browser-dot" style="background:#28c840;"></div>
-        <div class="browser-url">meizo.de · Dashboard</div>
+  <div class="eyebrow purple up">Das hat kein anderer</div>
+  <h2 class="up d1">meizo fragt selbst<br/>den nächsten Springer.</h2>
+  <p class="lead up d2">Kein Klicken durch die Liste. meizo kennt Verfügbarkeit und Arbeitszeitgesetz — und fragt automatisch, bis jemand zusagt.</p>
+  <div class="tag-row up d2">
+    <span class="tag purple">✓ Läuft von selbst</span>
+    <span class="tag purple">✓ Kosten sofort sichtbar</span>
+  </div>
+  <div class="dispatch-wrap up d3">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="avatar" style="background:#fee2e2;color:#dc2626;">AY</div>
+      <div>
+        <div style="font-weight:800;font-size:13px;">Anis Yildiz</div>
+        <span class="badge" style="background:#fee2e2;color:#dc2626;">Krankgemeldet</span>
       </div>
-      <img src="/Ersatz_finden.png" alt="Ersatz finden" style="width:100%;display:block;"/>
     </div>
+    <div class="dispatch-property">
+      <div style="font-weight:700;font-size:12.5px;">📍 Objekt Müller</div>
+      <div style="color:#6b7280;font-size:11px;margin-top:2px;">07:30 – 09:30 Uhr</div>
+    </div>
+    <div class="dispatch-card" id="dispatch-card">
+      <div style="display:flex;align-items:center;gap:6px;font-size:12.5px;flex-wrap:wrap;">
+        <span>🔍</span><span id="dispatch-name" style="font-weight:800;">Mustafa Yilmaz</span>
+        <span style="color:#6b7280;">wird gefragt</span>
+      </div>
+      <div style="margin-top:6px;font-size:12px;color:#94a3b8;">⏱ Antwort in <span class="dispatch-countdown" id="dispatch-countdown">0:08</span> Min</div>
+      <div class="dispatch-skip" id="dispatch-skip">Automatisch — kein Zutun nötig</div>
+    </div>
+    <div class="toast-m" id="dispatch-toast">Fatima übernimmt · 2 Std × 15,00 € = 30,00 €</div>
   </div>
 </div>
 
-<!-- S6 BESTE WAHL -->
+<!-- S6 CHECKLISTE & KUNDENBERICHT -->
 <div class="scene" id="s6" style="background:#f9fafb;">
-  <div class="eyebrow up">Schritt 3 von 4</div>
-  <h2 class="up d1">Ein Klick statt 12 Anrufe.</h2>
-  <p class="lead up d2">Während andere Chefs 45 Minuten herumtelefonieren und ihre Kunden anflehen, erledigt Meizo das im Hintergrund für Sie.</p>
-  <div class="up d2" style="margin-top:16px;">
-    <div class="browser">
-      <div class="browser-bar">
-        <div class="browser-dot" style="background:#ff5f57;"></div>
-        <div class="browser-dot" style="background:#febc2e;"></div>
-        <div class="browser-dot" style="background:#28c840;"></div>
-        <div class="browser-url">meizo.de · Springer zuweisen</div>
+  <div class="eyebrow up">Qualität & Vertrauen</div>
+  <h2 class="up d1">Ihr Bericht macht<br/>Sie professioneller.</h2>
+  <p class="lead up d2">Checkliste, GPS-Nachweis und Fotos — automatisch im Kundenbericht.</p>
+  <div class="up d3" style="margin-top:10px;">
+    <div class="chk-row" id="chk1"><div class="chk-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="chk-label">Böden gewischt</div></div>
+    <div class="chk-row" id="chk2"><div class="chk-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="chk-label">Mülleimer geleert</div></div>
+    <div class="chk-row" id="chk3"><div class="chk-box"><svg width="10" height="10" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="chk-label">Fenster geputzt</div></div>
+    <div class="pdf-mock">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><div style="font-weight:800;font-size:13px;">Ihre Reinigungsfirma</div><div style="color:#6b7280;font-size:9px;margin-top:2px;">Reinigungsnachweis</div></div>
+        <div style="text-align:right;"><div style="font-size:8px;color:#9ca3af;font-weight:700;">DATUM</div><div style="font-weight:700;font-size:11px;">28.05.2026</div></div>
       </div>
-      <img src="/Ersatz_finden_zuweisung.png" alt="Beste Wahl" style="width:100%;display:block;"/>
+      <hr style="margin:10px 0;border:none;border-top:2px solid #111827;"/>
+      <div style="font-size:9px;color:#9ca3af;font-weight:700;">CHECKLISTE (3/3 ERLEDIGT)</div>
+      <div style="color:#15803d;font-weight:700;font-size:11px;margin-top:6px;">✓ Böden gewischt · ✓ Mülleimer · ✓ Fenster</div>
+      <div style="margin-top:10px;display:flex;gap:6px;">
+        <div class="photo-placeholder">📷 Vorher</div>
+        <div class="photo-placeholder">📷 Nachher</div>
+      </div>
+      <div style="text-align:center;margin-top:12px;font-size:8px;color:#9ca3af;">Erstellt automatisch mit meizo.de</div>
     </div>
   </div>
 </div>
 
-<!-- S7 SPRINGER -->
-<div class="scene" id="s7">
-  <div class="eyebrow up">Schritt 4 von 4</div>
-  <h2 class="up d1">Springer bekommt<br/>die Anfrage.</h2>
-  <p class="lead up d2">Ein Klick auf "Ja, ich komme" — der Chef weiß es sofort.</p>
-  <div class="up d3" style="display:flex;justify-content:center;margin-top:16px;">
-    <div class="phone" style="width:200px;">
-      <img src="/EinspringenFrage.PNG" alt="Einspringen Frage"/>
-    </div>
-  </div>
-  <div class="springer-btn up d3">✓ Ja, ich komme</div>
-</div>
-
-<!-- S8 GPS CHECK-IN -->
-<div class="scene" id="s8" style="background:#f9fafb;">
+<!-- S7 GPS CHECK-IN -->
+<div class="scene" id="s7" style="background:#f9fafb;">
   <div class="eyebrow up">Zeiterfassung</div>
   <h2 class="up d1">Eingecheckt.<br/>Sie sehen es sofort.</h2>
   <p class="lead up d2">GPS geprüft, Foto gemacht — alles automatisch in der Abrechnung.</p>
@@ -603,56 +658,44 @@ h2 {
   </div>
   <div class="gps-row up d3">
     <div class="gps-item">
-      <div class="phone" style="width:100%;max-width:110px;margin:0 auto;">
-        <img src="/checkInBestatigung.PNG" alt="Einsatz aktiv"/>
-      </div>
+      <div style="background:#dcfce7;border-radius:10px;height:70px;display:flex;align-items:center;justify-content:center;font-size:24px;">🟢</div>
       <div class="gps-label">Einsatz aktiv</div>
     </div>
     <div class="gps-item">
-      <div class="phone" style="width:100%;max-width:110px;margin:0 auto;">
-        <img src="/CheckInStandortBestatigung.PNG" alt="Standort"/>
-      </div>
+      <div class="map-mock"><div class="radar-ring"></div><div class="radar-dot"></div></div>
       <div class="gps-label">Standort ✓</div>
     </div>
     <div class="gps-item">
-      <div class="phone" style="width:100%;max-width:110px;margin:0 auto;">
-        <img src="/CheckOutFertig.PNG" alt="Ausgecheckt"/>
+      <div style="height:70px;display:flex;align-items:center;justify-content:center;">
+        <div class="check-pop go"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       </div>
       <div class="gps-label">Ausgecheckt ✓</div>
     </div>
   </div>
 </div>
 
-<!-- S9 SPRACHEN -->
-<div class="scene" id="s9">
-  <div class="eyebrow up">Mehrsprachig</div>
-  <h2 class="up d1">Sie reden Deutsch.<br/>Ihr Team nicht.<br/>meizo versteht beide.</h2>
-  <p class="lead up d2">Automatisch. Kein Stress, kein Missverständnis.</p>
+<!-- S8 SPRACHEN -->
+<div class="scene" id="s8">
+  <div class="eyebrow up">Mehrsprachig — 8 Sprachen</div>
+  <h2 class="up d1">Sie reden Deutsch.<br/>Ihr Team redet acht<br/>Sprachen.</h2>
+  <p class="lead up d2">meizo versteht sie alle. Automatisch.</p>
   <div class="lang-grid up d2">
-    <div class="lang-card" id="lc1">
-      <span class="lang-flag">🇸🇦</span>
-      <div><div class="lang-name">عربي</div><div class="lang-sub">RTL-Layout</div></div>
-    </div>
-    <div class="lang-card" id="lc2">
-      <span class="lang-flag">🇷🇴</span>
-      <div><div class="lang-name">Română</div><div class="lang-sub">Buna ziua</div></div>
-    </div>
-    <div class="lang-card" id="lc3">
-      <span class="lang-flag">🇵🇱</span>
-      <div><div class="lang-name">Polski</div><div class="lang-sub">Dzień dobry</div></div>
-    </div>
-    <div class="lang-card green" id="lc4">
-      <span class="lang-flag">🇩🇪</span>
-      <div><div class="lang-name">Deutsch</div><div class="lang-sub">+ English</div></div>
-    </div>
+    <div class="lang-card" id="lc1"><span class="lang-flag">🇩🇪</span><div><div class="lang-name">Deutsch</div><div class="lang-sub">Guten Morgen</div></div></div>
+    <div class="lang-card" id="lc2"><span class="lang-flag">🇬🇧</span><div><div class="lang-name">English</div><div class="lang-sub">Good morning</div></div></div>
+    <div class="lang-card" id="lc3"><span class="lang-flag">🇸🇦</span><div><div class="lang-name">عربي</div><div class="lang-sub">RTL-Layout</div></div></div>
+    <div class="lang-card" id="lc4"><span class="lang-flag">🇹🇷</span><div><div class="lang-name">Türkçe</div><div class="lang-sub">Günaydın</div></div></div>
+    <div class="lang-card" id="lc5"><span class="lang-flag">🇷🇴</span><div><div class="lang-name">Română</div><div class="lang-sub">Buna ziua</div></div></div>
+    <div class="lang-card" id="lc6"><span class="lang-flag">🇵🇱</span><div><div class="lang-name">Polski</div><div class="lang-sub">Dzień dobry</div></div></div>
+    <div class="lang-card" id="lc7"><span class="lang-flag">🇺🇦</span><div><div class="lang-name">Українська</div><div class="lang-sub">Доброго ранку</div></div></div>
+    <div class="lang-card green" id="lc8"><span class="lang-flag">🇧🇬</span><div><div class="lang-name">Български</div><div class="lang-sub">Добро утро</div></div></div>
   </div>
 </div>
 
-<!-- S10 CSV EXPORT -->
-<div class="scene" id="s10" style="background:#f9fafb;">
+<!-- S9 CSV EXPORT -->
+<div class="scene" id="s9" style="background:#f9fafb;">
   <div class="eyebrow up">Abrechnung</div>
-  <h2 class="up d1" style="font-size:32px;">Monatsende.<br/>100% Fälschungssicher</h2>
-  <p class="lead up d2">Sie bezahlen nur die Minuten, die wirklich im Objekt gearbeitet wurden. Keine Diskussionen mehr mit Kunden, keine gerundeten Gefälligkeits-Stunden der Mitarbeiter.</p>
+  <h2 class="up d1" style="font-size:30px;">Monatsende.<br/>Ein Klick — fertig.</h2>
+  <p class="lead up d2">Nur bezahlte Minuten, die wirklich gearbeitet wurden. Keine Diskussionen, keine gerundeten Stunden.</p>
   <div class="stat-row up d2">
     <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">Fehler</div></div>
     <div class="stat-box"><div class="stat-num">100%</div><div class="stat-label">Auto</div></div>
@@ -666,7 +709,8 @@ h2 {
       <span class="csv-filename">Abrechnung_2026-05.csv</span>
       <div class="csv-export">↓ CSV</div>
     </div>
-    <div style="overflow:auto;max-height:200px;">
+    <div class="dl-bar-track"><div class="dl-bar-fill" id="dl-fill"></div></div>
+    <div style="overflow:auto;max-height:170px;">
       <table class="csv-table">
         <thead>
           <tr><th>Name</th><th>Datum</th><th>Std.</th><th>Gesamt</th><th>Nachweis</th></tr>
@@ -677,21 +721,22 @@ h2 {
   </div>
 </div>
 
-<!-- S11 CTA -->
-<div class="scene" id="s11">
+<!-- S10 CTA -->
+<div class="scene" id="s10">
   <div class="eyebrow up">Jetzt starten</div>
-  <h2 class="up d1" style="font-size:44px;">Erster Monat<br/>kostenlos.</h2>
-  <p class="lead up d2">Keine Kreditkarte. Keine Einrichtungsgebühr.</p>
+  <h2 class="up d1" style="font-size:34px;">Seien Sie der Chef,<br/>der nie wieder ohne<br/>Springer dasteht.</h2>
+  <p class="lead up d2">Erster Monat kostenlos. Keine Kreditkarte.</p>
   <div class="check-list up d3">
     <div class="check-item"><div class="check-mark">✓</div><span>Kein WhatsApp-Chaos mehr</span></div>
-    <div class="check-item"><div class="check-mark">✓</div><span>GPS-Nachweis & Abrechnung</span></div>
-    <div class="check-item"><div class="check-mark">✓</div><span>Mehrsprachig für Ihr Team</span></div>
-    <div class="check-item"><div class="check-mark">✓</div><span>Springer in unter 2 Minuten</span></div>
+    <div class="check-item"><div class="check-mark">✓</div><span>Springer automatisch gefunden</span></div>
+    <div class="check-item"><div class="check-mark">✓</div><span>GPS, Checkliste & Kundenbericht</span></div>
+    <div class="check-item"><div class="check-mark">✓</div><span>8 Sprachen & automatische Abrechnung</span></div>
   </div>
   <div class="cta-box up d3">
     <div class="cta-price">0€</div>
     <div class="cta-sub">Erster Monat gratis</div>
     <a href="https://calendly.com/meisam-meizo/30min" target="_blank" class="cta-btn-big">Jetzt Termin buchen →</a>
+    <div class="cta-risk">Jederzeit kündbar. Kein Risiko.</div>
     <div class="cta-link-small">calendly.com/meisam-meizo/30min</div>
   </div>
 </div>
@@ -699,7 +744,7 @@ h2 {
 </div><!-- /slides -->
 
 <div id="progress"><div id="prog-fill"></div></div>
-<div id="counter">01 / 11</div>
+<div id="counter">01 / 10</div>
 
 <script>
 // ── PWA CHECK — hide everything and redirect if standalone
@@ -708,18 +753,17 @@ h2 {
     || window.navigator.standalone === true;
   if (isPWA) {
     document.body.style.display = 'none';
-    // Let the app handle routing — just don't show hero
     window.location.href = '/login';
   }
 })();
 
-const TOTAL = 11;
+const TOTAL = 10;
 let cur = 1, busy = false, timer = null;
 
 const DUR = {
-  1:5500, 2:8000, 3:5500, 4:6500,
-  5:6000, 6:6000, 7:6500, 8:7000,
-  9:6500, 10:8000, 11:99999
+  1:5500, 2:9000, 3:6000, 4:6000,
+  5:10500, 6:7500, 7:6500, 8:6000,
+  9:8000, 10:99999
 };
 
 const CSV_ROWS = [
@@ -738,9 +782,14 @@ function upd() {
 
 function reset(n) {
   document.querySelectorAll('#s'+n+' .up').forEach(e=>e.classList.remove('go'));
-  if(n===2) document.querySelectorAll('.wa-bubble').forEach(e=>e.classList.remove('show'));
-  if(n===9) document.querySelectorAll('.lang-card').forEach(e=>e.classList.remove('show'));
-  if(n===10) document.getElementById('csv-body').innerHTML='';
+  if(n===2) { document.querySelectorAll('.wa-bubble').forEach(e=>e.classList.remove('show')); document.getElementById('impact1')?.classList.remove('show'); }
+  if(n===3) { document.querySelectorAll('#s3 [data-count]').forEach(e=>{ e.textContent='0'; }); }
+  if(n===4) { const p=document.getElementById('sick-pending'), d=document.getElementById('sick-done'); if(p) p.style.opacity='1'; if(d) d.style.opacity='0'; document.getElementById('sick-check')?.classList.remove('go'); }
+  if(n===5) { clearTimeout(window.__dispatchTimerM); document.getElementById('dispatch-toast')?.classList.remove('show'); document.getElementById('dispatch-card')?.classList.remove('success'); }
+  if(n===6) { document.querySelectorAll('.chk-row').forEach(e=>e.classList.remove('done')); }
+  if(n===7) { document.querySelector('#s7 .check-pop')?.classList.remove('go'); }
+  if(n===8) { document.querySelectorAll('.lang-card').forEach(e=>e.classList.remove('show')); }
+  if(n===9) { document.getElementById('csv-body').innerHTML=''; const f=document.getElementById('dl-fill'); if(f) f.style.width='0%'; }
 }
 
 function animate(n) {
@@ -748,13 +797,87 @@ function animate(n) {
 
   if(n===2) {
     ['wm1','wm2','wm3','wm4','wm5','wm6','wm7'].forEach((id,i)=>
-      setTimeout(()=>document.getElementById(id)?.classList.add('show'), 350+i*600));
+      setTimeout(()=>document.getElementById(id)?.classList.add('show'), 350+i*560));
+    setTimeout(()=>document.getElementById('impact1')?.classList.add('show'), 350+7*560+250);
   }
+
+  if(n===3) {
+    setTimeout(()=>{
+      document.querySelectorAll('#s3 [data-count]').forEach(el=>{
+        const target = parseInt(el.getAttribute('data-count'),10);
+        const dur = 800; const start = performance.now();
+        function step(now){
+          const p = Math.min(1,(now-start)/dur);
+          el.textContent = Math.round(target*(1-Math.pow(1-p,3)));
+          if(p<1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      });
+    }, 450);
+  }
+
+  if(n===4) {
+    setTimeout(()=>{
+      const p=document.getElementById('sick-pending'), d=document.getElementById('sick-done');
+      if(p) p.style.opacity='0';
+      if(d) d.style.opacity='1';
+      setTimeout(()=>document.getElementById('sick-check')?.classList.add('go'),150);
+    },2400);
+  }
+
+  if(n===5) {
+    const nameEl = document.getElementById('dispatch-name');
+    const cdEl = document.getElementById('dispatch-countdown');
+    const skipEl = document.getElementById('dispatch-skip');
+    const cardEl = document.getElementById('dispatch-card');
+    const toastEl = document.getElementById('dispatch-toast');
+    let sec = 8;
+    cdEl.textContent = '0:0'+sec;
+    function tick(){
+      sec--;
+      if(sec>0){
+        cdEl.textContent = '0:0'+sec;
+        window.__dispatchTimerM = setTimeout(tick,320);
+      } else {
+        skipEl.textContent = 'Zeit abgelaufen — nächster wird gefragt...';
+        window.__dispatchTimerM = setTimeout(()=>{
+          nameEl.textContent = 'Fatima Al-Hassan';
+          skipEl.textContent = 'Automatisch — kein Zutun nötig';
+          sec = 5; cdEl.textContent = '0:0'+sec;
+          function tick2(){
+            sec--;
+            if(sec>0){ cdEl.textContent='0:0'+sec; window.__dispatchTimerM=setTimeout(tick2,320); }
+            else {
+              cardEl.classList.add('success');
+              nameEl.textContent = 'Fatima Al-Hassan';
+              cdEl.parentElement.textContent = '✓ Hat zugesagt';
+              skipEl.textContent = '';
+              window.__dispatchTimerM = setTimeout(()=>toastEl.classList.add('show'),300);
+            }
+          }
+          window.__dispatchTimerM = setTimeout(tick2,320);
+        },900);
+      }
+    }
+    window.__dispatchTimerM = setTimeout(tick,320);
+  }
+
+  if(n===6) {
+    ['chk1','chk2','chk3'].forEach((id,i)=>
+      setTimeout(()=>document.getElementById(id)?.classList.add('done'),800+i*600));
+  }
+
+  if(n===7) {
+    setTimeout(()=>document.querySelector('#s7 .check-pop')?.classList.add('go'),650);
+  }
+
+  if(n===8) {
+    ['lc1','lc2','lc3','lc4','lc5','lc6','lc7','lc8'].forEach((id,i)=>
+      setTimeout(()=>document.getElementById(id)?.classList.add('show'), 350+i*130));
+  }
+
   if(n===9) {
-    ['lc1','lc2','lc3','lc4'].forEach((id,i)=>
-      setTimeout(()=>document.getElementById(id)?.classList.add('show'), 400+i*180));
-  }
-  if(n===10) {
+    setTimeout(()=>{ const f=document.getElementById('dl-fill'); if(f) f.style.width='100%'; },500);
     const tbody = document.getElementById('csv-body');
     CSV_ROWS.forEach((row,i)=>{
       setTimeout(()=>{
@@ -763,7 +886,7 @@ function animate(n) {
         tr.innerHTML=`<td style="font-weight:600">${row[0]}</td><td>${row[1]}</td><td>${row[2]}</td><td style="font-weight:700;color:#16a34a">${row[3]}</td><td><span class="badge">GPS ✓</span></td>`;
         tbody.appendChild(tr);
         requestAnimationFrame(()=>setTimeout(()=>tr.style.opacity='1',20));
-      }, 300+i*280);
+      }, 1600+i*270);
     });
   }
 }

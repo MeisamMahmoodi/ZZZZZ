@@ -38,18 +38,20 @@ body {
   margin-bottom:14px;
 }
 .eyebrow.red { color:#dc2626; }
+.eyebrow.purple { color:#7c3aed; }
 h1 { font-size:96px; font-weight:900; line-height:1.0; letter-spacing:-3px; }
 h2 { font-size:68px; font-weight:900; line-height:1.05; letter-spacing:-2px; }
 p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin-top:18px; }
-.phone {
-  border-radius:36px;
-  overflow:hidden;
-  box-shadow:0 20px 60px rgba(0,0,0,0.14), 0 0 0 1px rgba(0,0,0,0.07);
-  background:#f3f4f6;
-  flex-shrink:0;
-  display:block;
+.phone-shell {
+  background:#0b0b0f; border-radius:44px; padding:12px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.18), 0 0 0 1px rgba(0,0,0,0.08);
+  position:relative; flex-shrink:0;
 }
-.phone img { width:100%; display:block; }
+.phone-notch {
+  position:absolute; top:12px; left:50%; transform:translateX(-50%);
+  width:110px; height:22px; background:#0b0b0f; border-radius:0 0 14px 14px; z-index:2;
+}
+.phone-screen { background:#fff; border-radius:32px; overflow:hidden; position:relative; }
 .browser {
   border-radius:12px;
   overflow:hidden;
@@ -68,7 +70,7 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
   padding:5px 12px; font-size:13px; color:#6b7280;
   margin-left:10px; flex:1;
 }
-.browser img { width:100%; display:block; }
+.browser-body { padding:32px; background:#f8fafc; }
 .stat-box {
   background:#f9fafb; border:1px solid #e5e7eb;
   border-radius:14px; padding:20px 28px; text-align:center;
@@ -83,18 +85,25 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
 }
 .wa-bubble.in  { background:#f3f4f6; align-self:flex-start; border-radius:4px 14px 14px 14px; }
 .wa-bubble.out { background:#dcfce7; align-self:flex-end; border-radius:14px 4px 14px 14px; }
+.wa-bubble.alert { background:#fee2e2; color:#991b1b; font-weight:700; align-self:flex-end; }
 .wa-bubble.show { opacity:1; transform:translateY(0); }
 .wa-time { font-size:12px; color:#9ca3af; margin-top:4px; display:block; }
+.impact-stat {
+  opacity:0; transform:translateY(8px); transition:opacity 0.4s, transform 0.4s;
+  margin-top:18px; background:#fef2f2; border:1.5px solid #fecaca; border-radius:14px;
+  padding:16px 22px; font-size:19px; font-weight:700; color:#991b1b;
+}
+.impact-stat.show { opacity:1; transform:translateY(0); }
 .lang-card {
   background:#f9fafb; border:1.5px solid #e5e7eb; border-radius:16px;
-  padding:20px 24px; display:flex; align-items:center; gap:16px;
-  opacity:0; transform:scale(0.94);
+  padding:16px 20px; display:flex; align-items:center; gap:14px;
+  opacity:0; transform:scale(0.9);
   transition:opacity 0.35s, transform 0.35s;
 }
 .lang-card.show { opacity:1; transform:scale(1); }
-.lang-flag { font-size:36px; flex-shrink:0; }
-.lang-name { font-size:22px; font-weight:700; color:#111827; }
-.lang-sub  { font-size:14px; color:#9ca3af; }
+.lang-flag { font-size:30px; flex-shrink:0; }
+.lang-name { font-size:19px; font-weight:700; color:#111827; }
+.lang-sub  { font-size:12px; color:#9ca3af; }
 .badge-green { background:#dcfce7; color:#15803d; font-weight:700; padding:3px 10px; border-radius:20px; font-size:12px; white-space:nowrap; }
 .divider { width:56px; height:3px; background:#16a34a; border-radius:2px; margin:20px 0; }
 .csv-table { width:100%; border-collapse:collapse; font-size:14px; }
@@ -106,6 +115,76 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
 .cta-sub { font-size:24px; color:rgba(255,255,255,0.8); margin-top:8px; }
 .cta-btn { background:#fff; color:#16a34a; font-size:24px; font-weight:800; padding:20px 48px; border-radius:12px; display:inline-block; margin-top:28px; text-decoration:none; }
 .cta-link { font-size:15px; color:rgba(255,255,255,0.5); margin-top:14px; }
+.cta-risk { font-size:15px; color:rgba(255,255,255,0.85); margin-top:16px; font-weight:600; }
+
+/* Avatar */
+.avatar { width:44px; height:44px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:15px; flex-shrink:0; }
+
+/* Dispatch card (auto Ersatz-Dispatch demo) */
+.dispatch-wrap { background:#fef2f2; border:1.5px solid #fecaca; border-radius:20px; padding:26px; width:460px; }
+.dispatch-property { margin-top:14px; background:#fff; border-radius:12px; padding:14px 16px; }
+.dispatch-card { margin-top:14px; background:#fff; border:1.5px solid #fed7aa; border-radius:12px; padding:16px; transition:background 0.3s, border-color 0.3s; }
+.dispatch-card.success { background:#f0fdf4; border-color:#bbf7d0; }
+.dispatch-countdown { font-weight:800; color:#f97316; }
+.dispatch-skip { display:inline-block; margin-top:10px; font-size:12px; color:#94a3b8; }
+.toast {
+  position:absolute; left:50%; bottom:24px; transform:translate(-50%, 20px);
+  background:#111827; color:#fff; padding:14px 22px; border-radius:12px;
+  font-size:15px; font-weight:600; white-space:nowrap; opacity:0;
+  transition:opacity 0.35s, transform 0.35s; box-shadow:0 10px 30px rgba(0,0,0,0.25);
+}
+.toast.show { opacity:1; transform:translate(-50%, 0); }
+
+/* Checklist */
+.chk-row {
+  display:flex; align-items:center; gap:12px; padding:12px 14px;
+  background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; margin-top:10px;
+  transition:background 0.3s, border-color 0.3s;
+}
+.chk-row.done { background:#fff7ed; border-color:#fed7aa; }
+.chk-box {
+  width:22px; height:22px; border-radius:7px; border:2px solid #cbd5e1; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; transition:all 0.25s;
+}
+.chk-row.done .chk-box { background:#f97316; border-color:#f97316; transform:scale(1.12); }
+.chk-box svg { opacity:0; transition:opacity 0.2s; }
+.chk-row.done .chk-box svg { opacity:1; }
+.chk-label { font-size:15px; color:#475569; font-weight:500; }
+.chk-row.done .chk-label { color:#0f172a; font-weight:700; }
+
+/* PDF mock */
+.pdf-mock { background:#fff; border:1px solid #e5e7eb; border-radius:14px; padding:26px 30px; width:400px; box-shadow:0 16px 48px rgba(0,0,0,0.08); }
+.photo-placeholder {
+  flex:1; height:64px; border-radius:8px; background:linear-gradient(135deg,#f1f5f9,#e2e8f0);
+  display:flex; align-items:center; justify-content:center; font-size:11px; color:#94a3b8; font-weight:700;
+  border:1.5px dashed #cbd5e1;
+}
+
+/* GPS radar */
+.map-mock {
+  width:100%; height:150px; border-radius:16px; position:relative; overflow:hidden;
+  background-color:#eef2f7;
+  background-image:linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+  background-size:22px 22px;
+}
+.radar-dot { position:absolute; top:50%; left:50%; width:14px; height:14px; margin:-7px; border-radius:50%; background:#16a34a; box-shadow:0 0 0 4px rgba(22,163,74,0.18); z-index:2; }
+.radar-ring {
+  position:absolute; top:50%; left:50%; width:14px; height:14px; margin:-7px; border-radius:50%;
+  border:2px solid #16a34a; animation:radarPulse 1.8s ease-out infinite;
+}
+@keyframes radarPulse {
+  0% { transform:scale(1); opacity:0.9; }
+  100% { transform:scale(7); opacity:0; }
+}
+.check-pop {
+  width:64px; height:64px; border-radius:50%; background:#16a34a; display:flex; align-items:center; justify-content:center;
+  transform:scale(0); transition:transform 0.4s cubic-bezier(.34,1.56,.64,1);
+}
+.check-pop.go { transform:scale(1); }
+
+/* Download progress bar (CSV scene) */
+.dl-bar-track { width:100%; height:8px; background:#e5e7eb; border-radius:6px; overflow:hidden; margin-top:6px; }
+.dl-bar-fill { height:100%; width:0%; background:#16a34a; border-radius:6px; transition:width 1.1s ease; }
 
 /* Fixed elements */
 #logo {
@@ -142,7 +221,7 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
 </div>
 <div id="nav-fixed">   <a id="btn-login" href="/login">Anmelden</a>   <a id="btn-cta" href="https://calendly.com/meisam-meizo/30min" target="_blank">Gratis Termin buchen →</a> </div>
 <div id="progress"><div id="prog-fill"></div></div>
-<div id="counter">01 / 11</div>
+<div id="counter">01 / 10</div>
 
 <!-- S1 HOOK -->
 <div class="scene active" id="s1">
@@ -172,6 +251,7 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
       <div class="eyebrow red up">Das kennen Sie</div>
       <h2 class="up d1">Die Gruppe<br/>explodiert.</h2>
       <p class="lead up d2" style="margin-top:20px;">Stunden verloren.<br/>Nerven verloren.<br/>Objekt vielleicht unbesetzt.</p>
+      <div class="impact-stat" id="impact1">52 Minuten verloren.<br/>Kunde verärgert. Objekt unbesetzt.</div>
     </div>
     <div style="flex:1; display:flex; flex-direction:column; gap:12px; overflow:hidden;" id="wa-container">
       <div class="wa-bubble in" id="wm1">Chef, ich bin krank heute 🤒<span class="wa-time">06:47</span></div>
@@ -181,7 +261,8 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
       <div class="wa-bubble out" id="wm5">BITTE JEMAND MELDEN 🙏🙏<span class="wa-time">06:55</span></div>
       <div class="wa-bubble in" id="wm6">Vielleicht kann ich... weiß noch nicht<span class="wa-time">07:01</span></div>
       <div class="wa-bubble in" id="wm7">Was zahlt ihr extra?<span class="wa-time">07:08</span></div>
-      <div class="wa-bubble out" id="wm8" style="background:#fee2e2; font-weight:600; color:#991b1b;">Noch immer kein Springer — 07:20 ⚠️<span class="wa-time" style="color:#f87171;">07:20</span></div>
+      <div class="wa-bubble alert" id="wm8">Noch immer kein Springer — 07:20 ⚠️<span class="wa-time" style="color:#f87171;">07:20</span></div>
+      <div class="wa-bubble alert" id="wm9">Kunde ruft an: "Wo ist mein Team??" 😳<span class="wa-time" style="color:#f87171;">07:24</span></div>
     </div>
   </div>
 </div>
@@ -193,11 +274,22 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
       <p class="up" style="font-size:28px; color:#9ca3af; font-weight:500;">Während Sie das lesen, sucht irgendwo<br/>ein Chef gerade einen Springer.</p>
       <div class="divider up d1"></div>
       <h2 class="up d2" style="font-size:80px;">Das muss<br/>nicht so sein.</h2>
-      <p class="lead up d3" style="font-size:28px; margin-top:20px; color:#374151;">meizo löst das — in unter 2 Minuten.<br/>Kein Anruf. Keine Gruppe.</p>
+      <div class="up d3" style="margin-top:28px; display:flex; gap:14px;">
+        <div style="flex:1; background:#fef2f2; border:1.5px solid #fecaca; border-radius:14px; padding:18px 22px;">
+          <div style="font-size:12px; font-weight:700; color:#991b1b; letter-spacing:0.06em; text-transform:uppercase;">Vorher</div>
+          <div style="font-size:34px; font-weight:900; color:#dc2626; margin-top:4px;" data-count="52">0</div>
+          <div style="font-size:14px; color:#991b1b; margin-top:2px;">Minuten, 8 Nachrichten, kein Springer</div>
+        </div>
+        <div style="flex:1; background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:14px; padding:18px 22px;">
+          <div style="font-size:12px; font-weight:700; color:#15803d; letter-spacing:0.06em; text-transform:uppercase;">Mit meizo</div>
+          <div style="font-size:34px; font-weight:900; color:#16a34a; margin-top:4px;" data-count="90" data-unit="s">0</div>
+          <div style="font-size:14px; color:#15803d; margin-top:2px;">Sekunden, ein Klick, erledigt</div>
+        </div>
+      </div>
     </div>
     <div class="up d2" style="flex:0 0 420px; text-align:center;">
-      <div style="font-size:160px; font-weight:900; color:#111827; letter-spacing:-6px; line-height:1;">meizo</div>
-      <div style="font-size:22px; color:#6b7280; margin-top:8px;">Ihr digitaler Disponent</div>
+      <div style="font-size:150px; font-weight:900; color:#111827; letter-spacing:-6px; line-height:1;">meizo</div>
+      <div style="font-size:24px; color:#6b7280; margin-top:10px; font-weight:600;">Nie wieder 06:47-Uhr-Panik.</div>
     </div>
   </div>
 </div>
@@ -206,7 +298,7 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
 <div class="scene" id="s4" style="background:#f9fafb;">
   <div style="display:flex; align-items:center; gap:80px; width:100%;">
     <div style="flex:1;">
-      <div class="eyebrow up">Schritt 1 von 4</div>
+      <div class="eyebrow up">Schritt 1</div>
       <h2 class="up d1">Mitarbeiter meldet<br/>sich krank.</h2>
       <p class="lead up d2" style="font-size:26px;">Direkt in der App — kein Anruf, keine WhatsApp. Datum wählen, bestätigen. Chef wird sofort informiert.</p>
       <div class="up d3" style="margin-top:32px; display:flex; gap:16px;">
@@ -214,80 +306,117 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
         <div style="background:#f0fdf4; border:1.5px solid #bbf7d0; border-radius:12px; padding:16px 24px; font-size:20px; font-weight:600; color:#15803d;">✓ Chef sofort informiert</div>
       </div>
     </div>
-    <div class="up d2" style="flex:0 0 420px;">
-      <div class="phone" style="width:420px;">
-        <img src="/KrankHomeScreen.PNG" alt="Krankmeldung"/>
+    <div class="up d2" style="flex:0 0 320px;">
+      <div class="phone-shell" style="width:320px;">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="height:600px; padding:36px 22px 22px;">
+          <div style="font-size:13px; color:#94a3b8; font-weight:600;">Krankmeldung</div>
+          <div id="sick-pending" style="margin-top:70px; text-align:center;">
+            <div style="width:74px;height:74px;border-radius:24px;background:#fef2f2;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:32px;">🤒</div>
+            <div style="font-weight:800; font-size:17px; margin-top:16px;">Heute krankmelden?</div>
+            <div style="color:#94a3b8; font-size:13px; margin-top:6px;">Dein Chef wird sofort informiert</div>
+            <div style="margin-top:24px; background:#ef4444; color:#fff; font-weight:700; font-size:15px; padding:14px; border-radius:14px;">Ja, krank melden</div>
+          </div>
+          <div id="sick-done" style="margin-top:70px; text-align:center; opacity:0; transition:opacity 0.4s;">
+            <div class="check-pop" id="sick-check" style="margin:0 auto; background:#f97316;"><svg width="30" height="30" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+            <div style="font-weight:800; font-size:17px; margin-top:16px;">Gemeldet ✓</div>
+            <div style="color:#94a3b8; font-size:13px; margin-top:6px; line-height:1.5;">Dein Chef wurde informiert.<br/>Gute Besserung!</div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- S5 CHEF ERSATZ -->
-<div class="scene" id="s5" style="flex-direction:column; gap:24px; padding:28px 80px; justify-content:center;">
-  <div style="width:100%;">
-    <div class="eyebrow red up">Schritt 2 von 4</div>
-    <h2 class="up d1">Chef sieht sofort: Ersatz nötig.</h2>
-    <p class="lead up d2" style="font-size:24px; margin-top:8px;">Roter Alert direkt auf dem Dashboard. Kein Suchen, kein Scrollen.</p>
-  </div>
-  <div class="up d2" style="max-width:1200px; margin:0 auto; width:100%;">
-    <div class="browser">
-      <div class="browser-bar">
-        <div class="browser-dot" style="background:#ff5f57;"></div>
-        <div class="browser-dot" style="background:#febc2e;"></div>
-        <div class="browser-dot" style="background:#28c840;"></div>
-        <div class="browser-url">meizo.de · Dashboard</div>
-      </div>
-      <img src="/Ersatz_finden.png" alt="Ersatz finden" style="width:100%; height:auto; display:block;"/>
-    </div>
-  </div>
-</div>
-
-<!-- S6 BESTE WAHL -->
-<div class="scene" id="s6" style="flex-direction:column; gap:24px; padding:28px 80px; justify-content:center;">
-  <div style="width:100%;">
-    <div class="eyebrow up">Schritt 3 von 4</div>
-    <h2 class="up d1">"Beste Wahl" — ein Klick. Erledigt.</h2>
-    <p class="lead up d2" style="font-size:24px; margin-top:8px;">meizo zeigt den besten verfügbaren Mitarbeiter — qualifiziert, frei, kennt das Objekt.</p>
-  </div>
-  <div class="up d2" style="max-width:1200px; margin:0 auto; width:100%;">
-    <div class="browser">
-      <div class="browser-bar">
-        <div class="browser-dot" style="background:#ff5f57;"></div>
-        <div class="browser-dot" style="background:#febc2e;"></div>
-        <div class="browser-dot" style="background:#28c840;"></div>
-        <div class="browser-url">meizo.de · Springer zuweisen</div>
-      </div>
-      <img src="/Ersatz_finden_zuweisung.png" alt="Beste Wahl" style="width:100%; height:auto; display:block;"/>
-    </div>
-  </div>
-</div>
-
-<!-- S7 SPRINGER -->
-<div class="scene" id="s7" style="background:#f9fafb;">
-  <div style="display:flex; align-items:center; gap:60px; width:100%;">
-    <div style="flex:0 0 340px;">
-      <div class="phone" style="width:340px;">
-        <img src="/EinspringenFrage.PNG" alt="Einspringen Frage"/>
-      </div>
-    </div>
+<!-- S5 AUTOMATISCHER SPRINGER-VERSAND (Smart Ersatz-Dispatch) -->
+<div class="scene" id="s5" style="background:#f9fafb;">
+  <div style="display:flex; align-items:center; gap:70px; width:100%; position:relative;">
     <div style="flex:1;">
-      <div class="eyebrow up">Schritt 4 von 4</div>
-      <h2 class="up d1">Springer bekommt<br/>die Anfrage.</h2>
-      <p class="lead up d2" style="font-size:26px;">Ein Klick auf "Ja, ich komme" — der Chef weiß es sofort. Kein Anruf, kein Stress.</p>
-      <div class="up d3" style="margin-top:32px;">
-        <div style="background:#16a34a; color:#fff; font-size:26px; font-weight:700; padding:18px 40px; border-radius:12px; display:inline-flex; align-items:center; gap:12px; box-shadow:0 6px 20px rgba(22,163,74,0.3);">✓ Ja, ich komme</div>
+      <div class="eyebrow purple up">Das hat kein anderer</div>
+      <h2 class="up d1">meizo fragt selbst<br/>den nächsten Springer.</h2>
+      <p class="lead up d2" style="font-size:25px;">Kein Klicken durch die Mitarbeiterliste. meizo kennt Verfügbarkeit, Qualifikation und Arbeitszeitgesetz — und fragt automatisch, bis jemand zusagt.</p>
+      <div class="up d3" style="margin-top:28px; display:flex; gap:16px;">
+        <div style="background:#f5f3ff; border:1.5px solid #ddd6fe; border-radius:12px; padding:16px 24px; font-size:19px; font-weight:600; color:#6d28d9;">✓ Läuft von selbst</div>
+        <div style="background:#f5f3ff; border:1.5px solid #ddd6fe; border-radius:12px; padding:16px 24px; font-size:19px; font-weight:600; color:#6d28d9;">✓ Kostenübersicht sofort</div>
       </div>
     </div>
-    <div style="flex:0 0 340px;">
-      <div class="phone" style="width:340px;">
-        <img src="/EinspringenAusgewahlt.PNG" alt="Einspringen Ausgewählt"/>
+    <div class="up d2" style="flex:0 0 460px; position:relative;">
+      <div class="dispatch-wrap">
+        <div style="display:flex; align-items:center; gap:12px;">
+          <div class="avatar" style="background:#fee2e2; color:#dc2626;">AY</div>
+          <div>
+            <div style="font-weight:800; font-size:16px;">Anis Yildiz</div>
+            <span class="badge-green" style="background:#fee2e2;color:#dc2626;">Krankgemeldet</span>
+          </div>
+        </div>
+        <div class="dispatch-property">
+          <div style="font-weight:700; font-size:15px;">📍 Objekt Müller</div>
+          <div style="color:#6b7280; font-size:13px; margin-top:2px;">07:30 – 09:30 Uhr</div>
+        </div>
+        <div class="dispatch-card" id="dispatch-card">
+          <div style="display:flex; align-items:center; gap:8px; font-size:15px;">
+            <span>🔍</span><span id="dispatch-name" style="font-weight:800;">Mustafa Yilmaz</span>
+            <span style="color:#6b7280;">wird gefragt</span>
+          </div>
+          <div style="margin-top:8px; font-size:14px; color:#94a3b8;">⏱ Antwort in <span class="dispatch-countdown" id="dispatch-countdown">0:08</span> Min</div>
+          <div class="dispatch-skip" id="dispatch-skip">Automatisch — kein Zutun nötig</div>
+        </div>
+      </div>
+      <div class="toast" id="dispatch-toast">Fatima übernimmt Objekt Müller · 2 Std × 15,00 € = 30,00 €</div>
+    </div>
+  </div>
+</div>
+
+<!-- S6 CHECKLISTE & KUNDENBERICHT -->
+<div class="scene" id="s6">
+  <div style="display:flex; align-items:center; gap:70px; width:100%;">
+    <div style="flex:0 0 300px;">
+      <div class="phone-shell" style="width:300px;">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="height:560px; padding:36px 20px 20px;">
+          <div style="font-weight:800; font-size:17px; display:flex; align-items:center; gap:8px;">✓ Checkliste</div>
+          <div style="color:#94a3b8; font-size:12px; margin-top:4px;">Vor dem Beweisfoto abhaken</div>
+          <div class="chk-row" id="chk1"><div class="chk-box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="chk-label">Böden gewischt</div></div>
+          <div class="chk-row" id="chk2"><div class="chk-box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="chk-label">Mülleimer geleert</div></div>
+          <div class="chk-row" id="chk3"><div class="chk-box"><svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="chk-label">Fenster geputzt</div></div>
+        </div>
+      </div>
+    </div>
+    <div style="flex:0 0 60px; text-align:center; color:#cbd5e1; font-size:40px;" class="up d2">→</div>
+    <div style="flex:1;">
+      <div class="eyebrow up">Qualität & Vertrauen</div>
+      <h2 class="up d1">Ihr Bericht macht<br/>Sie professioneller.</h2>
+      <p class="lead up d2" style="font-size:24px;">Objekttyp-Checkliste, GPS-Nachweis und Fotos — automatisch im Kundenbericht. Sie sehen vor Ihrem Kunden aus wie ein Profi.</p>
+    </div>
+    <div class="up d3" style="flex:0 0 400px;">
+      <div class="pdf-mock">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div style="font-weight:800; font-size:17px;">Ihre Reinigungsfirma</div>
+            <div style="color:#6b7280; font-size:11px; margin-top:2px;">Reinigungsnachweis</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:9px; color:#9ca3af; font-weight:700;">DATUM</div>
+            <div style="font-weight:700; font-size:14px;">28.05.2026</div>
+          </div>
+        </div>
+        <hr style="margin:14px 0; border:none; border-top:2px solid #111827;"/>
+        <div style="font-size:10px; color:#9ca3af; font-weight:700; letter-spacing:0.06em;">CHECKLISTE (3/3 ERLEDIGT)</div>
+        <div style="color:#15803d; font-weight:700; font-size:13px; margin-top:8px;">✓ Böden gewischt</div>
+        <div style="color:#15803d; font-weight:700; font-size:13px; margin-top:3px;">✓ Mülleimer geleert</div>
+        <div style="color:#15803d; font-weight:700; font-size:13px; margin-top:3px;">✓ Fenster geputzt</div>
+        <div style="margin-top:14px; display:flex; gap:8px;">
+          <div class="photo-placeholder">📷 Vorher</div>
+          <div class="photo-placeholder">📷 Nachher</div>
+        </div>
+        <div style="text-align:center; margin-top:16px; font-size:9px; color:#9ca3af;">Erstellt automatisch mit meizo.de</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- S8 GPS CHECK-IN -->
-<div class="scene" id="s8">
+<!-- S7 GPS CHECK-IN -->
+<div class="scene" id="s7" style="background:#f9fafb;">
   <div style="display:flex; align-items:center; gap:60px; width:100%;">
     <div style="flex:1;">
       <div class="eyebrow up">Zeiterfassung</div>
@@ -299,62 +428,76 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
     </div>
     <div style="display:flex; gap:20px; align-items:flex-end;" class="up d2">
       <div style="text-align:center;">
-        <div class="phone" style="width:290px;"><img src="/checkInBestatigung.PNG" alt="Einsatz aktiv"/></div>
+        <div class="phone-shell" style="width:260px;">
+          <div class="phone-notch"></div>
+          <div class="phone-screen" style="height:340px; display:flex; align-items:center; justify-content:center;">
+            <div style="text-align:center;">
+              <div style="width:56px;height:56px;border-radius:16px;background:#dcfce7;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:24px;">🟢</div>
+              <div style="font-weight:800; font-size:15px; margin-top:12px;">Einsatz aktiv</div>
+              <div style="color:#94a3b8; font-size:11px; margin-top:4px;">seit 07:31 Uhr</div>
+            </div>
+          </div>
+        </div>
         <div style="font-size:17px; font-weight:600; color:#374151; margin-top:12px;">Einsatz aktiv</div>
       </div>
       <div style="text-align:center;">
-        <div class="phone" style="width:290px;"><img src="/CheckInStandortBestatigung.PNG" alt="Standort"/></div>
+        <div class="phone-shell" style="width:260px;">
+          <div class="phone-notch"></div>
+          <div class="phone-screen" style="height:340px; padding:24px 18px;">
+            <div class="map-mock"><div class="radar-ring"></div><div class="radar-dot"></div></div>
+            <div style="text-align:center; margin-top:14px; font-weight:800; font-size:14px; color:#16a34a;">Standort bestätigt ✓</div>
+          </div>
+        </div>
         <div style="font-size:17px; font-weight:600; color:#374151; margin-top:12px;">Standort ✓</div>
       </div>
       <div style="text-align:center;">
-        <div class="phone" style="width:290px;"><img src="/CheckOutFertig.PNG" alt="Ausgecheckt"/></div>
+        <div class="phone-shell" style="width:260px;">
+          <div class="phone-notch"></div>
+          <div class="phone-screen" style="height:340px; display:flex; align-items:center; justify-content:center;">
+            <div style="text-align:center;">
+              <div class="check-pop go" style="margin:0 auto;"><svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <div style="font-weight:800; font-size:15px; margin-top:14px;">Fertig!</div>
+              <div style="color:#94a3b8; font-size:11px; margin-top:4px;">Dauer: 2h 04min</div>
+            </div>
+          </div>
+        </div>
         <div style="font-size:17px; font-weight:600; color:#374151; margin-top:12px;">Ausgecheckt ✓</div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- S9 SPRACHEN -->
-<div class="scene" id="s9" style="background:#f9fafb;">
-  <div style="display:flex; align-items:center; gap:80px; width:100%;">
-    <div style="flex:1;">
-      <div class="eyebrow up">Mehrsprachig</div>
-      <h2 class="up d1">Sie reden Deutsch.<br/>Ihre Mitarbeiter reden Arabisch.<br/>meizo versteht beide.</h2>
-      <p class="lead up d2" style="font-size:24px; margin-top:20px;">Automatisch. Kein Missverständnis, kein Übersetzungsstress.</p>
+<!-- S8 SPRACHEN -->
+<div class="scene" id="s8" style="background:#f9fafb;">
+  <div style="display:flex; align-items:center; gap:70px; width:100%;">
+    <div style="flex:0 0 480px;">
+      <div class="eyebrow up">Mehrsprachig — 8 Sprachen</div>
+      <h2 class="up d1">Sie reden Deutsch.<br/>Ihr Team redet acht<br/>verschiedene Sprachen.</h2>
+      <p class="lead up d2" style="font-size:23px; margin-top:18px;">meizo versteht sie alle. Automatisch. Kein Missverständnis, kein Übersetzungsstress — auch von rechts nach links.</p>
     </div>
-    <div style="flex:0 0 580px;" class="up d2">
-      <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;" id="s9-grid">
-        <div class="lang-card" id="lc1">
-          <span class="lang-flag">🇸🇦</span>
-          <div><div class="lang-name">عربي</div><div class="lang-sub">RTL-Layout</div></div>
-        </div>
-        <div class="lang-card" id="lc2" style="transition-delay:0.1s;">
-          <span class="lang-flag">🇷🇴</span>
-          <div><div class="lang-name">Română</div><div class="lang-sub">Buna ziua</div></div>
-        </div>
-        <div class="lang-card" id="lc3" style="transition-delay:0.2s;">
-          <span class="lang-flag">🇵🇱</span>
-          <div><div class="lang-name">Polski</div><div class="lang-sub">Dzień dobry</div></div>
-        </div>
-        <div class="lang-card" id="lc4" style="transition-delay:0.3s; border-color:#bbf7d0; background:#f0fdf4;">
-          <span class="lang-flag">🇩🇪</span>
-          <div><div class="lang-name">Deutsch</div><div class="lang-sub">+ English</div></div>
-        </div>
+    <div style="flex:1;" class="up d2">
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:14px;" id="s8-grid">
+        <div class="lang-card" id="lc1"><span class="lang-flag">🇩🇪</span><div><div class="lang-name">Deutsch</div><div class="lang-sub">Guten Morgen</div></div></div>
+        <div class="lang-card" id="lc2" style="transition-delay:0.05s;"><span class="lang-flag">🇬🇧</span><div><div class="lang-name">English</div><div class="lang-sub">Good morning</div></div></div>
+        <div class="lang-card" id="lc3" style="transition-delay:0.1s;"><span class="lang-flag">🇸🇦</span><div><div class="lang-name">عربي</div><div class="lang-sub">RTL-Layout</div></div></div>
+        <div class="lang-card" id="lc4" style="transition-delay:0.15s;"><span class="lang-flag">🇹🇷</span><div><div class="lang-name">Türkçe</div><div class="lang-sub">Günaydın</div></div></div>
+        <div class="lang-card" id="lc5" style="transition-delay:0.2s;"><span class="lang-flag">🇷🇴</span><div><div class="lang-name">Română</div><div class="lang-sub">Buna ziua</div></div></div>
+        <div class="lang-card" id="lc6" style="transition-delay:0.25s;"><span class="lang-flag">🇵🇱</span><div><div class="lang-name">Polski</div><div class="lang-sub">Dzień dobry</div></div></div>
+        <div class="lang-card" id="lc7" style="transition-delay:0.3s;"><span class="lang-flag">🇺🇦</span><div><div class="lang-name">Українська</div><div class="lang-sub">Доброго ранку</div></div></div>
+        <div class="lang-card" id="lc8" style="transition-delay:0.35s; border-color:#bbf7d0; background:#f0fdf4;"><span class="lang-flag">🇧🇬</span><div><div class="lang-name">Български</div><div class="lang-sub">Добро утро</div></div></div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- S10 CSV EXPORT -->
-<div class="scene" id="s10" style="flex-direction:column; gap:20px; padding:28px 80px; justify-content:center; background:#f9fafb;">
+<!-- S9 CSV EXPORT -->
+<div class="scene" id="s9" style="flex-direction:column; gap:20px; padding:28px 80px; justify-content:center; background:#f9fafb;">
   <div style="display:flex; align-items:flex-start; justify-content:space-between; width:100%;">
     <div>
       <div class="eyebrow up">Abrechnung</div>
       <h2 class="up d1" style="font-size:64px;">Monatsende. Steuerberater wartet.<br/>Ein Klick — fertig.</h2>
       <p class="lead up d2" style="font-size:22px; margin-top:12px;">GPS-Nachweis und Foto bei jedem Eintrag. Direkt für den Steuerberater.
-      
-      Sie bezahlen nur die Minuten, die wirklich im Objekt gearbeitet wurden. Keine Diskussionen mehr mit Kunden, keine gerundeten Gefälligkeits-Stunden der Mitarbeiter
-      </p>
+      Sie bezahlen nur die Minuten, die wirklich im Objekt gearbeitet wurden. Keine Diskussionen mehr mit Kunden, keine gerundeten Gefälligkeits-Stunden der Mitarbeiter.</p>
     </div>
     <div class="up d2" style="display:flex; gap:16px; margin-top:8px;">
       <div class="stat-box"><div class="stat-num">0</div><div class="stat-label">Fehler</div></div>
@@ -369,9 +512,12 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
         <div style="width:10px; height:10px; border-radius:50%; background:#febc2e;"></div>
         <div style="width:10px; height:10px; border-radius:50%; background:#28c840;"></div>
         <div style="background:#fff; border:1px solid #e5e7eb; border-radius:6px; padding:5px 12px; font-size:15px; color:#6b7280; margin-left:10px; flex:1;">meizo.de · Abrechnung_2026-05.csv</div>
-        <div style="background:#16a34a; color:#fff; font-size:14px; font-weight:700; padding:7px 16px; border-radius:8px;">↓ CSV Export</div>
+        <div id="dl-badge" style="background:#16a34a; color:#fff; font-size:14px; font-weight:700; padding:7px 16px; border-radius:8px;">↓ CSV Export</div>
       </div>
-      <div style="overflow:auto; max-height:480px;">
+      <div style="padding:0 16px;">
+        <div class="dl-bar-track" id="dl-track" style="margin:12px 0 0;"><div class="dl-bar-fill" id="dl-fill"></div></div>
+      </div>
+      <div style="overflow:auto; max-height:460px;">
         <table class="csv-table">
           <thead>
             <tr>
@@ -385,18 +531,18 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
   </div>
 </div>
 
-<!-- S11 CTA -->
-<div class="scene" id="s11">
+<!-- S10 CTA -->
+<div class="scene" id="s10">
   <div style="display:flex; align-items:center; gap:80px; width:100%;">
     <div style="flex:1;">
       <div class="eyebrow up" style="margin-bottom:20px;">Jetzt starten</div>
-      <h2 class="up d1" style="font-size:80px; line-height:1.0;">Erster Monat<br/>kostenlos.</h2>
-      <p class="lead up d2" style="font-size:26px; margin-top:20px;">Keine Kreditkarte. Keine Einrichtungsgebühr.<br/>Einfach ausprobieren.</p>
-      <div class="up d3" style="margin-top:36px; display:flex; flex-direction:column; gap:14px;">
-        <div style="display:flex; align-items:center; gap:14px; font-size:22px; color:#374151;"><span style="color:#16a34a; font-weight:900; font-size:28px;">✓</span> Kein WhatsApp-Chaos mehr</div>
-        <div style="display:flex; align-items:center; gap:14px; font-size:22px; color:#374151;"><span style="color:#16a34a; font-weight:900; font-size:28px;">✓</span> GPS-Nachweis & automatische Abrechnung</div>
-        <div style="display:flex; align-items:center; gap:14px; font-size:22px; color:#374151;"><span style="color:#16a34a; font-weight:900; font-size:28px;">✓</span> Mehrsprachig für Ihr Team</div>
-        <div style="display:flex; align-items:center; gap:14px; font-size:22px; color:#374151;"><span style="color:#16a34a; font-weight:900; font-size:28px;">✓</span> Springer in unter 2 Minuten gefunden</div>
+      <h2 class="up d1" style="font-size:72px; line-height:1.05;">Seien Sie der Chef,<br/>der nie wieder ohne<br/>Springer dasteht.</h2>
+      <p class="lead up d2" style="font-size:24px; margin-top:20px;">Erster Monat kostenlos. Keine Kreditkarte. Einfach ausprobieren.</p>
+      <div class="up d3" style="margin-top:32px; display:flex; flex-direction:column; gap:14px;">
+        <div style="display:flex; align-items:center; gap:14px; font-size:21px; color:#374151;"><span style="color:#16a34a; font-weight:900; font-size:26px;">✓</span> Kein WhatsApp-Chaos mehr</div>
+        <div style="display:flex; align-items:center; gap:14px; font-size:21px; color:#374151;"><span style="color:#16a34a; font-weight:900; font-size:26px;">✓</span> Springer werden automatisch gefunden</div>
+        <div style="display:flex; align-items:center; gap:14px; font-size:21px; color:#374151;"><span style="color:#16a34a; font-weight:900; font-size:26px;">✓</span> GPS-Nachweis, Checkliste & Kundenbericht</div>
+        <div style="display:flex; align-items:center; gap:14px; font-size:21px; color:#374151;"><span style="color:#16a34a; font-weight:900; font-size:26px;">✓</span> 8 Sprachen, wiederkehrende Aufträge, Abrechnung</div>
       </div>
     </div>
     <div style="flex:0 0 460px;" class="up d2">
@@ -404,6 +550,7 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
         <div class="cta-price">0€</div>
         <div class="cta-sub">Erster Monat gratis</div>
         <a href="https://calendly.com/meisam-meizo/30min" target="_blank" class="cta-btn">Jetzt Termin buchen →</a>
+        <div class="cta-risk">Jederzeit kündbar. Kein Risiko.</div>
         <div class="cta-link">calendly.com/meisam-meizo/30min</div>
       </div>
       <div style="margin-top:20px; background:#f9fafb; border-radius:14px; padding:20px 24px; text-align:center;">
@@ -415,9 +562,9 @@ p.lead { font-size:26px; line-height:1.6; color:#4b5563; font-weight:400; margin
 </div>
 
 <script>
-const TOTAL = 11;
+const TOTAL = 10;
 let cur = 1, busy = false, timer = null;
-const DUR = { 1:5000, 2:8000, 3:5500, 4:6500, 5:6000, 6:6000, 7:6500, 8:7000, 9:6500, 10:8000, 11:99999 };
+const DUR = { 1:5000, 2:9500, 3:6000, 4:6500, 5:11000, 6:8500, 7:7000, 8:6500, 9:9000, 10:99999 };
 
 const CSV_ROWS = [
   [1,'Ionut Popescu','27.05.2026','Wohnung Müller','13:30','14:00','0.50','15.00 €','7.50 €'],
@@ -449,22 +596,102 @@ function goTo(n) {
 
 function reset(n) {
   document.querySelectorAll('#s'+n+' .up').forEach(e=>e.classList.remove('go'));
-  if(n===2) document.querySelectorAll('.wa-bubble').forEach(e=>e.classList.remove('show'));
-  if(n===9) document.querySelectorAll('.lang-card').forEach(e=>e.classList.remove('show'));
-  if(n===10) document.getElementById('csv-body').innerHTML='';
+  if(n===2) { document.querySelectorAll('.wa-bubble').forEach(e=>e.classList.remove('show')); document.getElementById('impact1')?.classList.remove('show'); }
+  if(n===3) { document.querySelectorAll('#s3 [data-count]').forEach(e=>{ e.textContent='0'; }); }
+  if(n===4) { const p=document.getElementById('sick-pending'), d=document.getElementById('sick-done'); if(p) p.style.opacity='1'; if(d){ d.style.opacity='0'; } document.getElementById('sick-check')?.classList.remove('go'); }
+  if(n===5) { clearTimeout(window.__dispatchTimer); const t=document.getElementById('dispatch-toast'); if(t) t.classList.remove('show'); const c=document.getElementById('dispatch-card'); if(c) c.classList.remove('success'); }
+  if(n===6) { document.querySelectorAll('.chk-row').forEach(e=>e.classList.remove('done')); }
+  if(n===7) { document.querySelector('#s7 .check-pop')?.classList.remove('go'); }
+  if(n===8) { document.querySelectorAll('.lang-card').forEach(e=>e.classList.remove('show')); }
+  if(n===9) { document.getElementById('csv-body').innerHTML=''; const f=document.getElementById('dl-fill'); if(f) f.style.width='0%'; }
 }
 
 function animate(n) {
   setTimeout(()=>document.querySelectorAll('#s'+n+' .up').forEach(e=>e.classList.add('go')),60);
+
   if(n===2) {
-    ['wm1','wm2','wm3','wm4','wm5','wm6','wm7','wm8'].forEach((id,i)=>
-      setTimeout(()=>document.getElementById(id)?.classList.add('show'),350+i*550));
+    ['wm1','wm2','wm3','wm4','wm5','wm6','wm7','wm8','wm9'].forEach((id,i)=>
+      setTimeout(()=>document.getElementById(id)?.classList.add('show'),350+i*520));
+    setTimeout(()=>document.getElementById('impact1')?.classList.add('show'), 350+9*520+300);
   }
+
+  if(n===3) {
+    setTimeout(()=>{
+      document.querySelectorAll('#s3 [data-count]').forEach(el=>{
+        const target = parseInt(el.getAttribute('data-count'),10);
+        const dur = 900; const start = performance.now();
+        function step(now){
+          const p = Math.min(1,(now-start)/dur);
+          el.textContent = Math.round(target*(1-Math.pow(1-p,3)));
+          if(p<1) requestAnimationFrame(step);
+        }
+        requestAnimationFrame(step);
+      });
+    }, 500);
+  }
+
+  if(n===4) {
+    setTimeout(()=>{
+      const p=document.getElementById('sick-pending'), d=document.getElementById('sick-done');
+      if(p) p.style.opacity='0';
+      if(d) d.style.opacity='1';
+      setTimeout(()=>document.getElementById('sick-check')?.classList.add('go'),150);
+    },2600);
+  }
+
+  if(n===5) {
+    const nameEl = document.getElementById('dispatch-name');
+    const cdEl = document.getElementById('dispatch-countdown');
+    const skipEl = document.getElementById('dispatch-skip');
+    const cardEl = document.getElementById('dispatch-card');
+    const toastEl = document.getElementById('dispatch-toast');
+    let sec = 8;
+    cdEl.textContent = '0:0'+sec;
+    function tick(){
+      sec--;
+      if(sec>0){
+        cdEl.textContent = '0:0'+sec;
+        window.__dispatchTimer = setTimeout(tick,320);
+      } else {
+        skipEl.textContent = 'Zeit abgelaufen — nächster wird gefragt...';
+        window.__dispatchTimer = setTimeout(()=>{
+          nameEl.textContent = 'Fatima Al-Hassan';
+          skipEl.textContent = 'Automatisch — kein Zutun nötig';
+          sec = 5; cdEl.textContent = '0:0'+sec;
+          function tick2(){
+            sec--;
+            if(sec>0){ cdEl.textContent='0:0'+sec; window.__dispatchTimer=setTimeout(tick2,320); }
+            else {
+              cardEl.classList.add('success');
+              nameEl.textContent = 'Fatima Al-Hassan';
+              cdEl.parentElement.textContent = '✓ Hat zugesagt';
+              skipEl.textContent = '';
+              window.__dispatchTimer = setTimeout(()=>toastEl.classList.add('show'),300);
+            }
+          }
+          window.__dispatchTimer = setTimeout(tick2,320);
+        },900);
+      }
+    }
+    window.__dispatchTimer = setTimeout(tick,320);
+  }
+
+  if(n===6) {
+    ['chk1','chk2','chk3'].forEach((id,i)=>
+      setTimeout(()=>document.getElementById(id)?.classList.add('done'),900+i*650));
+  }
+
+  if(n===7) {
+    setTimeout(()=>document.querySelector('#s7 .check-pop')?.classList.add('go'),700);
+  }
+
+  if(n===8) {
+    ['lc1','lc2','lc3','lc4','lc5','lc6','lc7','lc8'].forEach((id,i)=>
+      setTimeout(()=>document.getElementById(id)?.classList.add('show'),350+i*140));
+  }
+
   if(n===9) {
-    ['lc1','lc2','lc3','lc4'].forEach((id,i)=>
-      setTimeout(()=>document.getElementById(id)?.classList.add('show'),400+i*200));
-  }
-  if(n===10) {
+    setTimeout(()=>{ const f=document.getElementById('dl-fill'); if(f) f.style.width='100%'; },600);
     const tbody = document.getElementById('csv-body');
     CSV_ROWS.forEach((row,i)=>{
       setTimeout(()=>{
@@ -481,7 +708,7 @@ function animate(n) {
           <td><span class="badge-green">GPS ✓ Foto ✓</span></td>`;
         tbody.appendChild(tr);
         requestAnimationFrame(()=>setTimeout(()=>tr.style.opacity='1',20));
-      },300+i*260);
+      },1900+i*260);
     });
   }
 }
