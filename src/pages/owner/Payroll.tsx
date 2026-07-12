@@ -56,9 +56,13 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
         supabase.from('employee_properties').select('*'),
         supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').gte('date', monthStart).lte('date', monthEnd),
       ]);
+      const companyEmployeeIds = new Set((empRes.data || []).map(e => e.id));
+
       setEmployees(empRes.data || []);
       setProperties(propRes.data || []);
-      setEmployeeProperties(epRes.data || []);
+      // Defense-in-depth: employee_properties is only protected by RLS server-side;
+      // filter client-side too so we never render/process rows for other companies.
+      setEmployeeProperties((epRes.data || []).filter(ep => companyEmployeeIds.has(ep.employee_id)));
       setMonthAssignments((assignRes.data as unknown as AssignmentWithDetails[]) || []);
     } catch {
       // Component renders with existing state
