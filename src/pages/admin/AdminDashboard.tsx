@@ -1,14 +1,13 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
+import { PLAN_PRICES, type Plan } from '../../lib/plans';
 import {
   Building2, Users, ShieldCheck, LogOut, ChevronDown, ChevronUp,
   Plus, X, Eye, EyeOff, AlertTriangle, Calendar, CreditCard,
   CheckCircle, Clock, Trash2, RefreshCw, Key, Search, Database,
   UserCog, Mail, Copy, Check as CheckIcon, Crown, Star, Zap, Activity,
 } from 'lucide-react';
-
-type Plan = 'Starter' | 'Business' | 'Premium';
 
 interface CompanyRow {
   id: string;
@@ -1042,8 +1041,7 @@ export function AdminDashboard() {
   const totalEmployees = activeCompanies.reduce((s, c) => s + c.employee_count, 0);
   const overdueCount = activeCompanies.filter(c => !!c.paid_until && new Date(c.paid_until) < new Date()).length;
   const revenueByPlan = useMemo(() => {
-    const prices: Record<string, number> = { Starter: 249, Business: 399, Premium: 499 };
-    const total = activeCompanies.reduce((s, c) => s + (prices[c.contract] ?? 0), 0);
+    const total = activeCompanies.reduce((s, c) => s + (PLAN_PRICES[c.contract as Plan] ?? 0), 0);
     const byPlan = { Starter: 0, Business: 0, Premium: 0 };
     activeCompanies.forEach(c => { if (c.contract in byPlan) byPlan[c.contract as Plan]++; });
     return { total, byPlan };

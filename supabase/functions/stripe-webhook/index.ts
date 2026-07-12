@@ -8,6 +8,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, stripe-signature",
 };
 
+function plus31Days(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 31);
+  return d.toISOString();
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -32,27 +38,66 @@ Deno.serve(async (req: Request) => {
     });
   }
 
-  if (event.type === "checkout.session.completed") {
-    const session = event.data.object as Stripe.Checkout.Session;
-    const company_id = session.metadata?.company_id;
-    const plan = session.metadata?.plan;
+  const supabaseAdmin = createClient(
+    Deno.env.get("SUPABASE_URL") ?? "",
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
 
-    if (company_id) {
-      const supabaseAdmin = createClient(
-        Deno.env.get("SUPABASE_URL") ?? "",
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-        { auth: { autoRefreshToken: false, persistSession: false } }
-      );
+  try {
+    switch (event.type) {
+      // Erste Zahlung nach dem Checkout — schaltet die Firma frei und merkt
+      // sich Customer-/Subscription-ID, damit spätere Events (Verlängerung,
+      // Kündigung) wieder zur richtigen Firma zurückfinden, obwohl sie
+      // selbst keine company_id in ihrer Metadata tragen.
+      case "checkout.session.completed": {
+        const session = event.data.object as Stripe.Checkout.Session;
+        const company_id = session.metadata?.company_id;
+        const plan = session.metadata?.plan;
+        if (company_id) {
+          const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
+          const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? null;
+          await supabaseAdmin.from("companies").update({
+            paid_until: plus31Days(),
+            trial_ends_at: null,
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            ...(plan ? { contract: plan } : {}),
+          }).eq("id", company_id);
+        }
+        break;
+      }
 
-      const paidUntil = new Date();
-      paidUntil.setDate(paidUntil.getDate() + 31);
+      // Erfolgreiche Folgezahlung (automatische Verlängerung des Abos).
+      // Ohne diesen Fall lief paid_until nach 31 Tagen ab, obwohl der Kunde
+      // weiterbezahlt hat — er wäre trotz aktiver Zahlung ausgesperrt worden.
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const subscriptionId = typeof invoice.subscription === "string" ? invoice.subscription : invoice.subscription?.id;
+        if (subscriptionId) {
+          await supabaseAdmin.from("companies").update({
+            paid_until: plus31Days(),
+          }).eq("stripe_subscription_id", subscriptionId);
+        }
+        break;
+      }
 
-      await supabaseAdmin.from("companies").update({
-        paid_until: paidUntil.toISOString(),
-        trial_ends_at: null,
-        ...(plan ? { contract: plan } : {}),
-      }).eq("id", company_id);
+      // Abo wurde beendet (Kündigung oder nach Stripes eigenen
+      // Dunning-Versuchen endgültig fehlgeschlagene Zahlung). Zugriff wird
+      // ab jetzt gesperrt, statt unbegrenzt weiterzulaufen.
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object as Stripe.Subscription;
+        await supabaseAdmin.from("companies").update({
+          paid_until: new Date().toISOString(),
+        }).eq("stripe_subscription_id", subscription.id);
+        break;
+      }
     }
+  } catch (err) {
+    // Stripe wiederholt den Webhook automatisch bei einer Fehlerantwort —
+    // wir loggen nur und antworten trotzdem 200, damit Stripe nicht endlos
+    // retried (z.B. falls die Firma inzwischen gelöscht wurde).
+    console.error("stripe-webhook processing error", err);
   }
 
   return new Response(JSON.stringify({ received: true }), {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Check, ChevronDown } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
+import { PLAN_PRICES, PLAN_EMPLOYEE_LIMITS } from '../../lib/plans';
 
 interface Props {
   companyId: string;
@@ -9,9 +10,9 @@ interface Props {
 const PLANS = [
   {
     name: 'Starter',
-    price: '99€/Monat',
+    price: `${PLAN_PRICES.Starter}€/Monat`,
     features: [
-      'Bis zu 10 Mitarbeiter',
+      `Bis zu ${PLAN_EMPLOYEE_LIMITS.Starter} Mitarbeiter`,
       'Krankmeldungen',
       'Einsätze',
       'GPS Check-in',
@@ -20,9 +21,9 @@ const PLANS = [
   },
   {
     name: 'Business',
-    price: '199€/Monat',
+    price: `${PLAN_PRICES.Business}€/Monat`,
     features: [
-      'Bis zu 30 Mitarbeiter',
+      `Bis zu ${PLAN_EMPLOYEE_LIMITS.Business} Mitarbeiter`,
       'Alles aus Starter',
       'Abrechnung',
       'Zeitstempel',
@@ -31,9 +32,9 @@ const PLANS = [
   },
   {
     name: 'Premium',
-    price: '299€/Monat',
+    price: `${PLAN_PRICES.Premium}€/Monat`,
     features: [
-      'Bis zu 99 Mitarbeiter',
+      `Bis zu ${PLAN_EMPLOYEE_LIMITS.Premium} Mitarbeiter`,
       'Alles aus Business',
       'Stundenlohn',
       'Erweiterte Mitarbeiterprofile',

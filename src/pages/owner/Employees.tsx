@@ -5,7 +5,7 @@ import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
 import { UpgradeModal } from '../../components/shared/UpgradeModal';
-import type { Plan } from '../../components/shared/UpgradeModal';
+import { PLAN_EMPLOYEE_LIMITS, type Plan } from '../../lib/plans';
 import type { Employee, Property, EmployeeProperty, Company } from '../../lib/types';
 
 interface EmployeesProps {
@@ -33,8 +33,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const plan = ((company.contract as Plan) || 'Starter') as Plan;
   const isPremium = plan === 'Premium';
 
-  const employeeLimits: Record<Plan, number> = { 'Starter': 10, 'Business': 30, 'Premium': 99 };
-  const currentLimit = employeeLimits[plan];
+  const currentLimit = PLAN_EMPLOYEE_LIMITS[plan];
   const nextPlan: Record<Plan, Plan> = { 'Starter': 'Business', 'Business': 'Premium', 'Premium': 'Premium' };
   const nextPlanName = nextPlan[plan];
 

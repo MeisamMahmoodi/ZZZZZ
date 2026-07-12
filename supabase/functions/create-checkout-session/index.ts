@@ -38,6 +38,11 @@ Deno.serve(async (req: Request) => {
       success_url: "https://meizo.de/dashboard?payment=success",
       cancel_url: "https://meizo.de/dashboard?payment=cancelled",
       metadata: { company_id, plan },
+      // Metadata zusätzlich auf das Abo selbst spiegeln (nicht nur auf die
+      // Checkout Session) — hilfreich als Fallback beim Nachschlagen in
+      // Stripe direkt, auch wenn stripe-webhook primär über die auf
+      // companies gespeicherte stripe_subscription_id zuordnet.
+      subscription_data: { metadata: { company_id, plan } },
     });
 
     return new Response(JSON.stringify({ url: session.url }), {

@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { X, Check, Lock, Zap, Star, Crown, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-
-type Plan = 'Starter' | 'Business' | 'Premium';
+import { PLAN_PRICES, type Plan } from '../../lib/plans';
 
 interface UpgradeModalProps {
   open: boolean;
@@ -17,7 +16,6 @@ const planOrder: Plan[] = ['Starter', 'Business', 'Premium'];
 
 const planDetails: Record<Plan, {
   icon: typeof Zap;
-  price: string;
   color: string;
   bg: string;
   border: string;
@@ -25,7 +23,6 @@ const planDetails: Record<Plan, {
 }> = {
   Starter: {
     icon: Zap,
-    price: '99',
     color: 'text-[#3B82F6]',
     bg: 'bg-[#EFF6FF]',
     border: 'border-[#BFDBFE]',
@@ -33,7 +30,6 @@ const planDetails: Record<Plan, {
   },
   Business: {
     icon: Star,
-    price: '199',
     color: 'text-[#F97316]',
     bg: 'bg-[#FFF7ED]',
     border: 'border-[#FED7AA]',
@@ -41,7 +37,6 @@ const planDetails: Record<Plan, {
   },
   Premium: {
     icon: Crown,
-    price: '299',
     color: 'text-[#16A34A]',
     bg: 'bg-[#F0FDF4]',
     border: 'border-[#BBF7D0]',
@@ -138,7 +133,7 @@ export function UpgradeModal({ open, onClose, currentPlan, requiredPlan, feature
                       </div>
                       <div>
                         <p className="text-sm font-bold text-ink-900">{planName}</p>
-                        <p className="text-xs text-ink-400">€{p.price}/Monat</p>
+                        <p className="text-xs text-ink-400">€{PLAN_PRICES[planName]}/Monat</p>
                       </div>
                     </div>
                     <button
