@@ -103,6 +103,22 @@ export interface SickReportWithDetails extends SickReport {
   assignments: AssignmentWithDetails[];
 }
 
+export interface ChecklistItem {
+  id: string;
+  company_id: string;
+  property_type: Property['type'];
+  label: string;
+  sort_order: number;
+  created_at: string;
+}
+
+export interface ChecklistCompletion {
+  id: string;
+  assignment_id: string;
+  item_label: string;
+  checked_at: string;
+}
+
 export interface Notification {
   id: string;
   employee_id: string;

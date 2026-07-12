@@ -596,6 +596,7 @@ await supabase.from('assignments').insert({
         <CheckOutFlow
           assignmentId={todayAssignment.id}
           propertyName={todayAssignment.property?.name || ''}
+          propertyType={todayAssignment.property?.type}
           checkedInAt={checkedInAt}
           onSuccess={handleCheckOutSuccess}
           onQueued={handleCheckOutQueued}

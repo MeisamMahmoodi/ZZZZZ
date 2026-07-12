@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useToast } from '../../components/shared/Toast';
 import { UpgradeModal } from '../../components/shared/UpgradeModal';
 import type { Plan } from '../../components/shared/UpgradeModal';
+import { ChecklistSettings } from '../../components/owner/ChecklistSettings';
 import type { Company } from '../../lib/types';
 
 interface SettingsProps {
@@ -215,6 +216,9 @@ export function Settings({ company, onRefresh }: SettingsProps) {
             {savingPassword ? 'Wird geändert...' : 'Passwort ändern'}
           </button>
         </div>
+
+        {/* Checklists */}
+        <ChecklistSettings company={company} />
       </div>
 
       {upgradeOpen && (

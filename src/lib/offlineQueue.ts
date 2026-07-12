@@ -24,6 +24,9 @@ export interface PendingCheckOut {
   lat: number | null;
   lng: number | null;
   createdAt: string;
+  // Labels of checklist items ticked off before checkout, if the property
+  // type has a checklist defined. Recorded once the checkout actually syncs.
+  checklistItems?: string[];
 }
 
 export type PendingAction = PendingCheckIn | PendingCheckOut;

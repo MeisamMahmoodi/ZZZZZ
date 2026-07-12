@@ -111,6 +111,10 @@ type TranslationKeys = {
   sendResetLink: string;
   resetLinkSent: string;
   backToLogin: string;
+  checklistTitle: string;
+  checklistSubtitle: string;
+  checklistItemsDone: string;
+  checklistContinue: string;
 };
 
 const translations: Record<Lang, TranslationKeys> = {
@@ -192,6 +196,10 @@ const translations: Record<Lang, TranslationKeys> = {
     sendResetLink: 'Link senden',
     resetLinkSent: 'E-Mail verschickt! Prüfe dein Postfach (auch Spam-Ordner).',
     backToLogin: 'Zurück zum Login',
+    checklistTitle: 'Checkliste',
+    checklistSubtitle: 'Hake alle Punkte ab, bevor du das Beweisfoto machst.',
+    checklistItemsDone: 'erledigt',
+    checklistContinue: 'Weiter',
   },
   ro: {
     goodMorning: 'Buna dimineata',
@@ -271,6 +279,10 @@ const translations: Record<Lang, TranslationKeys> = {
     sendResetLink: 'Trimite linkul',
     resetLinkSent: 'E-mail trimis! Verifica inbox-ul (si folderul spam).',
     backToLogin: 'Inapoi la autentificare',
+    checklistTitle: 'Lista de verificare',
+    checklistSubtitle: 'Bifeaza toate punctele inainte de a face poza dovada.',
+    checklistItemsDone: 'finalizate',
+    checklistContinue: 'Continua',
   },
   ar: {
     goodMorning: 'صباح الخير',
@@ -350,6 +362,10 @@ const translations: Record<Lang, TranslationKeys> = {
     sendResetLink: 'إرسال الرابط',
     resetLinkSent: 'تم إرسال البريد! تحقق من صندوق الوارد (وأيضاً مجلد الرسائل غير المرغوب فيها).',
     backToLogin: 'العودة لتسجيل الدخول',
+    checklistTitle: 'قائمة التحقق',
+    checklistSubtitle: 'ضع علامة على جميع النقاط قبل التقاط صورة الإثبات.',
+    checklistItemsDone: 'مكتمل',
+    checklistContinue: 'متابعة',
   },
   pl: {
     goodMorning: 'Dzien dobry',
@@ -429,6 +445,10 @@ const translations: Record<Lang, TranslationKeys> = {
     sendResetLink: 'Wyslij link',
     resetLinkSent: 'E-mail wyslany! Sprawdz skrzynke (rowniez folder spam).',
     backToLogin: 'Powrot do logowania',
+    checklistTitle: 'Lista kontrolna',
+    checklistSubtitle: 'Odhacz wszystkie punkty przed zrobieniem zdjecia dowodowego.',
+    checklistItemsDone: 'wykonane',
+    checklistContinue: 'Dalej',
   },
   en: {
     goodMorning: 'Good morning',
@@ -508,6 +528,10 @@ const translations: Record<Lang, TranslationKeys> = {
     sendResetLink: 'Send link',
     resetLinkSent: 'Email sent! Check your inbox (and spam folder).',
     backToLogin: 'Back to login',
+    checklistTitle: 'Checklist',
+    checklistSubtitle: 'Tick off every item before taking the proof photo.',
+    checklistItemsDone: 'done',
+    checklistContinue: 'Continue',
   },
   uk: {
     goodMorning: 'Доброго ранку',
@@ -587,6 +611,10 @@ const translations: Record<Lang, TranslationKeys> = {
     sendResetLink: 'Надіслати посилання',
     resetLinkSent: 'Лист надіслано! Перевір поштову скриньку (також папку спам).',
     backToLogin: 'Назад до входу',
+    checklistTitle: 'Чек-лист',
+    checklistSubtitle: 'Познач усі пункти перед тим, як зробити фото-підтвердження.',
+    checklistItemsDone: 'виконано',
+    checklistContinue: 'Продовжити',
   },
   tr: {
     goodMorning: 'Günaydın',
@@ -666,6 +694,10 @@ const translations: Record<Lang, TranslationKeys> = {
     sendResetLink: 'Bağlantı gönder',
     resetLinkSent: 'E-posta gönderildi! Gelen kutunu kontrol et (spam klasörünü de).',
     backToLogin: 'Girişe dön',
+    checklistTitle: 'Kontrol listesi',
+    checklistSubtitle: 'Kanıt fotoğrafı çekmeden önce tüm maddeleri işaretle.',
+    checklistItemsDone: 'tamamlandı',
+    checklistContinue: 'Devam et',
   },
   bg: {
     goodMorning: 'Добро утро',
@@ -745,6 +777,10 @@ const translations: Record<Lang, TranslationKeys> = {
     sendResetLink: 'Изпрати линк',
     resetLinkSent: 'Имейлът е изпратен! Провери пощата си (и папка спам).',
     backToLogin: 'Обратно към входа',
+    checklistTitle: 'Контролен списък',
+    checklistSubtitle: 'Отметни всички точки, преди да направиш снимка-доказателство.',
+    checklistItemsDone: 'изпълнени',
+    checklistContinue: 'Продължи',
   },
 };
 

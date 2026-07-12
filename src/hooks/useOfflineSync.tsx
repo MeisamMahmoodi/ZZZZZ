@@ -46,6 +46,14 @@ export function useOfflineSync(onSynced?: () => void) {
       const { error: dbErr } = await supabase.from('assignments').update(update).eq('id', action.assignmentId);
       if (dbErr) return false;
 
+      if (action.type === 'checkout' && action.checklistItems && action.checklistItems.length > 0) {
+        // Best-effort: the checkout itself already succeeded above, so we
+        // don't want a checklist-insert failure to re-queue the whole action.
+        await supabase.from('checklist_completions').insert(
+          action.checklistItems.map(label => ({ assignment_id: action.assignmentId, item_label: label }))
+        );
+      }
+
       await removePendingAction(action.id);
       return true;
     } catch {

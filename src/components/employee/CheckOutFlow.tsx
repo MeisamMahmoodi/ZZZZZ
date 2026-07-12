@@ -1,12 +1,14 @@
-import { useState, useRef, useCallback } from 'react';
-import { Camera, Check, X, RotateCcw, Loader2, Clock, CloudOff } from 'lucide-react';
+import { useState, useRef, useCallback, useEffect } from 'react';
+import { Camera, Check, X, RotateCcw, Loader2, Clock, CloudOff, ListChecks } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { addPendingAction, isLikelyNetworkError } from '../../lib/offlineQueue';
 import { t, type Lang } from '../../lib/i18n';
+import type { ChecklistItem, Property } from '../../lib/types';
 
 interface CheckOutFlowProps {
   assignmentId: string;
   propertyName: string;
+  propertyType?: Property['type'];
   checkedInAt: string;
   onSuccess: () => void;
   onQueued: () => void;
@@ -15,7 +17,7 @@ interface CheckOutFlowProps {
   lang?: Lang;
 }
 
-type Step = 'intro' | 'camera' | 'preview' | 'uploading' | 'done' | 'queued';
+type Step = 'intro' | 'checklist' | 'camera' | 'preview' | 'uploading' | 'done' | 'queued';
 
 function formatDuration(ms: number): string {
   const totalMin = Math.round(ms / 60000);
@@ -24,19 +26,48 @@ function formatDuration(ms: number): string {
   return h > 0 ? `${h}h ${m}min` : `${m}min`;
 }
 
-export function CheckOutFlow({ assignmentId, propertyName, checkedInAt, onSuccess, onQueued, onCancel, rtl, lang = 'de' }: CheckOutFlowProps) {
+export function CheckOutFlow({ assignmentId, propertyName, propertyType, checkedInAt, onSuccess, onQueued, onCancel, rtl, lang = 'de' }: CheckOutFlowProps) {
   const [step, setStep] = useState<Step>('intro');
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState('');
   const [doneTime, setDoneTime] = useState<Date | null>(null);
+  const [checklistItems, setChecklistItems] = useState<ChecklistItem[]>([]);
+  const [checkedLabels, setCheckedLabels] = useState<Set<string>>(new Set());
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    if (!propertyType) return;
+    supabase
+      .from('checklist_items')
+      .select('*')
+      .eq('property_type', propertyType)
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => setChecklistItems((data as ChecklistItem[]) || []));
+  }, [propertyType]);
 
   const checkedInTime = new Date(checkedInAt).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
   const now = new Date();
   const elapsedMs = now.getTime() - new Date(checkedInAt).getTime();
   const elapsedLabel = formatDuration(elapsedMs);
+
+  const handleIntroContinue = useCallback(() => {
+    if (checklistItems.length > 0) {
+      setStep('checklist');
+    } else {
+      startCamera();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [checklistItems]);
+
+  const toggleChecklistItem = (label: string) => {
+    setCheckedLabels(prev => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label); else next.add(label);
+      return next;
+    });
+  };
 
   const startCamera = useCallback(async () => {
     setStep('camera');
@@ -116,6 +147,13 @@ export function CheckOutFlow({ assignmentId, propertyName, checkedInAt, onSucces
       }).eq('id', assignmentId);
       if (dbErr) throw new Error(dbErr.message);
 
+      if (checkedLabels.size > 0) {
+        // Best-effort — the checkout itself already succeeded above.
+        await supabase.from('checklist_completions').insert(
+          Array.from(checkedLabels).map(label => ({ assignment_id: assignmentId, item_label: label }))
+        );
+      }
+
       setDoneTime(completedAt);
       setStep('done');
       setTimeout(onSuccess, 1800);
@@ -132,6 +170,7 @@ export function CheckOutFlow({ assignmentId, propertyName, checkedInAt, onSucces
             lat: coords?.lat ?? null,
             lng: coords?.lng ?? null,
             createdAt: completedAt.toISOString(),
+            checklistItems: checkedLabels.size > 0 ? Array.from(checkedLabels) : undefined,
           });
           setDoneTime(completedAt);
           setStep('queued');
@@ -144,7 +183,7 @@ export function CheckOutFlow({ assignmentId, propertyName, checkedInAt, onSucces
       setUploadError(err instanceof Error ? err.message : 'Fehler beim Auschecken');
       setStep('preview');
     }
-  }, [photoDataUrl, assignmentId, onSuccess, onQueued]);
+  }, [photoDataUrl, assignmentId, onSuccess, onQueued, checkedLabels]);
 
   const handleCancel = () => { stopCamera(); onCancel(); };
 
@@ -198,9 +237,58 @@ export function CheckOutFlow({ assignmentId, propertyName, checkedInAt, onSucces
 
             {uploadError && <p className="text-xs text-[#EF4444] text-center mb-4">{uploadError}</p>}
 
-            <button onClick={startCamera}
+            <button onClick={handleIntroContinue}
               className="w-full py-3.5 rounded-2xl text-sm font-semibold bg-[#F97316] text-white hover:bg-[#EA580C] transition-colors flex items-center justify-center gap-2">
               <Camera size={16} /> Foto & Auschecken
+            </button>
+          </div>
+        )}
+
+        {/* Checklist — only shown when the property's type has items defined */}
+        {step === 'checklist' && (
+          <div className="p-7">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-bold text-[#0F172A] flex items-center gap-2">
+                <ListChecks size={19} className="text-[#F97316]" /> {t(lang, 'checklistTitle')}
+              </h2>
+              <button onClick={handleCancel} className="p-2 rounded-xl hover:bg-[#F1F5F9] transition-colors">
+                <X size={18} className="text-[#94A3B8]" />
+              </button>
+            </div>
+            <p className="text-sm text-[#64748B] mb-5">{t(lang, 'checklistSubtitle')}</p>
+
+            <div className="space-y-2.5 mb-6">
+              {checklistItems.map(item => {
+                const checked = checkedLabels.has(item.label);
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => toggleChecklistItem(item.label)}
+                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl border text-left transition-colors ${
+                      checked ? 'bg-[#FFF7ED] border-[#FED7AA]' : 'bg-[#F8FAFC] border-[#E2E8F0] hover:bg-[#F1F5F9]'
+                    }`}
+                  >
+                    <div className={`w-5 h-5 rounded-md border-2 flex items-center justify-center shrink-0 transition-colors ${
+                      checked ? 'bg-[#F97316] border-[#F97316]' : 'border-[#CBD5E1]'
+                    }`}>
+                      {checked && <Check size={13} className="text-white" strokeWidth={3} />}
+                    </div>
+                    <span className={`text-sm ${checked ? 'text-[#0F172A] font-medium' : 'text-[#475569]'}`}>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="text-xs text-[#94A3B8] text-center mb-3">
+              {checkedLabels.size}/{checklistItems.length} {t(lang, 'checklistItemsDone')}
+            </p>
+
+            <button
+              onClick={startCamera}
+              disabled={checkedLabels.size < checklistItems.length}
+              className="w-full py-3.5 rounded-2xl text-sm font-semibold bg-[#F97316] text-white hover:bg-[#EA580C] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {t(lang, 'checklistContinue')}
             </button>
           </div>
         )}

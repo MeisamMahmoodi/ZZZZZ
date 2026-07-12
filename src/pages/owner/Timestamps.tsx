@@ -54,8 +54,14 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
   // Customer-facing proof-of-service report — free on every plan, not gated
   // behind a paywall, since it's the report the owner hands to their own
   // client and every copy carries the "Erstellt mit meizo.de" footer.
-  const handleCustomerReport = (a: AssignmentWithDetails) => {
+  const handleCustomerReport = async (a: AssignmentWithDetails) => {
     if (!a.checked_in_at || !a.completed_at) return;
+
+    const { data: completions } = await supabase
+      .from('checklist_completions')
+      .select('item_label')
+      .eq('assignment_id', a.id);
+    const checklistLabels = (completions || []).map(c => (c as { item_label: string }).item_label);
 
     const checkInTime = new Date(a.checked_in_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
     const checkOutTime = new Date(a.completed_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
@@ -82,6 +88,13 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
       photoBox(a.checkout_photo_url, 'Nachher (Fertig)'),
     ].filter(Boolean).join('');
 
+    const checklistHtml = checklistLabels.length > 0
+      ? `<div class="checklist">
+          <div class="label" style="margin-bottom:8px;">Checkliste (${checklistLabels.length}/${checklistLabels.length} erledigt)</div>
+          ${checklistLabels.map(l => `<div class="checklist-item">✓ ${l}</div>`).join('')}
+        </div>`
+      : '';
+
     const html = `<!DOCTYPE html>
 <html lang="de">
 <head>
@@ -106,6 +119,9 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
   .photo-box { flex:1; }
   .photo-box .cap { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#6b7280; margin-bottom:6px; }
   .photo-box img { width:100%; border-radius:8px; border:1px solid #e5e7eb; max-height: 300px; object-fit: cover; display:block; }
+  .checklist { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; margin-top: 16px; }
+  .checklist .label { font-size: 9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#9ca3af; }
+  .checklist-item { font-size: 12px; color: #15803d; font-weight: 600; padding: 3px 0; }
   .footer { margin-top: 40px; font-size: 9px; color: #9ca3af; text-align:center; }
   @media print { body { padding: 24px 28px; } }
 </style>
@@ -145,6 +161,7 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
     </div>
   </div>
   ${photosHtml ? `<div class="photos">${photosHtml}</div>` : ''}
+  ${checklistHtml}
   <div class="footer">Erstellt automatisch mit meizo.de</div>
   <script>window.onload = () => { window.print(); };</script>
 </body>
