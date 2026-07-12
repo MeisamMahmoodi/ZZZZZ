@@ -118,7 +118,7 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
   .photos { display:flex; gap: 16px; margin-top: 20px; }
   .photo-box { flex:1; }
   .photo-box .cap { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#6b7280; margin-bottom:6px; }
-  .photo-box img { width:100%; border-radius:8px; border:1px solid #e5e7eb; max-height: 300px; object-fit: cover; display:block; }
+  .photo-box img { width:100%; height:300px; border-radius:8px; border:1px solid #e5e7eb; object-fit: contain; background:#f9fafb; display:block; }
   .checklist { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; margin-top: 16px; }
   .checklist .label { font-size: 9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#9ca3af; }
   .checklist-item { font-size: 12px; color: #15803d; font-weight: 600; padding: 3px 0; }

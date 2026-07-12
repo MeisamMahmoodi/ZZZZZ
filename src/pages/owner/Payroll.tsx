@@ -92,11 +92,22 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
       if (!entry) continue;
       entry.assignments.push(a);
 
+      // Tatsächlich gearbeitete Zeit (Check-in bis Check-out) hat Vorrang vor
+      // der geplanten Zeit — sonst zeigt die Abrechnung Soll- statt Ist-Stunden
+      // an (z.B. 1 Std. geplant, obwohl der Mitarbeiter nach 1 Minute wieder
+      // ausgecheckt hat).
+      if (a.status === 'completed' && a.checked_in_at && a.completed_at) {
+        const actualMin = Math.max(0, Math.round((new Date(a.completed_at).getTime() - new Date(a.checked_in_at).getTime()) / 60000));
+        entry.totalMinutes += actualMin;
+        continue;
+      }
+
       const prop = a.property;
       if (!prop) continue;
 
       const aTimeFrom = a.time_from ?? prop.time_from;
       const aTimeTo = a.time_to ?? prop.time_to;
+      if (!aTimeFrom || !aTimeTo) continue;
       const [fromH, fromM] = aTimeFrom.split(':').map(Number);
       const [toH, toM] = aTimeTo.split(':').map(Number);
       const durationMin = (toH * 60 + toM) - (fromH * 60 + fromM);
