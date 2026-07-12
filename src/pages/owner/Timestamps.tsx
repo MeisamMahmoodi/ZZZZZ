@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Check, CalendarDays, MapPin, Camera, Image, Navigation } from 'lucide-react';
+import { Clock, Check, CalendarDays, MapPin, Camera, Image, Navigation, FileText } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
@@ -50,6 +50,111 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
 
   const mapsUrl = (lat: number, lng: number) =>
     `https://www.google.com/maps?q=${lat},${lng}`;
+
+  // Customer-facing proof-of-service report — free on every plan, not gated
+  // behind a paywall, since it's the report the owner hands to their own
+  // client and every copy carries the "Erstellt mit meizo.de" footer.
+  const handleCustomerReport = (a: AssignmentWithDetails) => {
+    if (!a.checked_in_at || !a.completed_at) return;
+
+    const checkInTime = new Date(a.checked_in_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    const checkOutTime = new Date(a.completed_at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    const durationMin = Math.round((new Date(a.completed_at).getTime() - new Date(a.checked_in_at).getTime()) / 60000);
+    const dH = Math.floor(durationMin / 60);
+    const dM = durationMin % 60;
+    const durationLabel = dH > 0 ? `${dH}h ${dM}min` : `${dM}min`;
+
+    const dateLabel = new Date(a.date + 'T12:00:00').toLocaleDateString('de-DE', {
+      weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
+    });
+
+    const hasGps = !!(a.checkin_lat && a.checkin_lng);
+    const gpsBadge = hasGps
+      ? '<span class="badge-ok">✓ Vor Ort bestätigt</span>'
+      : '<span style="color:#9ca3af;font-size:11px;">Nicht verfügbar</span>';
+
+    const photoBox = (url: string | null | undefined, caption: string) => url
+      ? `<div class="photo-box"><div class="cap">${caption}</div><img src="${url}" alt="${caption}"/></div>`
+      : '';
+
+    const photosHtml = [
+      photoBox(a.checkin_photo_url, 'Vorher (Check-in)'),
+      photoBox(a.checkout_photo_url, 'Nachher (Fertig)'),
+    ].filter(Boolean).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<title>Reinigungsnachweis ${a.property?.name || ''} — ${a.date}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #111; background:#fff; padding: 32px 36px; }
+  .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+  .header-left .company { font-size: 22px; font-weight: 700; color:#111; }
+  .header-left .sub { font-size: 11px; color: #6b7280; margin-top: 4px; }
+  .header-right { text-align: right; }
+  .header-right .label { font-size: 9px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: #6b7280; }
+  .header-right .date { font-size: 18px; font-weight: 700; color: #111; margin-top: 2px; }
+  hr { border: none; border-top: 2px solid #111; margin-bottom: 24px; }
+  .info-grid { display:grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom:16px; }
+  .info-box { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px 16px; }
+  .info-box .label { font-size: 9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:#9ca3af; margin-bottom:4px; }
+  .info-box .value { font-size: 13px; font-weight:600; color:#111; }
+  .badge-ok { display:inline-flex; align-items:center; gap:4px; background:#dcfce7; color:#15803d; font-weight:700; padding:3px 8px; border-radius:10px; font-size:11px; }
+  .photos { display:flex; gap: 16px; margin-top: 20px; }
+  .photo-box { flex:1; }
+  .photo-box .cap { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:#6b7280; margin-bottom:6px; }
+  .photo-box img { width:100%; border-radius:8px; border:1px solid #e5e7eb; max-height: 300px; object-fit: cover; display:block; }
+  .footer { margin-top: 40px; font-size: 9px; color: #9ca3af; text-align:center; }
+  @media print { body { padding: 24px 28px; } }
+</style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <div class="company">${company.name}</div>
+      <div class="sub">Reinigungsnachweis</div>
+    </div>
+    <div class="header-right">
+      <div class="label">Datum</div>
+      <div class="date">${dateLabel}</div>
+    </div>
+  </div>
+  <hr/>
+  <div class="info-grid">
+    <div class="info-box">
+      <div class="label">Objekt</div>
+      <div class="value">${a.property?.name || ''}</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:2px;">${a.property?.address || ''}</div>
+    </div>
+    <div class="info-box">
+      <div class="label">Zeitraum</div>
+      <div class="value">${checkInTime} – ${checkOutTime} Uhr</div>
+      <div style="font-size:11px;color:#6b7280;margin-top:2px;">Dauer: ${durationLabel}</div>
+    </div>
+  </div>
+  <div class="info-grid">
+    <div class="info-box">
+      <div class="label">Durchgeführt von</div>
+      <div class="value">${a.employee?.first_name || ''}</div>
+    </div>
+    <div class="info-box">
+      <div class="label">Standort-Bestätigung</div>
+      <div class="value">${gpsBadge}</div>
+    </div>
+  </div>
+  ${photosHtml ? `<div class="photos">${photosHtml}</div>` : ''}
+  <div class="footer">Erstellt automatisch mit meizo.de</div>
+  <script>window.onload = () => { window.print(); };</script>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) return;
+    win.document.write(html);
+    win.document.close();
+  };
 
   return (
     <div>
@@ -163,10 +268,17 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
 
                         {/* Payroll note */}
                         {a.status === 'completed' && durationLabel && (
-                          <div className="mt-2 pl-14">
+                          <div className="mt-2 pl-14 flex items-center gap-2 flex-wrap">
                             <span className="text-[10px] font-semibold text-[#22C55E] bg-[#F0FDF4] border border-[#BBF7D0] px-2.5 py-1 rounded-full">
                               Wird in Abrechnung erfasst · {durationLabel}
                             </span>
+                            <button
+                              onClick={() => handleCustomerReport(a)}
+                              className="flex items-center gap-1.5 text-[10px] font-semibold text-[#3B82F6] bg-[#EFF6FF] border border-[#BFDBFE] px-2.5 py-1 rounded-full hover:bg-[#DBEAFE] transition-colors"
+                              title="Nachweis-PDF für deinen Kunden erstellen"
+                            >
+                              <FileText size={11} /> PDF für Kunde
+                            </button>
                           </div>
                         )}
                         {a.status === 'checked_in' && a.checked_in_at && (
