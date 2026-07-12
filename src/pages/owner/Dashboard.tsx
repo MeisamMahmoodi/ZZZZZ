@@ -35,7 +35,9 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const [assignments, setAssignments] = useState<AssignmentWithDetails[]>([]);
   const [sickReports, setSickReports] = useState<SickReportWithEmployee[]>([]);
   const [employeeProperties, setEmployeeProperties] = useState<EmployeeProperty[]>([]);
-  const [replacementRequests, setReplacementRequests] = useState<{ sick_report_id: string; property_id: string; status: string; replacement_employee_id: string; created_at: string; replacement_employee?: Employee }[]>([]);
+  const [replacementRequests, setReplacementRequests] = useState<{ id: string; sick_report_id: string; property_id: string; status: string; replacement_employee_id: string; created_at: string; expires_at: string | null; replacement_employee?: Employee }[]>([]);
+  const [nowTick, setNowTick] = useState(Date.now());
+  const [skippingId, setSkippingId] = useState<string | null>(null);
   const [replacementModal, setReplacementModal] = useState<{ sickReport: SickReportWithEmployee; property: Property; assignment: AssignmentWithDetails } | null>(null);
   const [removeConfirm, setRemoveConfirm] = useState<AssignmentWithDetails | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -63,16 +65,50 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
 
   useEffect(() => { loadData(); }, [company.id, refreshKey]);
 
+  // Tick every second so the auto-dispatch countdown stays live without a full reload.
+  useEffect(() => {
+    const interval = setInterval(() => setNowTick(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
   useEffect(() => {
     const channel = supabase
       .channel(`dashboard-${company.id}`)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'assignments' }, () => loadData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'sick_reports' }, () => loadData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'employees' }, () => loadData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'replacement_requests' }, () => loadData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'replacement_requests' }, (payload) => {
+        loadData();
+        handleReplacementRealtimeEvent(payload as unknown as { eventType: string; new: Record<string, unknown> });
+      })
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [company.id]);
+
+  // Cost-preview toast when a candidate accepts an auto-dispatched replacement
+  // request. Reads fresh data inside the callback (not from closed-over state)
+  // since this effect only depends on company.id.
+  const handleReplacementRealtimeEvent = async (payload: { eventType: string; new: Record<string, unknown> }) => {
+    if (payload.eventType !== 'UPDATE') return;
+    const row = payload.new as { status?: string; replacement_employee_id?: string; property_id?: string };
+    if (row.status !== 'accepted' || !row.replacement_employee_id || !row.property_id) return;
+
+    const [{ data: emp }, { data: prop }] = await Promise.all([
+      supabase.from('employees').select('first_name, last_name, hourly_wage').eq('id', row.replacement_employee_id).maybeSingle(),
+      supabase.from('properties').select('name, time_from, time_to').eq('id', row.property_id).maybeSingle(),
+    ]);
+    if (!emp || !prop) return;
+
+    let costLabel = '';
+    if (emp.hourly_wage && prop.time_from && prop.time_to) {
+      const [fh, fm] = prop.time_from.split(':').map(Number);
+      const [th, tm] = prop.time_to.split(':').map(Number);
+      const hours = Math.max(0, (th * 60 + tm - (fh * 60 + fm)) / 60);
+      const cost = hours * emp.hourly_wage;
+      costLabel = ` (ca. ${hours.toFixed(1).replace('.0', '')}h × ${emp.hourly_wage.toFixed(2)}€ = ${cost.toFixed(2)}€)`;
+    }
+    addToast(`${emp.first_name} ${emp.last_name} übernimmt ${prop.name}${costLabel}`);
+  };
 
   async function loadData() {
     try {
@@ -82,7 +118,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
         supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').eq('date', todayStr),
         supabase.from('sick_reports').select('*, employee:employees(*)'),
         supabase.from('employee_properties').select('*'),
-        supabase.from('replacement_requests').select('sick_report_id, property_id, status, replacement_employee_id, created_at, replacement_employee:employees!replacement_employee_id(*)'),
+        supabase.from('replacement_requests').select('id, sick_report_id, property_id, status, replacement_employee_id, created_at, expires_at, replacement_employee:employees!replacement_employee_id(*)'),
       ]);
       setEmployees(empRes.data || []);
       setProperties(propRes.data || []);
@@ -193,6 +229,24 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
     setReplacementModal(null);
     onRefresh();
     addToast('Ersatz wurde benachrichtigt');
+  };
+
+  const handleSkipCandidate = async (requestId: string) => {
+    setSkippingId(requestId);
+    const { error } = await supabase.from('replacement_requests').update({ status: 'declined' }).eq('id', requestId);
+    setSkippingId(null);
+    if (error) { addToast('Fehler beim Überspringen', 'error'); return; }
+    addToast('Kandidat übersprungen — nächster wird automatisch angefragt');
+    onRefresh();
+  };
+
+  const formatCountdown = (expiresAt: string) => {
+    const remainingMs = new Date(expiresAt).getTime() - nowTick;
+    if (remainingMs <= 0) return '0:00';
+    const totalSec = Math.floor(remainingMs / 1000);
+    const min = Math.floor(totalSec / 60);
+    const sec = totalSec % 60;
+    return `${min}:${sec.toString().padStart(2, '0')}`;
   };
 
   const handleRemoveAssignment = async (assignment: AssignmentWithDetails) => {
@@ -336,11 +390,41 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
                     ))}
                   </div>
                 </div>
-                {!hasReplacement && (
-                  <button onClick={() => handleFindReplacement(sr)} className="w-full mt-5 py-3 rounded-xl text-sm font-semibold bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors flex items-center justify-center gap-2">
-                    {hasBusiness ? <><Search size={16} /> Ersatz finden</> : <><Lock size={14} /> Ersatz finden (Business)</>}
-                  </button>
-                )}
+                {!hasReplacement && (() => {
+                  const pendingAuto = replacementRequests.find(
+                    rr => rr.sick_report_id === sr.id && rr.status === 'pending' && rr.expires_at
+                  );
+                  if (pendingAuto) {
+                    const expired = new Date(pendingAuto.expires_at as string).getTime() <= nowTick;
+                    return (
+                      <div className="mt-5 bg-white/70 border border-[#FECACA]/60 rounded-xl p-4">
+                        <div className="flex items-center gap-2 text-sm text-[#0F172A]">
+                          <Search size={14} className="text-[#F97316] shrink-0" />
+                          <span className="font-semibold">
+                            {pendingAuto.replacement_employee?.first_name} {pendingAuto.replacement_employee?.last_name}
+                          </span>
+                          <span className="text-[#64748B]">wird automatisch angefragt</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 mt-2 text-xs text-[#94A3B8]">
+                          <AlarmClock size={13} />
+                          {expired ? 'Wartet auf nächste Anfrage…' : <>Antwort erwartet in <span className="font-semibold text-[#F97316]">{formatCountdown(pendingAuto.expires_at as string)}</span> Min</>}
+                        </div>
+                        <button
+                          onClick={() => handleSkipCandidate(pendingAuto.id)}
+                          disabled={skippingId === pendingAuto.id}
+                          className="w-full mt-3 py-2 rounded-xl text-xs font-semibold text-[#64748B] bg-white hover:bg-[#F8FAFC] border border-[#E2E8F0] transition-colors disabled:opacity-50"
+                        >
+                          {skippingId === pendingAuto.id ? 'Wird übersprungen…' : 'Überspringen — nächsten Kandidaten fragen'}
+                        </button>
+                      </div>
+                    );
+                  }
+                  return (
+                    <button onClick={() => handleFindReplacement(sr)} className="w-full mt-5 py-3 rounded-xl text-sm font-semibold bg-[#EF4444] text-white hover:bg-[#DC2626] transition-colors flex items-center justify-center gap-2">
+                      {hasBusiness ? <><Search size={16} /> Ersatz finden</> : <><Lock size={14} /> Ersatz finden (Business)</>}
+                    </button>
+                  );
+                })()}
                 {hasReplacement && (() => {
                   const replacementRequest = replacementRequests.find(rr => rr.sick_report_id === sr.id);
                   const detailsOpen = replacementDetailsOpen === sr.employee_id;

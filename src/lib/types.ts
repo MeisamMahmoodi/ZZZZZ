@@ -86,6 +86,7 @@ export interface ReplacementRequest {
   message: string;
   channel: 'whatsapp' | 'sms' | 'app';
   created_at: string;
+  expires_at?: string | null;
 }
 
 export interface EmployeeWithDetails extends Employee {
