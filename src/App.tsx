@@ -213,7 +213,7 @@ function PricingGate() {
 }
 
 function AppRoutes() {
-  const { user, loading, mustChangePassword, signOut } = useAuth();
+  const { user, loading, mustChangePassword, passwordRecovery, signOut } = useAuth();
   const [role, setRole] = useState<'owner' | 'employee' | 'admin' | null>(null);
   const [roleLoading, setRoleLoading] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
@@ -297,6 +297,12 @@ function AppRoutes() {
     return <AccountSuspendedScreen />;
   }
 
+  // Recovery link clicked (forgot password) — let the user set a new
+  // password immediately, regardless of role/loading state.
+  if (passwordRecovery) {
+    return <ChangePasswordScreen />;
+  }
+
   if (loading || (user && roleLoading) || (role === 'owner' && ownerCompany === undefined)) {
     return (
       <div className="min-h-screen bg-surface-50 flex items-center justify-center">
@@ -374,7 +380,10 @@ function UnifiedLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const [mode, setMode] = useState<'login' | 'forgot' | 'sent'>('login');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetError, setResetError] = useState('');
+  const { signIn, requestPasswordReset } = useAuth();
   const { t, lang, setLang, rtl } = useLang();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -387,48 +396,118 @@ function UnifiedLogin() {
     setLoading(false);
   };
 
+  const handleResetSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setResetError('');
+    setLoading(true);
+    const { error: err } = await requestPasswordReset(resetEmail);
+    setLoading(false);
+    // Always show the "sent" confirmation, even on error — this avoids
+    // leaking whether an email address exists in the system.
+    if (err) {
+      setResetError(err);
+    } else {
+      setMode('sent');
+    }
+  };
+
   return (
     <div className={`min-h-screen bg-surface-50 flex items-center justify-center px-6 ${rtl ? 'text-right' : 'text-left'}`} dir={rtl ? 'rtl' : 'ltr'}>
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
           <img src="/meizoLogoL.jpeg" alt="Meizo" className="h-16 w-auto mx-auto mb-5" />
           <h1 className="text-2xl font-bold text-ink-900 tracking-tight">meizo</h1>
-          <p className="text-ink-500 text-sm mt-1.5">{t('login')}</p>
+          <p className="text-ink-500 text-sm mt-1.5">{mode === 'login' ? t('login') : t('forgotPassword')}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <input
-              type="email"
-              placeholder={t('email')}
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="input-field"
-            />
-          </div>
-          <div>
-            <input
-              type="password"
-              placeholder={t('password')}
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="input-field"
-            />
-          </div>
+        {mode === 'login' && (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <input
+                type="email"
+                placeholder={t('email')}
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                className="input-field"
+              />
+            </div>
+            <div>
+              <input
+                type="password"
+                placeholder={t('password')}
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                className="input-field"
+              />
+            </div>
 
-          {error && <p className="text-sm text-danger-500 text-center font-medium">{error}</p>}
+            {error && <p className="text-sm text-danger-500 text-center font-medium">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={loading || !email || !password}
-            className="w-full py-3 rounded-xl text-sm font-semibold bg-ink-900 text-white hover:bg-ink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loading ? t('sending') : t('login')}
-          </button>
-          <div className="flex justify-center pt-1">
-            <IosInstallButton />
+            <button
+              type="submit"
+              disabled={loading || !email || !password}
+              className="w-full py-3 rounded-xl text-sm font-semibold bg-ink-900 text-white hover:bg-ink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? t('sending') : t('login')}
+            </button>
+            <button
+              type="button"
+              onClick={() => { setMode('forgot'); setResetEmail(email); setResetError(''); }}
+              className="w-full text-center text-xs font-medium text-ink-500 hover:text-ink-900 transition-colors pt-1"
+            >
+              {t('forgotPassword')}
+            </button>
+            <div className="flex justify-center pt-1">
+              <IosInstallButton />
+            </div>
+          </form>
+        )}
+
+        {mode === 'forgot' && (
+          <form onSubmit={handleResetSubmit} className="space-y-4">
+            <p className="text-sm text-ink-500 text-center -mt-2 mb-2">{t('resetPasswordPrompt')}</p>
+            <div>
+              <input
+                type="email"
+                placeholder={t('email')}
+                value={resetEmail}
+                onChange={e => setResetEmail(e.target.value)}
+                className="input-field"
+                autoFocus
+              />
+            </div>
+
+            {resetError && <p className="text-sm text-danger-500 text-center font-medium">{resetError}</p>}
+
+            <button
+              type="submit"
+              disabled={loading || !resetEmail}
+              className="w-full py-3 rounded-xl text-sm font-semibold bg-ink-900 text-white hover:bg-ink-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? t('sending') : t('sendResetLink')}
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('login')}
+              className="w-full text-center text-xs font-medium text-ink-500 hover:text-ink-900 transition-colors pt-1"
+            >
+              {t('backToLogin')}
+            </button>
+          </form>
+        )}
+
+        {mode === 'sent' && (
+          <div className="text-center space-y-5">
+            <p className="text-sm text-ink-700">{t('resetLinkSent')}</p>
+            <button
+              type="button"
+              onClick={() => setMode('login')}
+              className="text-sm font-semibold text-ink-900 hover:underline"
+            >
+              {t('backToLogin')}
+            </button>
           </div>
-        </form>
+        )}
 
         {/* Language switcher on login page */}
         <div className="flex justify-center gap-2 mt-8">

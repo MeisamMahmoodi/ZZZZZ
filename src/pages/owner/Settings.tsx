@@ -14,7 +14,6 @@ interface SettingsProps {
 export function Settings({ company, onRefresh }: SettingsProps) {
   const [name, setName] = useState(company.name);
   const [ownerName, setOwnerName] = useState(company.owner_name);
-  const [email, setEmail] = useState(company.owner_email);
   const [saving, setSaving] = useState(false);
 
   const [newPassword, setNewPassword] = useState('');
@@ -27,9 +26,11 @@ export function Settings({ company, onRefresh }: SettingsProps) {
 
   const handleSave = async () => {
     setSaving(true);
+    // Login email is intentionally not editable anywhere in the app (owner
+    // or employee) — only the password can be changed.
     const { error } = await supabase
       .from('companies')
-      .update({ name, owner_name: ownerName, owner_email: email })
+      .update({ name, owner_name: ownerName })
       .eq('id', company.id);
 
     setSaving(false);
@@ -159,15 +160,6 @@ export function Settings({ company, onRefresh }: SettingsProps) {
                 type="text"
                 value={ownerName}
                 onChange={e => setOwnerName(e.target.value)}
-                className="input-field"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-ink-900 mb-1.5">E-Mail</label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
                 className="input-field"
               />
             </div>

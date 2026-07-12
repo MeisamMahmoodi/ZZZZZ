@@ -97,6 +97,11 @@ type TranslationKeys = {
   notCheckedIn: string;
   checkInNow: string;
   dontCloseAppUploading: string;
+  forgotPassword: string;
+  resetPasswordPrompt: string;
+  sendResetLink: string;
+  resetLinkSent: string;
+  backToLogin: string;
 };
 
 const translations: Record<Lang, TranslationKeys> = {
@@ -173,6 +178,11 @@ const translations: Record<Lang, TranslationKeys> = {
     notCheckedIn: 'Du hast dich noch nicht eingecheckt',
     checkInNow: 'Jetzt einchecken',
     dontCloseAppUploading: 'Bitte App jetzt nicht schließen!',
+    forgotPassword: 'Passwort vergessen?',
+    resetPasswordPrompt: 'Gib deine E-Mail-Adresse ein, wir schicken dir einen Link zum Zurücksetzen.',
+    sendResetLink: 'Link senden',
+    resetLinkSent: 'E-Mail verschickt! Prüfe dein Postfach (auch Spam-Ordner).',
+    backToLogin: 'Zurück zum Login',
   },
   ro: {
     goodMorning: 'Buna dimineata',
@@ -247,6 +257,11 @@ const translations: Record<Lang, TranslationKeys> = {
     notCheckedIn: 'Nu ai facut check-in inca',
     checkInNow: 'Fa check-in acum',
     dontCloseAppUploading: 'Te rugam nu inchide aplicatia acum!',
+    forgotPassword: 'Ai uitat parola?',
+    resetPasswordPrompt: 'Introdu adresa ta de e-mail, iti trimitem un link pentru resetare.',
+    sendResetLink: 'Trimite linkul',
+    resetLinkSent: 'E-mail trimis! Verifica inbox-ul (si folderul spam).',
+    backToLogin: 'Inapoi la autentificare',
   },
   ar: {
     goodMorning: 'صباح الخير',
@@ -321,6 +336,11 @@ const translations: Record<Lang, TranslationKeys> = {
     notCheckedIn: 'لم تسجل حضورك بعد',
     checkInNow: 'سجل حضورك الآن',
     dontCloseAppUploading: 'الرجاء عدم إغلاق التطبيق الآن!',
+    forgotPassword: 'نسيت كلمة المرور؟',
+    resetPasswordPrompt: 'أدخل بريدك الإلكتروني، سنرسل لك رابطاً لإعادة التعيين.',
+    sendResetLink: 'إرسال الرابط',
+    resetLinkSent: 'تم إرسال البريد! تحقق من صندوق الوارد (وأيضاً مجلد الرسائل غير المرغوب فيها).',
+    backToLogin: 'العودة لتسجيل الدخول',
   },
   pl: {
     goodMorning: 'Dzien dobry',
@@ -395,6 +415,11 @@ const translations: Record<Lang, TranslationKeys> = {
     notCheckedIn: 'Nie zrobiles jeszcze check-ina',
     checkInNow: 'Zrob check-in teraz',
     dontCloseAppUploading: 'Prosze nie zamykac teraz aplikacji!',
+    forgotPassword: 'Zapomniales hasla?',
+    resetPasswordPrompt: 'Podaj swoj adres e-mail, wyslemy Ci link do resetowania.',
+    sendResetLink: 'Wyslij link',
+    resetLinkSent: 'E-mail wyslany! Sprawdz skrzynke (rowniez folder spam).',
+    backToLogin: 'Powrot do logowania',
   },
   en: {
     goodMorning: 'Good morning',
@@ -469,6 +494,11 @@ const translations: Record<Lang, TranslationKeys> = {
     notCheckedIn: 'You have not checked in yet',
     checkInNow: 'Check in now',
     dontCloseAppUploading: "Please don't close the app now!",
+    forgotPassword: 'Forgot password?',
+    resetPasswordPrompt: "Enter your email address, we'll send you a reset link.",
+    sendResetLink: 'Send link',
+    resetLinkSent: 'Email sent! Check your inbox (and spam folder).',
+    backToLogin: 'Back to login',
   },
 };
 

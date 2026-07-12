@@ -41,6 +41,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [replacementDetailsOpen, setReplacementDetailsOpen] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const notifRef = useRef<HTMLDivElement>(null);
   const { addToast } = useToast();
 
@@ -98,6 +99,8 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       setReplacementRequests((rrRes.data || []) as typeof replacementRequests);
     } catch {
       // Component renders with existing state
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -405,33 +408,45 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <div className="card p-5 sm:p-6">
           <p className="section-label mb-3">Mitarbeiter</p>
-          <div className="flex items-baseline gap-1.5">
-            <p className="text-2xl font-bold text-[#0F172A]">{activeEmployees.length}</p>
-            <span className="text-sm text-[#94A3B8]">/</span>
-            <span className="text-sm text-[#94A3B8]">{companyEmployees.length}</span>
-          </div>
+          {loading ? (
+            <div className="h-7 w-16 bg-[#F1F5F9] rounded-lg animate-pulse" />
+          ) : (
+            <div className="flex items-baseline gap-1.5">
+              <p className="text-2xl font-bold text-[#0F172A]">{activeEmployees.length}</p>
+              <span className="text-sm text-[#94A3B8]">/</span>
+              <span className="text-sm text-[#94A3B8]">{companyEmployees.length}</span>
+            </div>
+          )}
           <p className="text-xs text-[#94A3B8] mt-2">verfügbar</p>
-          {sickCount > 0 && <p className="text-xs text-[#F97316] font-semibold mt-1">{sickCount} krank</p>}
+          {!loading && sickCount > 0 && <p className="text-xs text-[#F97316] font-semibold mt-1">{sickCount} krank</p>}
         </div>
         <div className="card p-5 sm:p-6">
           <p className="section-label mb-3">Einsätze heute</p>
-          <p className="text-2xl font-bold text-[#0F172A]">{todayAssignments.length}</p>
-          {todayAssignments.length > 0 ? (
+          {loading ? (
+            <div className="h-7 w-10 bg-[#F1F5F9] rounded-lg animate-pulse" />
+          ) : (
+            <p className="text-2xl font-bold text-[#0F172A]">{todayAssignments.length}</p>
+          )}
+          {!loading && (todayAssignments.length > 0 ? (
             <p className="text-xs text-[#16A34A] font-medium mt-2">{propertiesWithAssignments.length} Objekte</p>
           ) : (
             <p className="text-xs text-[#94A3B8] mt-2">Keine Einsätze</p>
-          )}
+          ))}
         </div>
         <div className="card p-5 sm:p-6 col-span-2 lg:col-span-1">
           <p className="section-label mb-3">Krankmeldungen</p>
-          <p className="text-2xl font-bold text-[#0F172A]">{sickCount}</p>
-          {openSickCount > 0 ? (
+          {loading ? (
+            <div className="h-7 w-10 bg-[#F1F5F9] rounded-lg animate-pulse" />
+          ) : (
+            <p className="text-2xl font-bold text-[#0F172A]">{sickCount}</p>
+          )}
+          {!loading && (openSickCount > 0 ? (
             <p className="text-xs text-[#EF4444] font-semibold mt-2">{openSickCount} Ersatz fehlt</p>
           ) : coveredSickCount > 0 ? (
             <p className="text-xs text-[#16A34A] font-medium mt-2">{coveredSickCount} mit Ersatz</p>
           ) : (
             <p className="text-xs text-[#16A34A] font-medium mt-2">Alles erledigt</p>
-          )}
+          ))}
         </div>
       </div>
 

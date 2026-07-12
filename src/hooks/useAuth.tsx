@@ -7,10 +7,12 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   mustChangePassword: boolean;
+  passwordRecovery: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signUp: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   changePassword: (newPassword: string) => Promise<{ error: string | null }>;
+  requestPasswordReset: (email: string) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [mustChangePassword, setMustChangePassword] = useState(false);
+  const [passwordRecovery, setPasswordRecovery] = useState(false);
 
   useEffect(() => {
     let initialized = false;
@@ -32,6 +35,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setMustChangePassword(false);
         setLoading(false);
         return;
+      }
+      if (event === 'PASSWORD_RECOVERY') {
+        setPasswordRecovery(true);
       }
       setSession(session);
       setUser(session?.user ?? null);
@@ -86,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setMustChangePassword(false);
+    setPasswordRecovery(false);
   };
 
   const changePassword = async (newPassword: string) => {
@@ -95,12 +102,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (!error) {
       setMustChangePassword(false);
+      setPasswordRecovery(false);
     }
     return { error: error?.message ?? null };
   };
 
+  // Sends the user a password reset email (only ever changes the password,
+  // never the login email — see changePassword above).
+  const requestPasswordReset = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+    return { error: error?.message ?? null };
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, loading, mustChangePassword, signIn, signUp, signOut, changePassword }}>
+    <AuthContext.Provider value={{ user, session, loading, mustChangePassword, passwordRecovery, signIn, signUp, signOut, changePassword, requestPasswordReset }}>
       {children}
     </AuthContext.Provider>
   );
