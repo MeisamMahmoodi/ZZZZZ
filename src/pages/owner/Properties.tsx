@@ -108,11 +108,10 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
     if (error) { addToast('Fehler beim Speichern', 'error'); return; }
 
     if (data && newEmployeeIds.length > 0) {
+      // Objekte legen nur noch fest, wer daran arbeiten DARF (employee_properties).
+      // Die eigentlichen Einsätze — einzeln oder als wiederkehrende Serie —
+      // werden bewusst getrennt im Einsätze-Bereich erstellt.
       await supabase.from('employee_properties').insert(newEmployeeIds.map(eid => ({ employee_id: eid, property_id: data.id })));
-      const todayStr = new Date().toISOString().split('T')[0];
-      if (newDays.includes(todayDay)) {
-        await supabase.from('assignments').insert(newEmployeeIds.map(eid => ({ property_id: data.id, employee_id: eid, date: todayStr, status: 'assigned' })));
-      }
     }
 
     setAddModal(false); resetForm(); onRefresh(); addToast('Objekt hinzugefügt');

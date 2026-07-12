@@ -1,12 +1,20 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Calendar, MapPin, Clock, Check, X, AlertTriangle, ChevronLeft, ChevronRight, Trash2 } from 'lucide-react';
+import { Plus, Calendar, MapPin, Clock, Check, X, AlertTriangle, ChevronLeft, ChevronRight, Trash2, Repeat, CalendarDays } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Modal } from '../../components/shared/Modal';
 import { Avatar } from '../../components/shared/Avatar';
 import { useToast } from '../../components/shared/Toast';
-import { formatTime } from '../../lib/utils';
+import { formatTime, getDayAbbrev } from '../../lib/utils';
 import { sendPushToEmployee } from '../../hooks/usePushNotifications';
 import type { Employee, Property, Assignment, Company, SickReport } from '../../lib/types';
+
+const weekdayOptions = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+const durationOptions = [
+  { weeks: 4, label: '4 Wochen' },
+  { weeks: 8, label: '8 Wochen' },
+  { weeks: 12, label: '12 Wochen' },
+  { weeks: 26, label: '26 Wochen' },
+];
 
 interface AssignmentsProps {
   company: Company;
@@ -38,6 +46,18 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const [saving, setSaving] = useState(false);
   const [removeConfirm, setRemoveConfirm] = useState<AssignmentWithDetails | null>(null);
   const [deleteGroupConfirm, setDeleteGroupConfirm] = useState<AssignmentWithDetails[] | null>(null);
+  const [deleteSeriesConfirm, setDeleteSeriesConfirm] = useState<{ recurringOrderId: string; propertyName: string } | null>(null);
+
+  // Wiederkehrender Auftrag
+  const [orderType, setOrderType] = useState<'single' | 'recurring'>('single');
+  const [recPropertyId, setRecPropertyId] = useState('');
+  const [recWeekdays, setRecWeekdays] = useState<string[]>([]);
+  const [recEmployeeIds, setRecEmployeeIds] = useState<string[]>([]);
+  const [recTimeFrom, setRecTimeFrom] = useState('');
+  const [recTimeTo, setRecTimeTo] = useState('');
+  const [recStartDate, setRecStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [recDurationWeeks, setRecDurationWeeks] = useState(8);
+  const [recSaving, setRecSaving] = useState(false);
 
   useEffect(() => { loadData(); }, [company.id, refreshKey, selectedDate]);
 
@@ -139,6 +159,106 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
     onRefresh(); addToast('Einsatz erstellt und Mitarbeiter benachrichtigt');
   };
 
+  const toggleRecWeekday = (day: string) => {
+    setRecWeekdays(prev => prev.includes(day) ? prev.filter(d => d !== day) : [...prev, day]);
+  };
+
+  const toggleRecEmployee = (empId: string) => {
+    setRecEmployeeIds(prev => prev.includes(empId) ? prev.filter(id => id !== empId) : [...prev, empId]);
+  };
+
+  const recEndDate = useMemo(() => {
+    const d = new Date(recStartDate);
+    d.setDate(d.getDate() + recDurationWeeks * 7 - 1);
+    return d.toISOString().split('T')[0];
+  }, [recStartDate, recDurationWeeks]);
+
+  const handleAddRecurringOrder = async () => {
+    if (!recPropertyId || recWeekdays.length === 0 || recEmployeeIds.length === 0) {
+      addToast('Bitte alle Felder ausfüllen', 'error');
+      return;
+    }
+
+    const prop = properties.find(p => p.id === recPropertyId);
+    const timeFrom = recTimeFrom || prop?.time_from || null;
+    const timeTo = recTimeTo || prop?.time_to || null;
+
+    setRecSaving(true);
+
+    const { data: order, error: orderErr } = await supabase.from('recurring_orders').insert({
+      company_id: company.id,
+      property_id: recPropertyId,
+      employee_ids: recEmployeeIds,
+      weekdays: recWeekdays,
+      time_from: timeFrom,
+      time_to: timeTo,
+      start_date: recStartDate,
+      end_date: recEndDate,
+    }).select().maybeSingle();
+
+    if (orderErr || !order) {
+      addToast('Fehler beim Erstellen der Serie', 'error');
+      setRecSaving(false);
+      return;
+    }
+
+    // Alle passenden Daten im Zeitraum sammeln
+    const dates: string[] = [];
+    const cursor = new Date(recStartDate + 'T00:00:00');
+    const end = new Date(recEndDate + 'T00:00:00');
+    while (cursor <= end) {
+      if (recWeekdays.includes(getDayAbbrev(cursor))) {
+        dates.push(cursor.toISOString().split('T')[0]);
+      }
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
+    const inserts = dates.flatMap(date =>
+      recEmployeeIds.map(eid => ({
+        property_id: recPropertyId,
+        employee_id: eid,
+        date,
+        status: 'assigned',
+        time_from: recTimeFrom || null,
+        time_to: recTimeTo || null,
+        recurring_order_id: order.id,
+      }))
+    );
+
+    const { error: assignErr } = await supabase.from('assignments').insert(inserts);
+    setRecSaving(false);
+
+    if (assignErr) {
+      addToast('Serie angelegt, aber Fehler beim Erstellen der Einsätze', 'error');
+      return;
+    }
+
+    if (prop) {
+      const weekdayLabel = recWeekdays.join('/');
+      const pushTitle = `Neuer wiederkehrender Einsatz: ${prop.name}`;
+      const pushBody = `Jeden ${weekdayLabel}, ${formatTime(timeFrom || '')} – ${formatTime(timeTo || '')} Uhr, bis ${new Date(recEndDate).toLocaleDateString('de-DE')}`;
+      await Promise.all(recEmployeeIds.map(eid => sendPushToEmployee(eid, pushTitle, pushBody, { type: 'new_assignment' })));
+    }
+
+    setAddModal(false);
+    setOrderType('single');
+    setRecPropertyId(''); setRecWeekdays([]); setRecEmployeeIds([]); setRecTimeFrom(''); setRecTimeTo('');
+    setRecStartDate(new Date().toISOString().split('T')[0]); setRecDurationWeeks(8);
+    onRefresh();
+    addToast(`Serie erstellt — ${dates.length} Einsätze angelegt`);
+  };
+
+  const handleDeleteSeries = async (recurringOrderId: string) => {
+    // Nur noch nicht wahrgenommene Einsätze löschen — bereits ein-/ausgecheckte
+    // Termine bleiben als Nachweis/Abrechnungshistorie erhalten.
+    const { error: assignErr } = await supabase.from('assignments').delete().eq('recurring_order_id', recurringOrderId).eq('status', 'assigned');
+    if (assignErr) { addToast('Fehler beim Löschen der Serie', 'error'); return; }
+    await supabase.from('recurring_orders').delete().eq('id', recurringOrderId);
+    setDeleteSeriesConfirm(null);
+    onRefresh();
+    addToast('Serie gelöscht');
+  };
+
   const handleRemoveAssignment = async (assignment: AssignmentWithDetails) => {
     const { error } = await supabase.from('assignments').delete().eq('id', assignment.id);
     if (error) { addToast('Fehler beim Entfernen', 'error'); return; }
@@ -173,7 +293,19 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   };
 
   const selectedProperty = properties.find(p => p.id === newPropertyId);
+  const recSelectedProperty = properties.find(p => p.id === recPropertyId);
   const employeesForProperty = activeEmployees;
+
+  const handleRecPropertyChange = (propId: string) => {
+    setRecPropertyId(propId);
+    const prop = properties.find(p => p.id === propId);
+    if (prop) {
+      setRecTimeFrom(prop.time_from); setRecTimeTo(prop.time_to);
+      setRecWeekdays(prop.cleaning_days || []);
+    } else {
+      setRecTimeFrom(''); setRecTimeTo(''); setRecWeekdays([]);
+    }
+  };
 
   const statusLabel = (status: string) => {
     switch (status) {
@@ -226,7 +358,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Einsätze</h1>
         <button onClick={() => setAddModal(true)} className="btn-primary flex items-center justify-center gap-2">
-          <Plus size={16} /> Einsatz erstellen
+          <Plus size={16} /> Auftrag erstellen
         </button>
       </div>
 
@@ -279,10 +411,26 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
                         <Check size={12} /> Ersatz: {replacementEmployee.first_name} {replacementEmployee.last_name}
                       </p>
                     )}
+                    {firstA?.recurring_order_id && (
+                      <p className="text-[10px] text-[#8B5CF6] font-semibold mt-1.5 flex items-center gap-1.5">
+                        <Repeat size={11} /> Teil einer Serie
+                      </p>
+                    )}
                   </div>
-                  <button onClick={() => setDeleteGroupConfirm(propAssignments)} className="p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors text-[#F87171] shrink-0" title="Einsatz löschen">
-                    <Trash2 size={15} />
-                  </button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {firstA?.recurring_order_id && (
+                      <button
+                        onClick={() => setDeleteSeriesConfirm({ recurringOrderId: firstA.recurring_order_id as string, propertyName: property.name })}
+                        className="p-1.5 rounded-lg hover:bg-[#F5F3FF] transition-colors text-[#8B5CF6]"
+                        title="Ganze Serie löschen"
+                      >
+                        <Repeat size={15} />
+                      </button>
+                    )}
+                    <button onClick={() => setDeleteGroupConfirm(propAssignments)} className="p-1.5 rounded-lg hover:bg-[#FEF2F2] transition-colors text-[#F87171]" title="Diesen Tag löschen">
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="divide-y divide-[#F1F5F9]">
@@ -331,51 +479,158 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
       {/* Add Assignment Modal */}
       <Modal open={addModal} onClose={() => setAddModal(false)} width="max-w-md">
         <div className="p-8">
-          <h2 className="text-lg font-bold text-[#0F172A] mb-6">Einsatz erstellen</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Datum</label>
-              <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="input-field" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Objekt <span className="text-[#EF4444]">*</span></label>
-              <select value={newPropertyId} onChange={e => {
-                setNewPropertyId(e.target.value);
-                const prop = properties.find(p => p.id === e.target.value);
-                if (prop) { setNewTimeFrom(prop.time_from); setNewTimeTo(prop.time_to); }
-                else { setNewTimeFrom(''); setNewTimeTo(''); }
-              }} className="input-field">
-                <option value="">Objekt auswählen...</option>
-                {properties.map(p => <option key={p.id} value={p.id}>{p.name} — {p.address}</option>)}
-              </select>
-            </div>
-            {selectedProperty && (
-              <div className="bg-[#F8FAFC] rounded-xl p-3.5 text-sm text-[#64748B]">
-                <p className="flex items-center gap-1.5"><MapPin size={14} className="text-[#94A3B8]" /> {selectedProperty.address}</p>
-              </div>
-            )}
-            <div className="flex gap-3">
-              <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit von</label><input type="time" value={newTimeFrom} onChange={e => setNewTimeFrom(e.target.value)} className="input-field" /></div>
-              <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit bis</label><input type="time" value={newTimeTo} onChange={e => setNewTimeTo(e.target.value)} className="input-field" /></div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-[#0F172A] mb-2">Mitarbeiter zuweisen</label>
-              <div className="flex flex-wrap gap-2">
-                {employeesForProperty.map(emp => (
-                  <button key={emp.id} onClick={() => toggleEmployee(emp.id)}
-                    className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${newEmployeeIds.includes(emp.id) ? 'bg-[#22C55E] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
-                    {emp.first_name} {emp.last_name}
-                  </button>
-                ))}
-                {employeesForProperty.length === 0 && <span className="text-sm text-[#94A3B8]">Keine aktiven Mitarbeiter</span>}
-              </div>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3 mt-8">
-            <button onClick={() => setAddModal(false)} className="btn-ghost">Abbrechen</button>
-            <button onClick={handleAddAssignment} disabled={saving || !newPropertyId || !newDate || newEmployeeIds.length === 0} className="btn-primary">
-              {saving ? 'Wird erstellt...' : 'Einsatz erstellen'}
+          <h2 className="text-lg font-bold text-[#0F172A] mb-4">Auftrag erstellen</h2>
+
+          <div className="flex gap-2 mb-6 bg-[#F1F5F9] p-1 rounded-xl">
+            <button
+              onClick={() => setOrderType('single')}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${orderType === 'single' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B]'}`}
+            >
+              <CalendarDays size={14} /> Einzelauftrag
             </button>
+            <button
+              onClick={() => setOrderType('recurring')}
+              className={`flex-1 py-2 rounded-lg text-sm font-semibold flex items-center justify-center gap-1.5 transition-colors ${orderType === 'recurring' ? 'bg-white text-[#0F172A] shadow-sm' : 'text-[#64748B]'}`}
+            >
+              <Repeat size={14} /> Wiederkehrend
+            </button>
+          </div>
+
+          {orderType === 'single' ? (
+            <>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Datum</label>
+                  <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)} className="input-field" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Objekt <span className="text-[#EF4444]">*</span></label>
+                  <select value={newPropertyId} onChange={e => {
+                    setNewPropertyId(e.target.value);
+                    const prop = properties.find(p => p.id === e.target.value);
+                    if (prop) { setNewTimeFrom(prop.time_from); setNewTimeTo(prop.time_to); }
+                    else { setNewTimeFrom(''); setNewTimeTo(''); }
+                  }} className="input-field">
+                    <option value="">Objekt auswählen...</option>
+                    {properties.map(p => <option key={p.id} value={p.id}>{p.name} — {p.address}</option>)}
+                  </select>
+                </div>
+                {selectedProperty && (
+                  <div className="bg-[#F8FAFC] rounded-xl p-3.5 text-sm text-[#64748B]">
+                    <p className="flex items-center gap-1.5"><MapPin size={14} className="text-[#94A3B8]" /> {selectedProperty.address}</p>
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit von</label><input type="time" value={newTimeFrom} onChange={e => setNewTimeFrom(e.target.value)} className="input-field" /></div>
+                  <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit bis</label><input type="time" value={newTimeTo} onChange={e => setNewTimeTo(e.target.value)} className="input-field" /></div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#0F172A] mb-2">Mitarbeiter zuweisen</label>
+                  <div className="flex flex-wrap gap-2">
+                    {employeesForProperty.map(emp => (
+                      <button key={emp.id} onClick={() => toggleEmployee(emp.id)}
+                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${newEmployeeIds.includes(emp.id) ? 'bg-[#22C55E] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
+                        {emp.first_name} {emp.last_name}
+                      </button>
+                    ))}
+                    {employeesForProperty.length === 0 && <span className="text-sm text-[#94A3B8]">Keine aktiven Mitarbeiter</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-8">
+                <button onClick={() => setAddModal(false)} className="btn-ghost">Abbrechen</button>
+                <button onClick={handleAddAssignment} disabled={saving || !newPropertyId || !newDate || newEmployeeIds.length === 0} className="btn-primary">
+                  {saving ? 'Wird erstellt...' : 'Einsatz erstellen'}
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Objekt <span className="text-[#EF4444]">*</span></label>
+                  <select value={recPropertyId} onChange={e => handleRecPropertyChange(e.target.value)} className="input-field">
+                    <option value="">Objekt auswählen...</option>
+                    {properties.map(p => <option key={p.id} value={p.id}>{p.name} — {p.address}</option>)}
+                  </select>
+                </div>
+                {recSelectedProperty && (
+                  <div className="bg-[#F8FAFC] rounded-xl p-3.5 text-sm text-[#64748B]">
+                    <p className="flex items-center gap-1.5"><MapPin size={14} className="text-[#94A3B8]" /> {recSelectedProperty.address}</p>
+                  </div>
+                )}
+                <div>
+                  <label className="block text-sm font-medium text-[#0F172A] mb-2">Wochentage <span className="text-[#EF4444]">*</span></label>
+                  <div className="flex flex-wrap gap-2">
+                    {weekdayOptions.map(day => (
+                      <button key={day} onClick={() => toggleRecWeekday(day)}
+                        className={`w-11 h-9 rounded-xl text-sm font-semibold transition-all duration-200 ${recWeekdays.includes(day) ? 'bg-[#8B5CF6] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
+                        {day}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit von</label><input type="time" value={recTimeFrom} onChange={e => setRecTimeFrom(e.target.value)} className="input-field" /></div>
+                  <div className="flex-1"><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Uhrzeit bis</label><input type="time" value={recTimeTo} onChange={e => setRecTimeTo(e.target.value)} className="input-field" /></div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#0F172A] mb-2">Mitarbeiter zuweisen</label>
+                  <div className="flex flex-wrap gap-2">
+                    {employeesForProperty.map(emp => (
+                      <button key={emp.id} onClick={() => toggleRecEmployee(emp.id)}
+                        className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${recEmployeeIds.includes(emp.id) ? 'bg-[#8B5CF6] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
+                        {emp.first_name} {emp.last_name}
+                      </button>
+                    ))}
+                    {employeesForProperty.length === 0 && <span className="text-sm text-[#94A3B8]">Keine aktiven Mitarbeiter</span>}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Startdatum</label>
+                  <input type="date" value={recStartDate} onChange={e => setRecStartDate(e.target.value)} className="input-field" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-[#0F172A] mb-2">Laufzeit</label>
+                  <div className="flex flex-wrap gap-2">
+                    {durationOptions.map(opt => (
+                      <button key={opt.weeks} onClick={() => setRecDurationWeeks(opt.weeks)}
+                        className={`px-3.5 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${recDurationWeeks === opt.weeks ? 'bg-[#8B5CF6] text-white shadow-sm' : 'bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0]'}`}>
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="text-xs text-[#94A3B8] mt-2">Bis {new Date(recEndDate).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })}</p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 mt-8">
+                <button onClick={() => setAddModal(false)} className="btn-ghost">Abbrechen</button>
+                <button
+                  onClick={handleAddRecurringOrder}
+                  disabled={recSaving || !recPropertyId || recWeekdays.length === 0 || recEmployeeIds.length === 0}
+                  className="btn-primary !bg-[#8B5CF6] hover:!bg-[#7C3AED]"
+                >
+                  {recSaving ? 'Wird erstellt...' : 'Serie erstellen'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </Modal>
+
+      {/* Delete Series Confirmation */}
+      <Modal open={!!deleteSeriesConfirm} onClose={() => setDeleteSeriesConfirm(null)} width="max-w-sm">
+        <div className="p-8">
+          <div className="w-12 h-12 rounded-2xl bg-[#F5F3FF] flex items-center justify-center mb-5">
+            <Repeat size={22} className="text-[#8B5CF6]" />
+          </div>
+          <h2 className="text-lg font-bold text-[#0F172A] mb-2">Ganze Serie löschen?</h2>
+          <p className="text-sm text-[#64748B] leading-relaxed mb-8">
+            {deleteSeriesConfirm && `Alle noch ausstehenden Einsätze der Serie bei ${deleteSeriesConfirm.propertyName} werden gelöscht. Bereits ein- oder ausgecheckte Einsätze bleiben als Nachweis erhalten.`}
+          </p>
+          <div className="flex justify-end gap-3">
+            <button onClick={() => setDeleteSeriesConfirm(null)} className="btn-ghost">Abbrechen</button>
+            <button onClick={() => deleteSeriesConfirm && handleDeleteSeries(deleteSeriesConfirm.recurringOrderId)} className="btn-danger">Serie löschen</button>
           </div>
         </div>
       </Modal>

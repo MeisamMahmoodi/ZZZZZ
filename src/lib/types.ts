@@ -66,6 +66,20 @@ export interface Assignment {
   checkin_lng?: number | null;
   checkout_lat?: number | null;
   checkout_lng?: number | null;
+  recurring_order_id?: string | null;
+}
+
+export interface RecurringOrder {
+  id: string;
+  company_id: string;
+  property_id: string;
+  employee_ids: string[];
+  weekdays: string[];
+  time_from: string | null;
+  time_to: string | null;
+  start_date: string;
+  end_date: string;
+  created_at: string;
 }
 
 export interface SickReport {
