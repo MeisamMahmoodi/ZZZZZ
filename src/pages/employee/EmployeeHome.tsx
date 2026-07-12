@@ -587,6 +587,7 @@ await supabase.from('assignments').insert({
           onQueued={handleCheckInQueued}
           onCancel={() => setShowCheckInFlow(false)}
           rtl={rtl}
+          lang={lang}
         />
       )}
 
@@ -600,6 +601,7 @@ await supabase.from('assignments').insert({
           onQueued={handleCheckOutQueued}
           onCancel={() => setShowCheckOutFlow(false)}
           rtl={rtl}
+          lang={lang}
         />
       )}
     </div>

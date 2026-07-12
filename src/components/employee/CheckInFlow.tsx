@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react';
 import { Camera, MapPin, Check, X, RotateCcw, Loader2, AlertTriangle, Navigation, CloudOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { addPendingAction, isLikelyNetworkError } from '../../lib/offlineQueue';
+import { t, type Lang } from '../../lib/i18n';
 
 interface CheckInFlowProps {
   assignmentId: string;
@@ -15,6 +16,7 @@ interface CheckInFlowProps {
   onQueued: () => void;
   onCancel: () => void;
   rtl?: boolean;
+  lang?: Lang;
 }
 
 type Step = 'gps' | 'camera' | 'preview' | 'uploading' | 'done' | 'queued';
@@ -47,7 +49,7 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
 export function CheckInFlow({
   assignmentId, propertyId, propertyName, propertyAddress,
   propertyLat, propertyLng, propertyRadiusM,
-  onSuccess, onQueued, onCancel, rtl,
+  onSuccess, onQueued, onCancel, rtl, lang = 'de',
 }: CheckInFlowProps) {
   const [step, setStep] = useState<Step>('gps');
   const [gpsState, setGpsState] = useState<GpsState>('idle');
@@ -375,6 +377,7 @@ export function CheckInFlow({
             <Loader2 size={40} className="text-[#22C55E] animate-spin mb-5" />
             <p className="text-sm font-semibold text-[#0F172A]">Einchecken...</p>
             <p className="text-xs text-[#94A3B8] mt-1">Foto wird hochgeladen</p>
+            <p className="text-lg font-extrabold text-[#DC2626] text-center mt-5">{t(lang, 'dontCloseAppUploading')}</p>
           </div>
         )}
 

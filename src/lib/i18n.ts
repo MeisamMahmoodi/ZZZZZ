@@ -96,6 +96,7 @@ type TranslationKeys = {
   assignmentStarted: string;
   notCheckedIn: string;
   checkInNow: string;
+  dontCloseAppUploading: string;
 };
 
 const translations: Record<Lang, TranslationKeys> = {
@@ -171,6 +172,7 @@ const translations: Record<Lang, TranslationKeys> = {
     assignmentStarted: 'Einsatz hat begonnen',
     notCheckedIn: 'Du hast dich noch nicht eingecheckt',
     checkInNow: 'Jetzt einchecken',
+    dontCloseAppUploading: 'Bitte App jetzt nicht schließen!',
   },
   ro: {
     goodMorning: 'Buna dimineata',
@@ -244,6 +246,7 @@ const translations: Record<Lang, TranslationKeys> = {
     assignmentStarted: 'Sarcina a inceput',
     notCheckedIn: 'Nu ai facut check-in inca',
     checkInNow: 'Fa check-in acum',
+    dontCloseAppUploading: 'Te rugam nu inchide aplicatia acum!',
   },
   ar: {
     goodMorning: 'صباح الخير',
@@ -317,6 +320,7 @@ const translations: Record<Lang, TranslationKeys> = {
     assignmentStarted: 'بدأت المهمة',
     notCheckedIn: 'لم تسجل حضورك بعد',
     checkInNow: 'سجل حضورك الآن',
+    dontCloseAppUploading: 'الرجاء عدم إغلاق التطبيق الآن!',
   },
   pl: {
     goodMorning: 'Dzien dobry',
@@ -390,6 +394,7 @@ const translations: Record<Lang, TranslationKeys> = {
     assignmentStarted: 'Zadanie sie rozpoczelo',
     notCheckedIn: 'Nie zrobiles jeszcze check-ina',
     checkInNow: 'Zrob check-in teraz',
+    dontCloseAppUploading: 'Prosze nie zamykac teraz aplikacji!',
   },
   en: {
     goodMorning: 'Good morning',
@@ -463,6 +468,7 @@ const translations: Record<Lang, TranslationKeys> = {
     assignmentStarted: 'Assignment has started',
     notCheckedIn: 'You have not checked in yet',
     checkInNow: 'Check in now',
+    dontCloseAppUploading: "Please don't close the app now!",
   },
 };
 

@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Camera, Check, X, RotateCcw, Loader2, Clock, CloudOff } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { addPendingAction, isLikelyNetworkError } from '../../lib/offlineQueue';
+import { t, type Lang } from '../../lib/i18n';
 
 interface CheckOutFlowProps {
   assignmentId: string;
@@ -11,6 +12,7 @@ interface CheckOutFlowProps {
   onQueued: () => void;
   onCancel: () => void;
   rtl?: boolean;
+  lang?: Lang;
 }
 
 type Step = 'intro' | 'camera' | 'preview' | 'uploading' | 'done' | 'queued';
@@ -22,7 +24,7 @@ function formatDuration(ms: number): string {
   return h > 0 ? `${h}h ${m}min` : `${m}min`;
 }
 
-export function CheckOutFlow({ assignmentId, propertyName, checkedInAt, onSuccess, onQueued, onCancel, rtl }: CheckOutFlowProps) {
+export function CheckOutFlow({ assignmentId, propertyName, checkedInAt, onSuccess, onQueued, onCancel, rtl, lang = 'de' }: CheckOutFlowProps) {
   const [step, setStep] = useState<Step>('intro');
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState('');
@@ -256,6 +258,7 @@ export function CheckOutFlow({ assignmentId, propertyName, checkedInAt, onSucces
             <Loader2 size={40} className="text-[#F97316] animate-spin mb-5" />
             <p className="text-sm font-semibold text-[#0F172A]">Auschecken...</p>
             <p className="text-xs text-[#94A3B8] mt-1">Foto wird hochgeladen</p>
+            <p className="text-lg font-extrabold text-[#DC2626] text-center mt-5">{t(lang, 'dontCloseAppUploading')}</p>
           </div>
         )}
 
