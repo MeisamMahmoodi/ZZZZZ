@@ -7,10 +7,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-// Grundgebühr + Preis pro Mitarbeiter, ersetzt die alten drei festen
-// Starter/Business/Premium-Preise (siehe src/lib/plans.ts für die
+// Grundgebühr + Preis pro Mitarbeiter (siehe src/lib/plans.ts für die
 // dazugehörige Preisformel, muss mit diesen IDs übereinstimmen).
-const BASE_FEE_PRICE_ID = "price_1TstyKRoktFw8HCnHaClxF9k";
+// Grundgebühr-Price am 14.07. von 29€ auf 19€ Price-ID gewechselt (alte
+// 29€-Price ist in Stripe archiviert, nicht gelöscht).
+const BASE_FEE_PRICE_ID = "price_1Tt5hSRoktFw8HCnwAy5U1I0";
 const PER_EMPLOYEE_PRICE_ID = "price_1TstyTRoktFw8HCnvWdYVNda";
 
 Deno.serve(async (req: Request) => {

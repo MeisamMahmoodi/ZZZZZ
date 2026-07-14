@@ -16,10 +16,21 @@ const FEATURES = [
   'Mehrsprachige Mitarbeiter-App (8 Sprachen)',
 ];
 
+// Blink-Preisformel laut deren eigener Preisseite (blink.de/preise, Stand
+// Juli 2026): 149€ Paketpreis (Standard) + 4,90€ pro Nutzer. Exakte Formel,
+// deshalb hier direkt nachrechenbar statt geschätzt.
+const BLINK_BASE = 149;
+const BLINK_PER_USER = 4.9;
+function blinkPrice(employeeCount: number): number {
+  return BLINK_BASE + Math.max(1, employeeCount) * BLINK_PER_USER;
+}
+
 export function Pricing({ onContinue }: PricingProps) {
   const [employeeCount, setEmployeeCount] = useState(15);
   const enterprise = isEnterpriseRange(employeeCount);
   const price = calculateMonthlyPrice(employeeCount);
+  const blinkComparison = Math.round(blinkPrice(employeeCount));
+  const savings = blinkComparison - price;
 
   const mailSubject = encodeURIComponent('Meizo Anfrage');
   const mailBody = encodeURIComponent(
@@ -31,6 +42,9 @@ export function Pricing({ onContinue }: PricingProps) {
       {/* Header */}
       <header className="pt-10 pb-6 px-6 text-center">
         <img src="/meizoLogoL.jpeg" alt="meizo" className="h-12 w-auto mx-auto mb-6 bg-white rounded-xl px-3 py-1.5 shadow-sm" />
+        <p className="text-xs font-bold uppercase tracking-widest text-[#16A34A] mb-3">
+          Nutzen Sie schon Blink oder Crewmeister? Ein Wechsel lohnt sich.
+        </p>
         <h1 className="text-3xl sm:text-4xl font-bold text-[#0F172A] tracking-tight">
           Ein Preis. Alle Funktionen.
         </h1>
@@ -73,6 +87,17 @@ export function Pricing({ onContinue }: PricingProps) {
               <span>{ENTERPRISE_THRESHOLD}+ (individuelles Angebot)</span>
             </div>
 
+            {!enterprise && savings > 0 && (
+              <div className="rounded-2xl bg-[#F0FDF4] border border-[#BBF7D0] px-5 py-4 mb-6 text-center">
+                <p className="text-sm text-[#15803D] font-semibold">
+                  Sie sparen {savings} €/Monat gegenüber Blink
+                </p>
+                <p className="text-xs text-[#4D7C61] mt-1">
+                  Blink kostet bei {employeeCount} Mitarbeitern ca. {blinkComparison} €/Monat (149 € Paketpreis + 4,90 €/Nutzer, Stand blink.de/preise) — bei uns ist DATEV-Export und Ersatzsuche schon inklusive, keine Zusatzmodule wie bei Crewmeister.
+                </p>
+              </div>
+            )}
+
             <div className="h-px bg-[#F1F5F9] mb-6" />
 
             <ul className="space-y-3 mb-8">
@@ -105,8 +130,18 @@ export function Pricing({ onContinue }: PricingProps) {
             </a>
           </div>
 
+          {/* Wechsel-Garantie */}
+          <div className="mt-6 flex flex-col items-center gap-1.5 text-center">
+            <p className="text-xs text-[#64748B]">
+              Schon bei Blink oder Crewmeister? Wir übernehmen Ihre Mitarbeiter- und Objektdaten kostenlos.
+            </p>
+            <p className="text-xs text-[#64748B]">
+              Keine Vertragsbindung, jederzeit kündbar.
+            </p>
+          </div>
+
           {/* Already paid */}
-          <div className="mt-8 text-center">
+          <div className="mt-6 text-center">
             <p className="text-sm text-[#94A3B8]">
               Sie haben bereits ein Konto?{' '}
               <button
