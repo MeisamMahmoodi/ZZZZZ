@@ -3,7 +3,7 @@ import { MapPin, Clock, LogIn, Mail, LogOut, Heart, Bell, CheckCircle, CalendarD
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useLang } from '../../hooks/useLang';
-import { formatDateLong, formatTime } from '../../lib/utils';
+import { formatDateLong, formatTime, toLocalDateStr } from '../../lib/utils';
 import { langNames, langFlags, langLocale, type Lang } from '../../lib/i18n';
 import { CheckInFlow } from '../../components/employee/CheckInFlow';
 import { CheckOutFlow } from '../../components/employee/CheckOutFlow';
@@ -53,7 +53,7 @@ export function EmployeeHome({ onSickLeave }: EmployeeHomeProps) {
   }, []);
 
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = toLocalDateStr(today);
 
   useEffect(() => {
     if (!user) return;
@@ -198,7 +198,7 @@ const { data: upcoming } = await supabase
   const handleMarkAsHealthy = async () => {
     if (!employee) return;
     try {
-      const todayStr = new Date().toISOString().split('T')[0];
+      const todayStr = toLocalDateStr(new Date());
 await supabase.from('sick_reports').delete()
   .eq('employee_id', employee.id)
   .lte('date', todayStr)

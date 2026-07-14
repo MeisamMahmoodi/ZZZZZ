@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react';
 import { AlertTriangle, Star, Bell } from 'lucide-react';
 import { Modal } from '../shared/Modal';
 import { Avatar } from '../shared/Avatar';
-import { formatTime } from '../../lib/utils';
+import { formatTime, toLocalDateStr } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
 import { sendPushToEmployee } from '../../hooks/usePushNotifications';
 import type { Employee, Property, SickReport, EmployeeProperty, Assignment } from '../../lib/types';
@@ -37,7 +37,7 @@ export function ReplacementModal({
 
   const availableEmployees = useMemo((): AvailableEmployee[] => {
     const sickEmployeeId = sickReport.employee_id;
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = toLocalDateStr(new Date());
 
     const alreadyAssignedToProperty = new Set(
       assignments
@@ -72,7 +72,7 @@ export function ReplacementModal({
 
   const handleSelect = (emp: AvailableEmployee) => {
     setSelectedEmployee(emp);
-    const todayStr = new Date().toISOString().split('T')[0];
+    const todayStr = toLocalDateStr(new Date());
     const empAssignments = assignments.filter(a => a.employee_id === emp.id && a.date === todayStr);
     const timeInfo = empAssignments.length > 0
       ? `Du hast heute bereits eine Schicht.`

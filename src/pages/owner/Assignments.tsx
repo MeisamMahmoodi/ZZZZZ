@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { Modal } from '../../components/shared/Modal';
 import { Avatar } from '../../components/shared/Avatar';
 import { useToast } from '../../components/shared/Toast';
-import { formatTime, getDayAbbrev } from '../../lib/utils';
+import { formatTime, getDayAbbrev, toLocalDateStr } from '../../lib/utils';
 import { sendPushToEmployee } from '../../hooks/usePushNotifications';
 import type { Employee, Property, Assignment, Company, SickReport } from '../../lib/types';
 
@@ -35,7 +35,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const [sickReports, setSickReports] = useState<SickReport[]>([]);
   const [replacementRequests, setReplacementRequests] = useState<{ id: string; sick_report_id: string; property_id: string; status: string; replacement_employee_id: string; replacement_employee?: Employee }[]>([]);
   const [addModal, setAddModal] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(toLocalDateStr(new Date()));
   const [loading, setLoading] = useState(false);
   const { addToast } = useToast();
 
@@ -47,7 +47,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const [dragOverCell, setDragOverCell] = useState<string | null>(null);
 
   const [newPropertyId, setNewPropertyId] = useState('');
-  const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [newDate, setNewDate] = useState(toLocalDateStr(new Date()));
   const [newEmployeeIds, setNewEmployeeIds] = useState<string[]>([]);
   const [newTimeFrom, setNewTimeFrom] = useState('');
   const [newTimeTo, setNewTimeTo] = useState('');
@@ -63,7 +63,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const [recEmployeeIds, setRecEmployeeIds] = useState<string[]>([]);
   const [recTimeFrom, setRecTimeFrom] = useState('');
   const [recTimeTo, setRecTimeTo] = useState('');
-  const [recStartDate, setRecStartDate] = useState(new Date().toISOString().split('T')[0]);
+  const [recStartDate, setRecStartDate] = useState(toLocalDateStr(new Date()));
   const [recDurationWeeks, setRecDurationWeeks] = useState(8);
   const [recSaving, setRecSaving] = useState(false);
 
@@ -115,7 +115,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
     for (let i = 0; i < 7; i++) {
       const cur = new Date(monday);
       cur.setDate(monday.getDate() + i);
-      dates.push(cur.toISOString().split('T')[0]);
+      dates.push(toLocalDateStr(cur));
     }
     return { start: dates[0], dates };
   }
@@ -219,7 +219,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
     }
 
     setSaving(false); setAddModal(false);
-    setNewPropertyId(''); setNewDate(new Date().toISOString().split('T')[0]); setNewEmployeeIds([]); setNewTimeFrom(''); setNewTimeTo('');
+    setNewPropertyId(''); setNewDate(toLocalDateStr(new Date())); setNewEmployeeIds([]); setNewTimeFrom(''); setNewTimeTo('');
     onRefresh(); addToast('Einsatz erstellt und Mitarbeiter benachrichtigt');
   };
 
@@ -234,7 +234,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const recEndDate = useMemo(() => {
     const d = new Date(recStartDate);
     d.setDate(d.getDate() + recDurationWeeks * 7 - 1);
-    return d.toISOString().split('T')[0];
+    return toLocalDateStr(d);
   }, [recStartDate, recDurationWeeks]);
 
   const handleAddRecurringOrder = async () => {
@@ -272,7 +272,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
     const end = new Date(recEndDate + 'T00:00:00');
     while (cursor <= end) {
       if (recWeekdays.includes(getDayAbbrev(cursor))) {
-        dates.push(cursor.toISOString().split('T')[0]);
+        dates.push(toLocalDateStr(cursor));
       }
       cursor.setDate(cursor.getDate() + 1);
     }
@@ -307,7 +307,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
     setAddModal(false);
     setOrderType('single');
     setRecPropertyId(''); setRecWeekdays([]); setRecEmployeeIds([]); setRecTimeFrom(''); setRecTimeTo('');
-    setRecStartDate(new Date().toISOString().split('T')[0]); setRecDurationWeeks(8);
+    setRecStartDate(toLocalDateStr(new Date())); setRecDurationWeeks(8);
     onRefresh();
     addToast(`Serie erstellt — ${dates.length} Einsätze angelegt`);
   };
@@ -412,10 +412,10 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const dateNav = (direction: number) => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + direction * (viewMode === 'week' ? 7 : 1));
-    setSelectedDate(d.toISOString().split('T')[0]);
+    setSelectedDate(toLocalDateStr(d));
   };
 
-  const isToday = selectedDate === new Date().toISOString().split('T')[0];
+  const isToday = selectedDate === toLocalDateStr(new Date());
 
   const weekRangeLabel = (() => {
     const start = new Date(currentWeek.dates[0] + 'T00:00:00');
@@ -466,7 +466,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
             <ChevronRight size={18} />
           </button>
           {!isToday && (
-            <button onClick={() => setSelectedDate(new Date().toISOString().split('T')[0])} className="px-3.5 py-2 rounded-xl text-sm font-semibold bg-[#0F172A] text-white hover:bg-[#334155] transition-colors ml-1">
+            <button onClick={() => setSelectedDate(toLocalDateStr(new Date()))} className="px-3.5 py-2 rounded-xl text-sm font-semibold bg-[#0F172A] text-white hover:bg-[#334155] transition-colors ml-1">
               Heute
             </button>
           )}
@@ -793,7 +793,7 @@ interface WeekGridProps {
 const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
 
 function WeekGrid({ weekDates, employees, weekAssignments, isEmployeeSickOnDate, onDropAssignment, dragOverCell, setDragOverCell }: WeekGridProps) {
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = toLocalDateStr(new Date());
 
   const cellKey = (empId: string, date: string) => `${empId}__${date}`;
 

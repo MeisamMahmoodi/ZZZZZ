@@ -21,6 +21,15 @@ export function formatTime(time: string): string {
   return `${h}:${m}`;
 }
 
+// WICHTIG: niemals date.toISOString().split('T')[0] verwenden, um aus einem
+// lokal konstruierten Date ein YYYY-MM-DD zu machen — toISOString() rechnet
+// zuerst in UTC um. In Deutschland (UTC+1/+2) rutscht dabei ein lokales
+// Mitternachts-Datum auf den Vortag zurück (z.B. Mo 13. wird zu So 12.).
+// Dieser Helper bleibt konsequent in lokaler Zeit.
+export function toLocalDateStr(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
 export function getDayAbbrev(date: Date): string {
   const days = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
   return days[date.getDay()];

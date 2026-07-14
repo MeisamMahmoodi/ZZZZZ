@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { calculateMonthlyPrice } from '../../lib/plans';
+import { toLocalDateStr } from '../../lib/utils';
 import {
   Building2, Users, ShieldCheck, LogOut, ChevronDown, ChevronUp,
   Plus, X, Eye, EyeOff, AlertTriangle, Calendar, CreditCard,
@@ -70,9 +71,9 @@ async function callAdminAction(action: string, payload: Record<string, unknown>,
 function CreateOwnerModal({ onClose, onCreated, token }: { onClose: () => void; onCreated: () => void; token?: string }) {
   const [form, setForm] = useState({
     owner_name: '', company_name: '', email: '', password: '',
-    contract_start: new Date().toISOString().split('T')[0],
+    contract_start: toLocalDateStr(new Date()),
     paid_until: '',
-    trial_ends_at: (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split('T')[0]; })(),
+    trial_ends_at: (() => { const d = new Date(); d.setDate(d.getDate() + 30); return toLocalDateStr(d); })(),
   });
   const [showPw, setShowPw] = useState(false);
   const [loading, setLoading] = useState(false);

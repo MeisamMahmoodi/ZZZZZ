@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays, AlertCircle, AlarmClock, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
-import { formatDateLong, formatTime, getTodayDayAbbrev } from '../../lib/utils';
+import { formatDateLong, formatTime, getTodayDayAbbrev, toLocalDateStr } from '../../lib/utils';
 import type { Employee, Property, Assignment, SickReport, EmployeeProperty } from '../../lib/types';
 import { ReplacementModal } from '../../components/owner/ReplacementModal';
 import { Modal } from '../../components/shared/Modal';
@@ -51,7 +51,7 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
   }, []);
 
   const today = new Date();
-  const todayStr = today.toISOString().split('T')[0];
+  const todayStr = toLocalDateStr(today);
   const todayDay = getTodayDayAbbrev();
   const isWeekend = todayDay === 'Sa' || todayDay === 'So';
 

@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
 import { useLang } from '../../hooks/useLang';
 import { langLocale } from '../../lib/i18n';
+import { toLocalDateStr } from '../../lib/utils';
 
 interface SickLeaveProps {
   onBack: () => void;
@@ -35,11 +36,11 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
     return today;
   };
 
-  const dateStr = getSelectedDate().toISOString().split('T')[0];
+  const dateStr = toLocalDateStr(getSelectedDate());
   const minEndDate = (() => {
     const d = new Date(dateStr + 'T00:00:00');
     d.setDate(d.getDate() + 1);
-    return d.toISOString().split('T')[0];
+    return toLocalDateStr(d);
   })();
 
   useEffect(() => {
@@ -198,7 +199,7 @@ export function SickLeave({ onBack, onComplete }: SickLeaveProps) {
               type="date"
               value={customDate}
               onChange={e => setCustomDate(e.target.value)}
-              min={today.toISOString().split('T')[0]}
+              min={toLocalDateStr(today)}
               className="input-field"
             />
           </div>

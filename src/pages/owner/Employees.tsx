@@ -5,6 +5,7 @@ import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
 import { calculateMonthlyPrice, PER_EMPLOYEE_EUR } from '../../lib/plans';
+import { toLocalDateStr } from '../../lib/utils';
 import type { Employee, Property, EmployeeProperty, Company } from '../../lib/types';
 
 interface EmployeesProps {
@@ -97,7 +98,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const getKnownProperties = (empId: string) =>
     employeeProperties.filter(ep => ep.employee_id === empId).map(ep => properties.find(p => p.id === ep.property_id)).filter(Boolean) as Property[];
 
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = toLocalDateStr(new Date());
 
   const filteredEmployees = useMemo(() => {
     let list = employees;
@@ -185,7 +186,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
 const handleMarkActive = async (emp: Employee) => {
   const { error } = await supabase.from('employees').update({ status: 'active' }).eq('id', emp.id);
   if (error) { addToast('Fehler', 'error'); return; }
-  const todayStr = new Date().toISOString().split('T')[0];
+  const todayStr = toLocalDateStr(new Date());
   await supabase.from('sick_reports').delete()
     .eq('employee_id', emp.id)
     .lte('date', todayStr)

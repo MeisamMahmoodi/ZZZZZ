@@ -3,7 +3,7 @@ import { Clock, Check, CalendarDays, MapPin, Camera, Image, Navigation, FileText
 import { supabase } from '../../lib/supabase';
 import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
-import { formatTime } from '../../lib/utils';
+import { formatTime, toLocalDateStr } from '../../lib/utils';
 import type { Employee, Property, Assignment, Company } from '../../lib/types';
 
 interface TimestampsProps {
@@ -19,7 +19,7 @@ interface AssignmentWithDetails extends Assignment {
 
 export function Timestamps({ company, refreshKey }: TimestampsProps) {
   const [assignments, setAssignments] = useState<AssignmentWithDetails[]>([]);
-  const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(() => toLocalDateStr(new Date()));
   const [lightboxPhoto, setLightboxPhoto] = useState<{ url: string; label: string } | null>(null);
 
   useEffect(() => { loadData(); }, [company.id, refreshKey, selectedDate]);
