@@ -1,9 +1,10 @@
 import { useState, useMemo } from 'react';
-import { AlertTriangle, Star } from 'lucide-react';
+import { AlertTriangle, Star, Bell } from 'lucide-react';
 import { Modal } from '../shared/Modal';
 import { Avatar } from '../shared/Avatar';
 import { formatTime } from '../../lib/utils';
 import { supabase } from '../../lib/supabase';
+import { sendPushToEmployee } from '../../hooks/usePushNotifications';
 import type { Employee, Property, SickReport, EmployeeProperty, Assignment } from '../../lib/types';
 
 interface ReplacementModalProps {
@@ -32,7 +33,6 @@ export function ReplacementModal({
 
   type AvailableEmployee = Employee & { knowsProperty: boolean; availStatus: 'free' | 'partial' | 'unknown'; empAssignments: Assignment[] };
   const [message, setMessage] = useState('');
-  const [channel, setChannel] = useState<'whatsapp' | 'sms' | 'app'>('whatsapp');
   const [sending, setSending] = useState(false);
 
   const availableEmployees = useMemo((): AvailableEmployee[] => {
@@ -108,7 +108,7 @@ if (existing) {
         replacement_employee_id: selectedEmployee.id,
         status: 'pending',
         message,
-        channel,
+        channel: 'app',
       });
 
       if (error) {
@@ -116,15 +116,10 @@ if (existing) {
         return;
       }
 
-      if (channel === 'whatsapp' && selectedEmployee.phone) {
-        const phone = selectedEmployee.phone.replace(/[^0-9]/g, '');
-        const text = encodeURIComponent(message);
-        window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
-      } else if (channel === 'sms' && selectedEmployee.phone) {
-        const phone = selectedEmployee.phone.replace(/[^0-9+]/g, '');
-        const body = encodeURIComponent(message);
-        window.open(`sms:${phone}?body=${body}`, '_self');
-      }
+      // Push-Benachrichtigung in der App — das ist der einzige Kanal, bei
+      // dem wir wirklich wissen, ob der Mitarbeiter angenommen/abgelehnt hat
+      // (WhatsApp/SMS-Links hatten keine Zustellbestätigung).
+      await sendPushToEmployee(selectedEmployee.id, 'Einspringen?', message, { type: 'replacement_request' });
 
       onComplete();
     } catch {
@@ -224,38 +219,11 @@ if (existing) {
             className="input-field resize-none bg-surface-50"
           />
 
-          <p className="text-sm text-ink-500 mt-5 mb-2.5">Senden via:</p>
-          <div className="flex gap-5">
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="channel"
-                checked={channel === 'whatsapp'}
-                onChange={() => setChannel('whatsapp')}
-                className="accent-brand-500"
-              />
-              <span className="text-sm text-ink-900 font-medium">WhatsApp</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="channel"
-                checked={channel === 'sms'}
-                onChange={() => setChannel('sms')}
-                className="accent-brand-500"
-              />
-              <span className="text-sm text-ink-900 font-medium">SMS</span>
-            </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="radio"
-                name="channel"
-                checked={channel === 'app'}
-                onChange={() => setChannel('app')}
-                className="accent-brand-500"
-              />
-              <span className="text-sm text-ink-900 font-medium">Nur speichern</span>
-            </label>
+          <div className="flex items-start gap-2.5 mt-5 p-3.5 rounded-xl bg-brand-50/60 border border-brand-100">
+            <Bell size={15} className="text-brand-500 shrink-0 mt-0.5" />
+            <p className="text-[13px] text-ink-500 leading-relaxed">
+              Wird als Push-Benachrichtigung in der App gesendet. Sie sehen live, ob {selectedEmployee.first_name} annimmt oder ablehnt.
+            </p>
           </div>
 
           <div className="flex justify-end gap-3 mt-8">

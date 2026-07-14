@@ -129,7 +129,7 @@ function Hero() {
           Es ist 06:47 Uhr.<br />Eine Krankmeldung kommt rein.
         </h1>
         <p className="text-lg text-[#475569] mt-5 leading-relaxed max-w-lg">
-          Statt WhatsApp-Rundruf und Durchtelefonieren sucht meizo automatisch einen Ersatz — während Sie noch Ihren Kaffee trinken.
+          Statt WhatsApp-Rundruf und Durchtelefonieren sucht meizo automatisch einen Ersatz per App-Benachrichtigung — während Sie noch Ihren Kaffee trinken.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <a href={CALENDLY} target="_blank" rel="noopener noreferrer" className="bg-[#0F172A] text-white font-bold px-6 py-3.5 rounded-2xl hover:bg-[#1E293B] transition-colors shadow-sm">
@@ -240,7 +240,7 @@ function DispatchDemo() {
       <div className={`rounded-xl p-3.5 border transition-colors duration-300 ${phase === 'success' ? 'bg-[#F0FDF4] border-[#BBF7D0]' : 'bg-white border-[#FED7AA]'}`}>
         {phase !== 'success' ? (
           <>
-            <p className="text-sm flex items-center gap-1.5"><MessageCircle size={13} className="text-[#16A34A]" /> <span className="font-bold text-[#0F172A]">{candidate}</span> <span className="text-[#6B7280]">wird per WhatsApp gefragt</span></p>
+            <p className="text-sm flex items-center gap-1.5"><MessageCircle size={13} className="text-[#16A34A]" /> <span className="font-bold text-[#0F172A]">{candidate}</span> <span className="text-[#6B7280]">wird per App-Push gefragt</span></p>
             <p className="text-xs text-[#94A3B8] mt-1.5">⏱ Antwort in 0:0{seconds} Min</p>
           </>
         ) : (
@@ -503,8 +503,8 @@ function ModulesSection() {
         eyebrow="Das hat kein anderer"
         eyebrowColor="#7C3AED"
         title="Automatische Ersatzsuche bei Krankmeldung"
-        text="Meldet sich jemand krank, fragt meizo selbst die passenden Kollegen an — per WhatsApp, mit Kontext zu Ort und Uhrzeit. Kein Durchtelefonieren, kein Rundruf."
-        bullets={['Läuft automatisch, ohne Ihr Zutun', 'Kennt Verfügbarkeit und Qualifikation', 'Sie behalten jederzeit die manuelle Kontrolle']}
+        text="Meldet sich jemand krank, fragt meizo selbst die passenden Kollegen per App-Benachrichtigung an — mit Kontext zu Ort und Uhrzeit. Sie sehen live, wer annimmt oder ablehnt, kein Rätselraten wie bei WhatsApp."
+        bullets={['Läuft automatisch, ohne Ihr Zutun', 'Echte Zu-/Absage statt ungelesener Nachricht', 'Sie behalten jederzeit die manuelle Kontrolle']}
         visual={<DispatchDemo />}
       />
       <Module
