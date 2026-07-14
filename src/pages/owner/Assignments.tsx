@@ -150,6 +150,15 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const handleWeekDrop = async (assignmentId: string, newEmployeeId: string, newDate: string) => {
     const a = weekAssignments.find(wa => wa.id === assignmentId);
     if (!a || (a.employee_id === newEmployeeId && a.date === newDate)) return;
+    // Bereits erledigte/eingecheckte Einsätze oder Einsätze in der Vergangenheit
+    // dürfen nicht mehr verschoben werden — sonst werden Zeitstempel, Nachweise
+    // und die Abrechnung nachträglich verfälscht. Die Karte ist in der UI schon
+    // nicht mehr greifbar, das hier ist nur die zusätzliche Absicherung.
+    const todayStr = toLocalDateStr(new Date());
+    if (a.status === 'completed' || a.status === 'checked_in' || a.date < todayStr) {
+      addToast('Bereits erledigte oder vergangene Einsätze können nicht mehr verschoben werden', 'error');
+      return;
+    }
     const { error } = await supabase.from('assignments').update({ employee_id: newEmployeeId, date: newDate }).eq('id', assignmentId);
     if (error) { addToast('Fehler beim Verschieben', 'error'); return; }
     const emp = activeEmployees.find(e => e.id === newEmployeeId);
@@ -866,18 +875,25 @@ function WeekGrid({ weekDates, employees, weekAssignments, isEmployeeSickOnDate,
                       <div className="text-[10px] font-bold text-white bg-[#DC2626] rounded-lg px-2 py-1.5 text-center">KRANK</div>
                     ) : (
                       <div className="space-y-1">
-                        {cellAssignments.map(a => (
-                          <div
-                            key={a.id}
-                            draggable
-                            onDragStart={e => handleDragStart(e, a.id)}
-                            title="Ziehen, um zu verschieben"
-                            className="cursor-grab active:cursor-grabbing rounded-lg px-2 py-1.5 bg-[#EFF6FF] border border-[#BFDBFE] hover:border-[#3B82F6] transition-colors"
-                          >
-                            <p className="text-[11px] font-semibold text-[#0F172A] truncate">{a.property?.name}</p>
-                            <p className="text-[10px] text-[#64748B]">{formatTime(a.time_from ?? a.property?.time_from ?? '')}–{formatTime(a.time_to ?? a.property?.time_to ?? '')}</p>
-                          </div>
-                        ))}
+                        {cellAssignments.map(a => {
+                          const locked = a.status === 'completed' || a.status === 'checked_in' || a.date < todayStr;
+                          return (
+                            <div
+                              key={a.id}
+                              draggable={!locked}
+                              onDragStart={locked ? undefined : e => handleDragStart(e, a.id)}
+                              title={locked ? 'Bereits erledigt bzw. vergangen — kann nicht mehr verschoben werden' : 'Ziehen, um zu verschieben'}
+                              className={`rounded-lg px-2 py-1.5 border transition-colors ${
+                                locked
+                                  ? 'cursor-not-allowed bg-[#F8FAFC] border-[#E2E8F0] opacity-70'
+                                  : 'cursor-grab active:cursor-grabbing bg-[#EFF6FF] border-[#BFDBFE] hover:border-[#3B82F6]'
+                              }`}
+                            >
+                              <p className="text-[11px] font-semibold text-[#0F172A] truncate">{a.property?.name}</p>
+                              <p className="text-[10px] text-[#64748B]">{formatTime(a.time_from ?? a.property?.time_from ?? '')}–{formatTime(a.time_to ?? a.property?.time_to ?? '')}</p>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                   </td>
