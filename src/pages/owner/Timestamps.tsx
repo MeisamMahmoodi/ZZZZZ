@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Clock, Check, CalendarDays, MapPin, Camera, Image, Navigation, FileText } from 'lucide-react';
+import { Clock, Check, CalendarDays, MapPin, Camera, Image, Navigation, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
@@ -40,6 +40,13 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
   const dateLabel = new Date(selectedDate + 'T12:00:00').toLocaleDateString('de-DE', {
     weekday: 'long', day: '2-digit', month: 'long', year: 'numeric',
   });
+
+  const isToday = selectedDate === toLocalDateStr(new Date());
+  const dateNav = (direction: number) => {
+    const d = new Date(selectedDate + 'T12:00:00');
+    d.setDate(d.getDate() + direction);
+    setSelectedDate(toLocalDateStr(d));
+  };
 
   const withTimestamps = assignments.filter(a => a.checked_in_at || a.completed_at);
   const withoutTimestamps = assignments.filter(a => !a.checked_in_at && !a.completed_at && a.status !== 'cancelled');
@@ -176,20 +183,39 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
   return (
     <div>
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Zeitstempel</h1>
           <p className="text-[#64748B] text-sm mt-1.5">Check-in/out mit Foto und GPS-Nachweis</p>
         </div>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={e => setSelectedDate(e.target.value)}
-          className="input-field !w-auto"
-        />
       </div>
 
-      <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wide mb-5">{dateLabel}</p>
+      {/* Datumsnavigation — gleiches Muster wie bei Einsätze: Pfeile + Heute
+          statt eines einsamen Datumsfelds oben rechts. */}
+      <div className="card p-2 mb-6">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <button onClick={() => dateNav(-1)} className="p-2.5 rounded-xl hover:bg-[#F1F5F9] transition-colors text-[#64748B]">
+            <ChevronLeft size={18} />
+          </button>
+          <div className="flex-1 text-center min-w-[140px]">
+            <p className="text-sm font-semibold text-[#0F172A]">{dateLabel}</p>
+          </div>
+          <button onClick={() => dateNav(1)} className="p-2.5 rounded-xl hover:bg-[#F1F5F9] transition-colors text-[#64748B]">
+            <ChevronRight size={18} />
+          </button>
+          {!isToday && (
+            <button onClick={() => setSelectedDate(toLocalDateStr(new Date()))} className="px-3.5 py-2 rounded-xl text-sm font-semibold bg-[#0F172A] text-white hover:bg-[#334155] transition-colors">
+              Heute
+            </button>
+          )}
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={e => setSelectedDate(e.target.value)}
+            className="input-field !w-auto !py-2"
+          />
+        </div>
+      </div>
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-8">
