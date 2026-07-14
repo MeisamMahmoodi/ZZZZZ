@@ -428,36 +428,21 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Einsätze</h1>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 bg-white border border-[#E2E8F0] rounded-xl p-1">
-            <button
-              onClick={() => setViewMode('day')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${viewMode === 'day' ? 'bg-[#0F172A] text-white' : 'text-[#64748B] hover:bg-[#F1F5F9]'}`}
-            >
-              Tag
-            </button>
-            <button
-              onClick={() => setViewMode('week')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${viewMode === 'week' ? 'bg-[#0F172A] text-white' : 'text-[#64748B] hover:bg-[#F1F5F9]'}`}
-            >
-              Woche
-            </button>
-          </div>
-          <button onClick={() => setAddModal(true)} className="btn-primary flex items-center justify-center gap-2">
-            <Plus size={16} /> Auftrag erstellen
-          </button>
-        </div>
+        <button onClick={() => setAddModal(true)} className="btn-primary flex items-center justify-center gap-2">
+          <Plus size={16} /> Auftrag erstellen
+        </button>
       </div>
 
-      {/* Date Navigation */}
+      {/* Ein einziger Toolbar-Streifen statt zwei getrennter Regler-Zeilen:
+          Datumsnavigation + Tag/Woche-Umschalter zusammen in einer Card. */}
       <div className="card p-2 mb-6">
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <button onClick={() => dateNav(-1)} className="p-2.5 rounded-xl hover:bg-[#F1F5F9] transition-colors text-[#64748B]">
             <ChevronLeft size={18} />
           </button>
-          <div className="flex-1 text-center">
+          <div className="flex-1 text-center min-w-[140px]">
             <p className="text-sm font-semibold text-[#0F172A]">
               {viewMode === 'week' ? weekRangeLabel : new Date(selectedDate).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
@@ -466,10 +451,25 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
             <ChevronRight size={18} />
           </button>
           {!isToday && (
-            <button onClick={() => setSelectedDate(toLocalDateStr(new Date()))} className="px-3.5 py-2 rounded-xl text-sm font-semibold bg-[#0F172A] text-white hover:bg-[#334155] transition-colors ml-1">
+            <button onClick={() => setSelectedDate(toLocalDateStr(new Date()))} className="px-3.5 py-2 rounded-xl text-sm font-semibold bg-[#0F172A] text-white hover:bg-[#334155] transition-colors">
               Heute
             </button>
           )}
+          <div className="w-px h-6 bg-[#E2E8F0] mx-0.5 hidden sm:block" />
+          <div className="flex items-center gap-1 bg-[#F8FAFC] rounded-xl p-1">
+            <button
+              onClick={() => setViewMode('day')}
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${viewMode === 'day' ? 'bg-[#0F172A] text-white' : 'text-[#64748B] hover:bg-white'}`}
+            >
+              Tag
+            </button>
+            <button
+              onClick={() => setViewMode('week')}
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${viewMode === 'week' ? 'bg-[#0F172A] text-white' : 'text-[#64748B] hover:bg-white'}`}
+            >
+              Woche
+            </button>
+          </div>
         </div>
       </div>
 

@@ -194,19 +194,34 @@ export function Timestamps({ company, refreshKey }: TimestampsProps) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-8">
         <div className="card p-5">
-          <p className="section-label mb-3">Eingecheckt</p>
-          <p className="text-2xl font-bold text-[#3B82F6]">{checkedInCount}</p>
-          <p className="text-xs text-[#94A3B8] mt-2">aktiv</p>
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="stat-icon" style={{ backgroundColor: '#EFF6FF' }}>
+              <Clock size={20} className="text-[#2563EB]" />
+            </div>
+            <p className="section-label">Eingecheckt</p>
+          </div>
+          <p className="text-[1.75rem] leading-none font-bold tracking-tight text-[#3B82F6]">{checkedInCount}</p>
+          <p className="text-xs text-[#94A3B8] mt-2.5">aktiv</p>
         </div>
         <div className="card p-5">
-          <p className="section-label mb-3">Fertig</p>
-          <p className="text-2xl font-bold text-[#22C55E]">{completedCount}</p>
-          <p className="text-xs text-[#94A3B8] mt-2">abgeschlossen</p>
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="stat-icon" style={{ backgroundColor: '#F0FDF4' }}>
+              <Check size={20} className="text-[#16A34A]" />
+            </div>
+            <p className="section-label">Fertig</p>
+          </div>
+          <p className="text-[1.75rem] leading-none font-bold tracking-tight text-[#22C55E]">{completedCount}</p>
+          <p className="text-xs text-[#94A3B8] mt-2.5">abgeschlossen</p>
         </div>
         <div className="card p-5">
-          <p className="section-label mb-3">Ausstehend</p>
-          <p className="text-2xl font-bold text-[#0F172A]">{assignedCount}</p>
-          <p className="text-xs text-[#94A3B8] mt-2">kein Check-in</p>
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="stat-icon" style={{ backgroundColor: '#F1F5F9' }}>
+              <CalendarDays size={20} className="text-[#64748B]" />
+            </div>
+            <p className="section-label">Ausstehend</p>
+          </div>
+          <p className="text-[1.75rem] leading-none font-bold tracking-tight text-[#0F172A]">{assignedCount}</p>
+          <p className="text-xs text-[#94A3B8] mt-2.5">kein Check-in</p>
         </div>
       </div>
 

@@ -59,26 +59,31 @@ export function Sidebar({ active, onNavigate, ownerName }: SidebarProps) {
       <div className="mx-5 h-px bg-white/[0.06]" />
 
       {/* Navigation */}
-      <nav className="flex-1 mt-3 px-4">
+      <nav className="flex-1 mt-4 px-3">
         {navItems.map(item => {
           const isActive = active === item.id;
           return (
             <button
               key={item.id}
               onClick={() => handleNav(item)}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 mb-0.5 ${
+              className={`w-full flex items-center gap-2.5 pl-2 pr-3 py-2 rounded-2xl text-[13px] font-medium transition-all duration-200 mb-1 ${
                 isActive
-                  ? 'bg-white/[0.08] text-white'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]'
+                  ? 'bg-white/[0.09] text-white'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-white/[0.045]'
               }`}
             >
-              <item.icon
-                size={18}
-                strokeWidth={isActive ? 2 : 1.5}
-                className={isActive ? 'text-brand-400' : ''}
-              />
+              <div
+                className={`w-8 h-8 rounded-[10px] flex items-center justify-center shrink-0 transition-colors duration-200 ${
+                  isActive ? 'bg-brand-500/[0.16]' : ''
+                }`}
+              >
+                <item.icon
+                  size={17}
+                  strokeWidth={isActive ? 2 : 1.5}
+                  className={isActive ? 'text-brand-400' : ''}
+                />
+              </div>
               <span>{item.label}</span>
-              {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-brand-400" />}
             </button>
           );
         })}

@@ -475,24 +475,44 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
       {/* Summary Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <div className="card p-5 sm:p-6">
-          <p className="section-label mb-3">Gesamtkosten</p>
-          <p className="text-2xl font-bold text-[#0F172A]">{payrollData.totalMonthlyCost.toFixed(2)} <span className="text-sm font-medium text-[#94A3B8]">EUR</span></p>
-          <p className="text-xs text-[#94A3B8] mt-2">{monthLabel}</p>
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="stat-icon" style={{ backgroundColor: '#EFF6FF' }}>
+              <Euro size={20} className="text-[#2563EB]" />
+            </div>
+            <p className="section-label">Gesamtkosten</p>
+          </div>
+          <p className="text-[1.75rem] leading-none font-bold tracking-tight text-[#0F172A]">{payrollData.totalMonthlyCost.toFixed(2)} <span className="text-sm font-medium text-[#94A3B8]">EUR</span></p>
+          <p className="text-xs text-[#94A3B8] mt-2.5">{monthLabel}</p>
         </div>
         <div className="card p-5 sm:p-6">
-          <p className="section-label mb-3">Gearbeitet</p>
-          <p className="text-2xl font-bold text-[#0F172A]">{payrollData.totalWorkedHours.toFixed(1)} <span className="text-sm font-medium text-[#94A3B8]">Std.</span></p>
-          <p className="text-xs text-[#94A3B8] mt-2">{payrollData.daysPassed}/{payrollData.daysInMonth} Tage</p>
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="stat-icon" style={{ backgroundColor: '#F0FDF4' }}>
+              <Clock size={20} className="text-[#16A34A]" />
+            </div>
+            <p className="section-label">Gearbeitet</p>
+          </div>
+          <p className="text-[1.75rem] leading-none font-bold tracking-tight text-[#0F172A]">{payrollData.totalWorkedHours.toFixed(1)} <span className="text-sm font-medium text-[#94A3B8]">Std.</span></p>
+          <p className="text-xs text-[#94A3B8] mt-2.5">{payrollData.daysPassed}/{payrollData.daysInMonth} Tage</p>
         </div>
         <div className="card p-5 sm:p-6">
-          <p className="section-label mb-3">Erwartet</p>
-          <p className="text-2xl font-bold text-[#0F172A]">{payrollData.totalExpectedHours.toFixed(1)} <span className="text-sm font-medium text-[#94A3B8]">Std.</span></p>
-          <p className="text-xs text-[#94A3B8] mt-2">nach Planung</p>
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="stat-icon" style={{ backgroundColor: '#F5F3FF' }}>
+              <CalendarDays size={20} className="text-[#7C3AED]" />
+            </div>
+            <p className="section-label">Erwartet</p>
+          </div>
+          <p className="text-[1.75rem] leading-none font-bold tracking-tight text-[#0F172A]">{payrollData.totalExpectedHours.toFixed(1)} <span className="text-sm font-medium text-[#94A3B8]">Std.</span></p>
+          <p className="text-xs text-[#94A3B8] mt-2.5">nach Planung</p>
         </div>
         <div className="card p-5 sm:p-6">
-          <p className="section-label mb-3">Ohne Stundenlohn</p>
-          <p className="text-2xl font-bold text-[#0F172A]">{employees.filter(e => e.hourly_wage == null).length}</p>
-          <p className="text-xs text-[#F97316] font-medium mt-2">{employees.filter(e => e.hourly_wage == null).length > 0 ? 'Lohn fehlt' : 'Alle erfasst'}</p>
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="stat-icon" style={{ backgroundColor: employees.filter(e => e.hourly_wage == null).length > 0 ? '#FFF7ED' : '#F0FDF4' }}>
+              <AlertCircle size={20} className={employees.filter(e => e.hourly_wage == null).length > 0 ? 'text-[#F97316]' : 'text-[#16A34A]'} />
+            </div>
+            <p className="section-label">Ohne Stundenlohn</p>
+          </div>
+          <p className="text-[1.75rem] leading-none font-bold tracking-tight text-[#0F172A]">{employees.filter(e => e.hourly_wage == null).length}</p>
+          <p className="text-xs text-[#F97316] font-medium mt-2.5">{employees.filter(e => e.hourly_wage == null).length > 0 ? 'Lohn fehlt' : 'Alle erfasst'}</p>
         </div>
       </div>
 
