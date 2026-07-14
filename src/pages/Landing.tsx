@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Check, MapPin, Clock, Users, MessageCircle, Globe2, Shield } from 'lucide-react';
+import { Check, MapPin, Clock, Users, MessageCircle, Globe2, Shield, FileText } from 'lucide-react';
 import { BASE_FEE_EUR, PER_EMPLOYEE_EUR, calculateMonthlyPrice } from '../lib/plans';
 
 const CALENDLY = 'https://calendly.com/meisam-meizo/30min';
@@ -318,6 +318,47 @@ function ChecklistDemo() {
   );
 }
 
+function CustomerReportDemo() {
+  const [sent, setSent] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => setSent(s => !s), 2600);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_16px_48px_-12px_rgba(15,23,42,0.15)] max-w-sm mx-auto overflow-hidden">
+      <div className="bg-[#0F172A] px-5 py-3 flex items-center justify-between">
+        <span className="text-xs font-bold text-white tracking-wide">LEISTUNGSNACHWEIS</span>
+        <FileText size={14} className="text-white/70" />
+      </div>
+      <div className="p-5">
+        <p className="text-sm font-bold text-[#0F172A]">Objekt Müller · 14.07.2026</p>
+        <p className="text-xs text-[#64748B] mt-0.5">07:30 – 09:32 Uhr · Anis Yildiz</p>
+        <span className="inline-block text-[11px] font-bold text-[#15803D] bg-[#F0FDF4] border border-[#BBF7D0] px-2 py-0.5 rounded-full mt-2">
+          ✓ Vor Ort bestätigt (GPS)
+        </span>
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          <div className="h-14 rounded-lg bg-[#F1F5F9] flex items-center justify-center text-[10px] text-[#94A3B8] font-semibold">Vorher-Foto</div>
+          <div className="h-14 rounded-lg bg-[#F1F5F9] flex items-center justify-center text-[10px] text-[#94A3B8] font-semibold">Nachher-Foto</div>
+        </div>
+        <div className="mt-4 space-y-1.5">
+          {['Böden gewischt', 'Mülleimer geleert', 'Fenster geputzt'].map(l => (
+            <div key={l} className="flex items-center gap-2 text-xs text-[#334155]">
+              <Check size={11} className="text-[#16A34A]" strokeWidth={3} /> {l}
+            </div>
+          ))}
+        </div>
+        <div className={`mt-4 rounded-xl p-3 text-center border transition-colors duration-300 ${sent ? 'bg-[#F0FDF4] border-[#BBF7D0]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
+          {sent ? (
+            <p className="text-xs font-bold text-[#15803D]">✓ Als PDF an Hausverwaltung gesendet</p>
+          ) : (
+            <p className="text-xs font-semibold text-[#64748B]">PDF wird erstellt …</p>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BillingDemo() {
   const rows = [
     ['Ionut P.', 'Wohnung Müller', '0,50', '7,50 €'],
@@ -484,11 +525,19 @@ function ModulesSection() {
         visual={<ChecklistDemo />}
       />
       <Module
+        eyebrow="Das hat kein anderer"
+        eyebrowColor="#3B82F6"
+        title="Leistungsnachweis, den Ihr Kunde sofort glaubt"
+        text="Statt 'wurde wirklich geputzt?' schicken Sie einen fertigen PDF-Nachweis — mit Uhrzeit, GPS-Bestätigung, Vorher/Nachher-Fotos und abgehakter Checkliste. Ein Klick, direkt an die Hausverwaltung."
+        bullets={['Automatisch aus jedem Einsatz erstellt', 'GPS-, Foto- und Checklisten-Nachweis in einem Dokument', 'Weniger Diskussionen, weniger Reklamationen']}
+        visual={<CustomerReportDemo />}
+      />
+      <Module
         eyebrow="Abrechnung"
         eyebrowColor="#0F172A"
         title="Zeiterfassung, die sich von selbst rechnet"
-        text="Jeder Check-in und Check-out landet automatisch in der Abrechnung — mit GPS- und Foto-Nachweis, fertig für den Steuerberater."
-        bullets={['DATEV-Export mit einem Klick', 'Individuelle Stundensätze pro Mitarbeiter', 'Keine abgetippten Stundenzettel mehr']}
+        text="Jeder Check-in und Check-out landet automatisch in der Abrechnung — mit GPS- und Foto-Nachweis, fertig für Steuerberater und Mitarbeiter."
+        bullets={['DATEV-Export mit einem Klick', 'Lohnabrechnung als PDF pro Mitarbeiter', 'Keine abgetippten Stundenzettel mehr']}
         visual={<BillingDemo />}
         reverse
       />
