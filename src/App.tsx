@@ -201,6 +201,19 @@ function PricingGate() {
   return <Pricing onContinue={() => setShowLogin(true)} />;
 }
 
+function PublicLegalPage({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="min-h-screen bg-[#F8FAFC] py-10 px-5 sm:px-6">
+      <div className="max-w-2xl mx-auto mb-6">
+        <a href="/" className="text-sm font-semibold text-[#64748B] hover:text-[#0F172A] transition-colors">
+          ← Zurück zu meizo
+        </a>
+      </div>
+      {children}
+    </div>
+  );
+}
+
 function AppRoutes() {
   const { user, loading, mustChangePassword, passwordRecovery, signOut } = useAuth();
   const [role, setRole] = useState<'owner' | 'employee' | 'admin' | null>(null);
@@ -306,6 +319,8 @@ function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<UnifiedLogin />} />
         <Route path="/pricing" element={<PricingGate />} />
+        <Route path="/impressum" element={<PublicLegalPage><Impressum /></PublicLegalPage>} />
+        <Route path="/datenschutz" element={<PublicLegalPage><Datenschutz /></PublicLegalPage>} />
         <Route path="/*" element={<LandingPage />} />
       </Routes>
     );

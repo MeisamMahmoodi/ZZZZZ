@@ -154,6 +154,13 @@ export function Pricing({ onContinue }: PricingProps) {
           </div>
         </div>
       </main>
+
+      <footer className="text-center pb-8">
+        <div className="flex items-center justify-center gap-4 text-xs text-[#94A3B8]">
+          <a href="/impressum" className="hover:text-[#0F172A] transition-colors">Impressum</a>
+          <a href="/datenschutz" className="hover:text-[#0F172A] transition-colors">Datenschutz</a>
+        </div>
+      </footer>
     </div>
   );
 }

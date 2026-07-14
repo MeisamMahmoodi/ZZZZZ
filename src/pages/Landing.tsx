@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { ReactNode } from 'react';
-import { Check, MapPin, Clock, Users, MessageCircle, Globe2 } from 'lucide-react';
+import { Check, MapPin, Clock, Users, MessageCircle, Globe2, Shield } from 'lucide-react';
 import { BASE_FEE_EUR, PER_EMPLOYEE_EUR, calculateMonthlyPrice } from '../lib/plans';
 
 const CALENDLY = 'https://calendly.com/meisam-meizo/30min';
@@ -666,13 +666,21 @@ function FinalCta() {
 function Footer() {
   return (
     <footer className="border-t border-[#F1F5F9] py-8">
-      <div className="max-w-6xl mx-auto px-5 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#94A3B8]">
-        <span>© {new Date().getFullYear()} meizo · München</span>
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1"><MapPin size={12} /> München</span>
-          <span className="flex items-center gap-1"><Clock size={12} /> Erster Monat kostenlos</span>
-          <span className="flex items-center gap-1"><Globe2 size={12} /> 8 Sprachen</span>
-          <span className="flex items-center gap-1"><MessageCircle size={12} /> Persönlicher Support</span>
+      <div className="max-w-6xl mx-auto px-5 sm:px-6">
+        <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-semibold text-[#64748B] mb-6">
+          <span className="flex items-center gap-1.5">🇩🇪 Made in Germany</span>
+          <span className="flex items-center gap-1.5"><Shield size={13} className="text-[#16A34A]" /> DSGVO-konform</span>
+          <span className="flex items-center gap-1.5"><MapPin size={12} /> Server in der EU</span>
+          <span className="flex items-center gap-1.5"><Globe2 size={12} /> 8 Sprachen</span>
+          <span className="flex items-center gap-1.5"><Clock size={12} /> Erster Monat kostenlos</span>
+          <span className="flex items-center gap-1.5"><MessageCircle size={12} /> Persönlicher Support</span>
+        </div>
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#94A3B8] pt-6 border-t border-[#F1F5F9]">
+          <span>© {new Date().getFullYear()} meizo · München</span>
+          <div className="flex items-center gap-4">
+            <a href="/impressum" className="hover:text-[#0F172A] transition-colors">Impressum</a>
+            <a href="/datenschutz" className="hover:text-[#0F172A] transition-colors">Datenschutz</a>
+          </div>
         </div>
       </div>
     </footer>
