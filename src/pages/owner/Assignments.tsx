@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import type { DragEvent } from 'react';
 import { Plus, Calendar, MapPin, Clock, Check, X, AlertTriangle, ChevronLeft, ChevronRight, Trash2, Repeat, CalendarDays } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Modal } from '../../components/shared/Modal';
@@ -37,6 +38,13 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const { addToast } = useToast();
+
+  // Wochenansicht
+  const [viewMode, setViewMode] = useState<'day' | 'week'>('day');
+  const [weekAssignments, setWeekAssignments] = useState<AssignmentWithDetails[]>([]);
+  const [weekSickReports, setWeekSickReports] = useState<{ employee_id: string; date: string; date_to: string | null }[]>([]);
+  const [weekLoading, setWeekLoading] = useState(false);
+  const [dragOverCell, setDragOverCell] = useState<string | null>(null);
 
   const [newPropertyId, setNewPropertyId] = useState('');
   const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
@@ -96,6 +104,62 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
     }
     setLoading(false);
   }
+
+  function weekBounds(dateStr: string): { start: string; dates: string[] } {
+    const d = new Date(dateStr + 'T00:00:00');
+    const day = d.getDay(); // 0 = Sonntag
+    const diffToMonday = day === 0 ? -6 : 1 - day;
+    const monday = new Date(d);
+    monday.setDate(d.getDate() + diffToMonday);
+    const dates: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      const cur = new Date(monday);
+      cur.setDate(monday.getDate() + i);
+      dates.push(cur.toISOString().split('T')[0]);
+    }
+    return { start: dates[0], dates };
+  }
+
+  const currentWeek = useMemo(() => weekBounds(selectedDate), [selectedDate]);
+
+  async function loadWeekData() {
+    setWeekLoading(true);
+    try {
+      const weekStart = currentWeek.dates[0];
+      const weekEnd = currentWeek.dates[6];
+      const [assignRes, sickRes] = await Promise.all([
+        supabase.from('assignments').select('*, employee:employees(*), property:properties(*)').gte('date', weekStart).lte('date', weekEnd).order('time_from'),
+        supabase.from('sick_reports').select('employee_id, date, date_to').lte('date', weekEnd).or(`date_to.gte.${weekStart},date_to.is.null`),
+      ]);
+      setWeekAssignments(((assignRes.data as unknown as AssignmentWithDetails[]) || []).filter(a => a.property?.company_id === company.id));
+      setWeekSickReports((sickRes.data as { employee_id: string; date: string; date_to: string | null }[]) || []);
+    } catch {
+      // Component renders with existing state
+    }
+    setWeekLoading(false);
+  }
+
+  useEffect(() => {
+    if (viewMode === 'week') loadWeekData();
+  }, [viewMode, currentWeek.start, company.id, refreshKey]);
+
+  const isEmployeeSickOnDate = (employeeId: string, date: string) => {
+    return weekSickReports.some(sr => sr.employee_id === employeeId && sr.date <= date && (sr.date_to == null || date <= sr.date_to));
+  };
+
+  const handleWeekDrop = async (assignmentId: string, newEmployeeId: string, newDate: string) => {
+    const a = weekAssignments.find(wa => wa.id === assignmentId);
+    if (!a || (a.employee_id === newEmployeeId && a.date === newDate)) return;
+    const { error } = await supabase.from('assignments').update({ employee_id: newEmployeeId, date: newDate }).eq('id', assignmentId);
+    if (error) { addToast('Fehler beim Verschieben', 'error'); return; }
+    const emp = activeEmployees.find(e => e.id === newEmployeeId);
+    if (emp) {
+      const dateLabel = new Date(newDate + 'T00:00:00').toLocaleDateString('de-DE', { weekday: 'long', day: '2-digit', month: '2-digit' });
+      sendPushToEmployee(newEmployeeId, `Einsatz: ${a.property?.name ?? ''}`, `Neu für dich eingeplant: ${dateLabel}`, { type: 'new_assignment' });
+    }
+    addToast('Einsatz verschoben');
+    loadWeekData();
+  };
 
   const companyAssignments = useMemo(() => assignments.filter(a => a.property?.company_id === company.id), [assignments, company.id]);
   const activeEmployees = useMemo(() => employees.filter(e => e.status === 'active'), [employees]);
@@ -347,19 +411,44 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
 
   const dateNav = (direction: number) => {
     const d = new Date(selectedDate);
-    d.setDate(d.getDate() + direction);
+    d.setDate(d.getDate() + direction * (viewMode === 'week' ? 7 : 1));
     setSelectedDate(d.toISOString().split('T')[0]);
   };
 
   const isToday = selectedDate === new Date().toISOString().split('T')[0];
 
+  const weekRangeLabel = (() => {
+    const start = new Date(currentWeek.dates[0] + 'T00:00:00');
+    const end = new Date(currentWeek.dates[6] + 'T00:00:00');
+    const sameMonth = start.getMonth() === end.getMonth();
+    const startLabel = start.toLocaleDateString('de-DE', { day: 'numeric', month: sameMonth ? undefined : 'long' });
+    const endLabel = end.toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' });
+    return `${startLabel} – ${endLabel}`;
+  })();
+
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Einsätze</h1>
-        <button onClick={() => setAddModal(true)} className="btn-primary flex items-center justify-center gap-2">
-          <Plus size={16} /> Auftrag erstellen
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 bg-white border border-[#E2E8F0] rounded-xl p-1">
+            <button
+              onClick={() => setViewMode('day')}
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${viewMode === 'day' ? 'bg-[#0F172A] text-white' : 'text-[#64748B] hover:bg-[#F1F5F9]'}`}
+            >
+              Tag
+            </button>
+            <button
+              onClick={() => setViewMode('week')}
+              className={`px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors ${viewMode === 'week' ? 'bg-[#0F172A] text-white' : 'text-[#64748B] hover:bg-[#F1F5F9]'}`}
+            >
+              Woche
+            </button>
+          </div>
+          <button onClick={() => setAddModal(true)} className="btn-primary flex items-center justify-center gap-2">
+            <Plus size={16} /> Auftrag erstellen
+          </button>
+        </div>
       </div>
 
       {/* Date Navigation */}
@@ -370,7 +459,7 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
           </button>
           <div className="flex-1 text-center">
             <p className="text-sm font-semibold text-[#0F172A]">
-              {new Date(selectedDate).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              {viewMode === 'week' ? weekRangeLabel : new Date(selectedDate).toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
             </p>
           </div>
           <button onClick={() => dateNav(1)} className="p-2.5 rounded-xl hover:bg-[#F1F5F9] transition-colors text-[#64748B]">
@@ -384,7 +473,21 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
         </div>
       </div>
 
-      {loading ? (
+      {viewMode === 'week' ? (
+        weekLoading ? (
+          <div className="flex items-center justify-center py-16"><div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" /></div>
+        ) : (
+          <WeekGrid
+            weekDates={currentWeek.dates}
+            employees={activeEmployees}
+            weekAssignments={weekAssignments}
+            isEmployeeSickOnDate={isEmployeeSickOnDate}
+            onDropAssignment={handleWeekDrop}
+            dragOverCell={dragOverCell}
+            setDragOverCell={setDragOverCell}
+          />
+        )
+      ) : loading ? (
         <div className="flex items-center justify-center py-16"><div className="w-8 h-8 border-2 border-[#22C55E] border-t-transparent rounded-full animate-spin" /></div>
       ) : groupedAssignments.length === 0 ? (
         <div className="card p-10 text-center">
@@ -671,6 +774,120 @@ export function Assignments({ company, refreshKey, onRefresh }: AssignmentsProps
           </div>
         </div>
       </Modal>
+    </div>
+  );
+}
+
+/* ---------- Wochenansicht (Drag-and-Drop-Grid) ---------- */
+
+interface WeekGridProps {
+  weekDates: string[];
+  employees: Employee[];
+  weekAssignments: AssignmentWithDetails[];
+  isEmployeeSickOnDate: (employeeId: string, date: string) => boolean;
+  onDropAssignment: (assignmentId: string, newEmployeeId: string, newDate: string) => void;
+  dragOverCell: string | null;
+  setDragOverCell: (cell: string | null) => void;
+}
+
+const WEEKDAY_LABELS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa', 'So'];
+
+function WeekGrid({ weekDates, employees, weekAssignments, isEmployeeSickOnDate, onDropAssignment, dragOverCell, setDragOverCell }: WeekGridProps) {
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  const cellKey = (empId: string, date: string) => `${empId}__${date}`;
+
+  const assignmentsFor = (empId: string, date: string) =>
+    weekAssignments.filter(a => a.employee_id === empId && a.date === date);
+
+  const handleDragStart = (e: DragEvent, assignmentId: string) => {
+    e.dataTransfer.setData('text/plain', assignmentId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDrop = (e: DragEvent, empId: string, date: string) => {
+    e.preventDefault();
+    setDragOverCell(null);
+    const assignmentId = e.dataTransfer.getData('text/plain');
+    if (assignmentId) onDropAssignment(assignmentId, empId, date);
+  };
+
+  if (employees.length === 0) {
+    return (
+      <div className="card p-10 text-center">
+        <p className="text-sm text-[#94A3B8]">Noch keine aktiven Mitarbeiter vorhanden</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="card p-0 overflow-x-auto">
+      <table className="w-full border-collapse min-w-[820px]">
+        <thead>
+          <tr>
+            <th className="sticky left-0 bg-white z-10 text-left px-4 py-3 text-xs font-bold uppercase tracking-wide text-[#94A3B8] border-b border-[#F1F5F9] w-[160px]">
+              Mitarbeiter
+            </th>
+            {weekDates.map((date, i) => {
+              const isToday = date === todayStr;
+              const d = new Date(date + 'T00:00:00');
+              return (
+                <th key={date} className={`text-center px-2 py-3 text-xs font-bold border-b border-[#F1F5F9] border-l border-[#F8FAFC] ${isToday ? 'bg-[#F0FDF4]' : ''}`}>
+                  <span className={`uppercase tracking-wide ${isToday ? 'text-[#16A34A]' : 'text-[#94A3B8]'}`}>{WEEKDAY_LABELS[i]}</span>
+                  <div className={`text-sm mt-0.5 ${isToday ? 'text-[#16A34A]' : 'text-[#0F172A]'}`}>{d.getDate()}.{d.getMonth() + 1}.</div>
+                </th>
+              );
+            })}
+          </tr>
+        </thead>
+        <tbody>
+          {employees.map(emp => (
+            <tr key={emp.id} className="border-b border-[#F1F5F9] last:border-0">
+              <td className="sticky left-0 bg-white z-10 px-4 py-3 border-r border-[#F8FAFC]">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Avatar firstName={emp.first_name} lastName={emp.last_name} id={emp.id} size="sm" />
+                  <span className="text-sm font-semibold text-[#0F172A] truncate">{emp.first_name} {emp.last_name}</span>
+                </div>
+              </td>
+              {weekDates.map(date => {
+                const cellAssignments = assignmentsFor(emp.id, date);
+                const sick = isEmployeeSickOnDate(emp.id, date);
+                const key = cellKey(emp.id, date);
+                const isOver = dragOverCell === key;
+                return (
+                  <td
+                    key={date}
+                    onDragOver={e => { e.preventDefault(); setDragOverCell(key); }}
+                    onDragLeave={() => setDragOverCell(prev => (prev === key ? null : prev))}
+                    onDrop={e => handleDrop(e, emp.id, date)}
+                    className={`align-top px-1.5 py-1.5 border-l border-[#F8FAFC] min-w-[110px] transition-colors ${isOver ? 'bg-[#EFF6FF]' : ''}`}
+                  >
+                    {sick && cellAssignments.length === 0 ? (
+                      <div className="text-[10px] font-bold text-white bg-[#DC2626] rounded-lg px-2 py-1.5 text-center">KRANK</div>
+                    ) : (
+                      <div className="space-y-1">
+                        {cellAssignments.map(a => (
+                          <div
+                            key={a.id}
+                            draggable
+                            onDragStart={e => handleDragStart(e, a.id)}
+                            title="Ziehen, um zu verschieben"
+                            className="cursor-grab active:cursor-grabbing rounded-lg px-2 py-1.5 bg-[#EFF6FF] border border-[#BFDBFE] hover:border-[#3B82F6] transition-colors"
+                          >
+                            <p className="text-[11px] font-semibold text-[#0F172A] truncate">{a.property?.name}</p>
+                            <p className="text-[10px] text-[#64748B]">{formatTime(a.time_from ?? a.property?.time_from ?? '')}–{formatTime(a.time_to ?? a.property?.time_to ?? '')}</p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="text-xs text-[#94A3B8] px-4 py-3 border-t border-[#F1F5F9]">Einsätze per Drag-and-Drop auf einen anderen Mitarbeiter oder Tag ziehen, um sie umzuplanen.</p>
     </div>
   );
 }

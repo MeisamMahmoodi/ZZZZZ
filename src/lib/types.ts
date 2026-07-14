@@ -48,6 +48,10 @@ export interface Property {
   lat?: number | null;
   lng?: number | null;
   gps_radius_m?: number | null;
+  // Was der Kunde monatlich für dieses Objekt zahlt — Basis für Umsatz-
+  // und Margenberechnung im Controlling. Optional, da bestehende Objekte
+  // das Feld noch nicht gepflegt haben.
+  monthly_price?: number | null;
 }
 
 export interface EmployeeProperty {

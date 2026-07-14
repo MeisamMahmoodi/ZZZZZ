@@ -9,6 +9,7 @@ import { Employees } from './pages/owner/Employees';
 import { Properties } from './pages/owner/Properties';
 import { Assignments } from './pages/owner/Assignments';
 import { Payroll } from './pages/owner/Payroll';
+import { Controlling } from './pages/owner/Controlling';
 import { Timestamps } from './pages/owner/Timestamps';
 import { Settings } from './pages/owner/Settings';
 import { Impressum } from './pages/owner/Impressum';
@@ -37,6 +38,7 @@ function OwnerApp({ company }: { company: Company & { paid_until: string | null 
           case 'properties': return <Properties {...props} />;
           case 'assignments': return <Assignments {...props} />;
           case 'payroll': return <Payroll {...props} />;
+          case 'controlling': return <Controlling {...props} />;
           case 'timestamps': return <Timestamps {...props} />;
           case 'settings': return <Settings company={props.company} onRefresh={props.onRefresh} />;
           case 'impressum': return <Impressum />;

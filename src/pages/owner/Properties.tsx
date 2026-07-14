@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, MapPin, MoreVertical, Pencil, Trash2, Building2, GraduationCap, ShoppingCart, HeartPulse, CalendarPlus } from 'lucide-react';
+import { Plus, MapPin, MoreVertical, Pencil, Trash2, Building2, GraduationCap, ShoppingCart, HeartPulse, CalendarPlus, Euro } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Modal } from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
@@ -34,10 +34,12 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   const [newName, setNewName] = useState('');
   const [newAddress, setNewAddress] = useState<AddressValue>({ formatted: '', lat: null, lng: null });
   const [newType, setNewType] = useState('office');
+  const [newPrice, setNewPrice] = useState('');
 
   const [editName, setEditName] = useState('');
   const [editAddress, setEditAddress] = useState<AddressValue>({ formatted: '', lat: null, lng: null });
   const [editType, setEditType] = useState('office');
+  const [editPrice, setEditPrice] = useState('');
 
   useEffect(() => { loadData(); }, [company.id, refreshKey]);
 
@@ -62,17 +64,19 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
     setEditName(prop.name);
     setEditAddress({ formatted: prop.address, lat: prop.lat ?? null, lng: prop.lng ?? null });
     setEditType(prop.type);
+    setEditPrice(prop.monthly_price != null ? String(prop.monthly_price) : '');
     setEditModal(prop); setMenuOpen(null);
   };
 
   const handleAddProperty = async () => {
     if (!newName) return;
-    // Objekte legen nur noch die Stammdaten fest (Name, Adresse, Typ).
+    // Objekte legen nur noch die Stammdaten fest (Name, Adresse, Typ, Preis).
     // Reinigungstage, Uhrzeiten und Mitarbeiterzuweisung passieren bewusst
     // getrennt im Einsätze-Bereich (Einzel- oder wiederkehrender Auftrag).
     const { error } = await supabase.from('properties').insert({
       company_id: company.id, name: newName, address: newAddress.formatted, type: newType,
       lat: newAddress.lat, lng: newAddress.lng,
+      monthly_price: newPrice ? Number(newPrice) : null,
     });
 
     if (error) { addToast('Fehler beim Speichern', 'error'); return; }
@@ -85,6 +89,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
     const { error } = await supabase.from('properties').update({
       name: editName, address: editAddress.formatted, type: editType,
       lat: editAddress.lat, lng: editAddress.lng,
+      monthly_price: editPrice ? Number(editPrice) : null,
     }).eq('id', editModal.id);
 
     if (error) { addToast('Fehler beim Speichern', 'error'); return; }
@@ -101,7 +106,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
   };
 
   const resetForm = () => {
-    setNewName(''); setNewAddress({ formatted: '', lat: null, lng: null }); setNewType('office');
+    setNewName(''); setNewAddress({ formatted: '', lat: null, lng: null }); setNewType('office'); setNewPrice('');
   };
 
   const TypeIcon = ({ type }: { type: string }) => {
@@ -141,6 +146,9 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-[#0F172A]">{prop.name}</p>
                   <p className="text-xs text-[#64748B] mt-1 flex items-center gap-1.5"><MapPin size={12} className="text-[#94A3B8]" /> {prop.address}</p>
+                  {prop.monthly_price != null && (
+                    <p className="text-xs text-[#16A34A] font-semibold mt-1 flex items-center gap-1.5"><Euro size={12} /> {prop.monthly_price.toLocaleString('de-DE')} €/Monat</p>
+                  )}
                 </div>
                 <div className="relative" ref={menuOpen === prop.id ? menuRef : null}>
                   <button onClick={() => setMenuOpen(menuOpen === prop.id ? null : prop.id)} className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition-colors">
@@ -181,6 +189,14 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
               />
             </div>
             <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Typ</label>{renderTypePicker(newType, setNewType)}</div>
+            <div>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Monatspreis für den Kunden (optional)</label>
+              <div className="relative">
+                <Euro size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+                <input type="number" min="0" step="1" value={newPrice} onChange={e => setNewPrice(e.target.value)} placeholder="z. B. 450" className="input-field pl-9" />
+              </div>
+              <p className="text-xs text-[#94A3B8] mt-1.5">Wird für die Umsatz- und Margenberechnung im Controlling genutzt.</p>
+            </div>
           </div>
           <p className="text-xs text-[#94A3B8] mt-5">Reinigungstage, Uhrzeiten und Mitarbeiter legst du im Einsätze-Bereich fest, sobald du für dieses Objekt einen Einzel- oder wiederkehrenden Auftrag erstellst.</p>
           <div className="flex justify-end gap-3 mt-6">
@@ -204,6 +220,14 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
               />
             </div>
             <div><label className="block text-sm font-medium text-[#0F172A] mb-1.5">Typ</label>{renderTypePicker(editType, setEditType)}</div>
+            <div>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Monatspreis für den Kunden (optional)</label>
+              <div className="relative">
+                <Euro size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94A3B8]" />
+                <input type="number" min="0" step="1" value={editPrice} onChange={e => setEditPrice(e.target.value)} placeholder="z. B. 450" className="input-field pl-9" />
+              </div>
+              <p className="text-xs text-[#94A3B8] mt-1.5">Wird für die Umsatz- und Margenberechnung im Controlling genutzt.</p>
+            </div>
           </div>
           <div className="flex justify-end gap-3 mt-8">
             <button onClick={() => setEditModal(null)} className="btn-ghost">Abbrechen</button>
