@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../hooks/useAuth';
-import { PLAN_PRICES, type Plan } from '../../lib/plans';
+import { calculateMonthlyPrice } from '../../lib/plans';
 import {
   Building2, Users, ShieldCheck, LogOut, ChevronDown, ChevronUp,
   Plus, X, Eye, EyeOff, AlertTriangle, Calendar, CreditCard,
   CheckCircle, Clock, Trash2, RefreshCw, Key, Search, Database,
-  UserCog, Mail, Copy, Check as CheckIcon, Crown, Star, Zap, Activity,
+  UserCog, Mail, Copy, Check as CheckIcon, Crown, Activity,
 } from 'lucide-react';
 
 interface CompanyRow {
@@ -39,15 +39,6 @@ interface AuthUser {
   user_metadata: Record<string, unknown>;
 }
 
-const PLAN_STYLE: Record<Plan, { bg: string; text: string; icon: typeof Zap }> = {
-  Starter: { bg: 'bg-blue-100', text: 'text-blue-700', icon: Zap },
-  Business: { bg: 'bg-orange-100', text: 'text-orange-700', icon: Star },
-  Premium: { bg: 'bg-emerald-100', text: 'text-emerald-700', icon: Crown },
-};
-
-function planStyle(p: string): { bg: string; text: string; icon: typeof Zap } {
-  return PLAN_STYLE[p as Plan] ?? PLAN_STYLE.Starter;
-}
 
 function paymentStatus(c: CompanyRow): { label: string; color: string; icon: typeof CheckCircle } {
   if (!c.paid_until) return { label: 'Nicht hinterlegt', color: 'text-slate-400', icon: Clock };
@@ -79,7 +70,6 @@ async function callAdminAction(action: string, payload: Record<string, unknown>,
 function CreateOwnerModal({ onClose, onCreated, token }: { onClose: () => void; onCreated: () => void; token?: string }) {
   const [form, setForm] = useState({
     owner_name: '', company_name: '', email: '', password: '',
-    contract: 'Starter' as Plan,
     contract_start: new Date().toISOString().split('T')[0],
     paid_until: '',
     trial_ends_at: (() => { const d = new Date(); d.setDate(d.getDate() + 30); return d.toISOString().split('T')[0]; })(),
@@ -103,7 +93,6 @@ function CreateOwnerModal({ onClose, onCreated, token }: { onClose: () => void; 
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({
           owner_name: form.owner_name, company_name: form.company_name, email: form.email, password: form.password,
-          contract: form.contract,
           contract_start: form.contract_start ? new Date(form.contract_start).toISOString() : undefined,
           paid_until: form.paid_until ? new Date(form.paid_until).toISOString() : undefined,
           trial_ends_at: form.trial_ends_at || undefined,
@@ -134,13 +123,8 @@ function CreateOwnerModal({ onClose, onCreated, token }: { onClose: () => void; 
             </button>
           </div>
         </Field>
-        <div className="grid grid-cols-3 gap-3">
-          <Field label="Vertrag">
-            <select value={form.contract} onChange={set('contract')} className="input-field text-sm">
-              <option>Starter</option><option>Business</option><option>Premium</option>
-            </select>
-          </Field>
-          <Field label="Beginn"><input type="date" value={form.contract_start} onChange={set('contract_start')} className="input-field text-sm" /></Field>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Vertragsbeginn"><input type="date" value={form.contract_start} onChange={set('contract_start')} className="input-field text-sm" /></Field>
           <Field label="Bezahlt bis"><input type="date" value={form.paid_until} onChange={set('paid_until')} className="input-field text-sm" /></Field>
         </div>
         <Field label="Testzeitraum endet am">
@@ -248,7 +232,6 @@ function DeleteCompanyModal({ company, onClose, onDone, token }: { company: Comp
 // ── Billing Modal ────────────────────────────────────────────────────────────
 function BillingModal({ company, onClose, onSaved }: { company: CompanyRow; onClose: () => void; onSaved: () => void }) {
   const [form, setForm] = useState({
-    contract: company.contract,
     contract_start: company.contract_start ? company.contract_start.split('T')[0] : '',
     contract_end: company.contract_end ? company.contract_end.split('T')[0] : '',
     paid_until: company.paid_until ? company.paid_until.split('T')[0] : '',
@@ -262,7 +245,6 @@ function BillingModal({ company, onClose, onSaved }: { company: CompanyRow; onCl
   const save = async () => {
     setLoading(true);
     const { error: err } = await supabase.from('companies').update({
-      contract: form.contract,
       contract_start: form.contract_start ? new Date(form.contract_start).toISOString() : null,
       contract_end: form.contract_end ? new Date(form.contract_end).toISOString() : null,
       paid_until: form.paid_until ? new Date(form.paid_until).toISOString() : null,
@@ -277,11 +259,6 @@ function BillingModal({ company, onClose, onSaved }: { company: CompanyRow; onCl
     <Modal title="Vertrag & Zahlung" onClose={onClose}>
       <div className="px-6 py-5 space-y-4">
         <p className="text-sm font-semibold text-slate-700">{company.name}</p>
-        <Field label="Vertragsplan">
-          <select value={form.contract} onChange={set('contract')} className="input-field text-sm">
-            <option>Starter</option><option>Business</option><option>Premium</option>
-          </select>
-        </Field>
         <div className="grid grid-cols-2 gap-3">
           <Field label="Vertragsbeginn"><input type="date" value={form.contract_start} onChange={set('contract_start')} className="input-field text-sm" /></Field>
           <Field label="Vertragsende"><input type="date" value={form.contract_end} onChange={set('contract_end')} className="input-field text-sm" /></Field>
@@ -544,8 +521,6 @@ function CompaniesTab({ companies, loading, token, onRefresh }: { companies: Com
               const pay = paymentStatus(c);
               const PayIcon = pay.icon;
               const isDeleted = !!c.deleted_at;
-              const plan = planStyle(c.contract);
-              const PlanIcon = plan.icon;
               return (
                 <li key={c.id} className={isDeleted ? 'opacity-60' : ''}>
                   <button onClick={() => setExpanded(open ? null : c.id)} className="w-full text-left px-6 py-4 hover:bg-slate-50 transition-colors">
@@ -563,8 +538,8 @@ function CompaniesTab({ companies, loading, token, onRefresh }: { companies: Com
                         </div>
                       </div>
                       <div className="flex items-center gap-3 flex-shrink-0">
-                        <span className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg ${plan.bg} ${plan.text}`}>
-                          <PlanIcon size={11} /> {c.contract}
+                        <span className="flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-100 text-emerald-700">
+                          <CreditCard size={11} /> {calculateMonthlyPrice(c.employee_count)}€/Monat
                         </span>
                         <span className={`hidden sm:flex items-center gap-1 text-xs font-medium ${pay.color}`}><PayIcon size={13} /> {pay.label}</span>
                         {open ? <ChevronUp size={15} className="text-slate-400" /> : <ChevronDown size={15} className="text-slate-400" />}
@@ -1040,12 +1015,9 @@ export function AdminDashboard() {
   const activeCompanies = companies.filter(c => !c.deleted_at);
   const totalEmployees = activeCompanies.reduce((s, c) => s + c.employee_count, 0);
   const overdueCount = activeCompanies.filter(c => !!c.paid_until && new Date(c.paid_until) < new Date()).length;
-  const revenueByPlan = useMemo(() => {
-    const total = activeCompanies.reduce((s, c) => s + (PLAN_PRICES[c.contract as Plan] ?? 0), 0);
-    const byPlan = { Starter: 0, Business: 0, Premium: 0 };
-    activeCompanies.forEach(c => { if (c.contract in byPlan) byPlan[c.contract as Plan]++; });
-    return { total, byPlan };
-  }, [activeCompanies]);
+  const totalMonthlyRevenue = useMemo(() => (
+    activeCompanies.reduce((s, c) => s + calculateMonthlyPrice(c.employee_count), 0)
+  ), [activeCompanies]);
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -1087,26 +1059,8 @@ export function AdminDashboard() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <HeroCard icon={Building2} label="Aktive Firmen" value={activeCompanies.length} color="text-blue-600 bg-blue-50" loading={loading} />
               <HeroCard icon={Users} label="Mitarbeiter gesamt" value={totalEmployees} color="text-emerald-600 bg-emerald-50" loading={loading} />
-              <HeroCard icon={ShieldCheck} label="MRR (geschätzt)" value={`${revenueByPlan.total} EUR`} color="text-slate-600 bg-slate-100" loading={loading} />
+              <HeroCard icon={ShieldCheck} label="MRR (geschätzt)" value={`${totalMonthlyRevenue} EUR`} color="text-slate-600 bg-slate-100" loading={loading} />
               <HeroCard icon={AlertTriangle} label="Überfällig" value={overdueCount} color={overdueCount > 0 ? 'text-red-600 bg-red-50' : 'text-slate-400 bg-slate-50'} loading={loading} />
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              {(['Starter', 'Business', 'Premium'] as Plan[]).map(p => {
-                const s = planStyle(p);
-                const Icon = s.icon;
-                return (
-                  <div key={p} className="card p-4 flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${s.bg}`}>
-                      <Icon size={18} className={s.text} />
-                    </div>
-                    <div>
-                      <p className="text-xs text-slate-400 font-medium">{p}</p>
-                      <p className="text-xl font-bold text-slate-900 leading-tight">{revenueByPlan.byPlan[p]}</p>
-                    </div>
-                  </div>
-                );
-              })}
             </div>
 
             <CompaniesTab companies={companies} loading={loading} token={token} onRefresh={load} />

@@ -1,10 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Euro, TrendingUp, TrendingDown, Minus, Clock, Check, CalendarDays, AlertCircle, Pencil, X, Lock, Crown, Download } from 'lucide-react';
+import { Euro, TrendingUp, TrendingDown, Minus, Clock, Check, CalendarDays, AlertCircle, Pencil, X, Download } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
-import { UpgradeModal } from '../../components/shared/UpgradeModal';
-import type { Plan } from '../../components/shared/UpgradeModal';
 import { useToast } from '../../components/shared/Toast';
 import { formatTime } from '../../lib/utils';
 import type { Employee, Property, Assignment, EmployeeProperty, Company } from '../../lib/types';
@@ -34,12 +32,7 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
   const [expandedEmployee, setExpandedEmployee] = useState<string | null>(null);
   const [editingWageId, setEditingWageId] = useState<string | null>(null);
   const [editingWageValue, setEditingWageValue] = useState('');
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const { addToast } = useToast();
-
-  const plan = ((company.contract as Plan) || 'Starter') as Plan;
-  const isPremium = plan === 'Premium';
-  const hasBusiness = plan === 'Business' || plan === 'Premium';
 
   useEffect(() => { loadData(); }, [company.id, refreshKey, selectedMonth]);
 
@@ -176,8 +169,6 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
   };
 
   const handleExportPDF = () => {
-    if (!hasBusiness) { setUpgradeOpen(true); return; }
-
     const standardWage = employees.find(e => e.hourly_wage != null)?.hourly_wage;
 
     interface PdfRow {
@@ -204,7 +195,7 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
     let rowNum = 0;
 
     for (const emp of employees) {
-      const empWage = isPremium ? emp.hourly_wage : standardWage ?? null;
+      const empWage = emp.hourly_wage ?? standardWage ?? null;
       const empAssignments = monthAssignments
         .filter(a => a.employee_id === emp.id && (a.status === 'completed' || a.status === 'checked_in'))
         .sort((a, b) => a.date.localeCompare(b.date));
@@ -389,7 +380,7 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
 
     for (const emp of employees) {
       const empAssignments = monthAssignments.filter(a => a.employee_id === emp.id);
-      const empWage = isPremium ? emp.hourly_wage : standardWage;
+      const empWage = emp.hourly_wage ?? standardWage;
 
       for (const a of empAssignments) {
         if (a.status !== 'completed' && a.status !== 'checked_in') continue;
@@ -462,31 +453,20 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
             {monthOptions.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
           <button
-            onClick={hasBusiness ? handleExportPDF : () => setUpgradeOpen(true)}
-            disabled={!hasBusiness}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
-              hasBusiness
-                ? 'bg-[#111827] text-white hover:bg-[#1f2937]'
-                : 'bg-[#F3F4F6] text-[#94A3B8] cursor-not-allowed'
-            }`}
-            title={!hasBusiness ? 'Upgrade auf Business für PDF-Export' : 'Abrechnung als PDF exportieren'}
+            onClick={handleExportPDF}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors bg-[#111827] text-white hover:bg-[#1f2937]"
+            title="Abrechnung als PDF exportieren"
           >
             <Download size={16} /> PDF
           </button>
           <button
-            onClick={hasBusiness ? handleExportCSV : () => setUpgradeOpen(true)}
-            disabled={!hasBusiness}
-            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors ${
-              hasBusiness
-                ? 'bg-[#F3F4F6] text-[#0F172A] hover:bg-[#E5E7EB]'
-                : 'bg-[#F3F4F6] text-[#94A3B8] cursor-not-allowed'
-            }`}
-            title={!hasBusiness ? 'Upgrade auf Business für CSV-Export' : 'Abrechnung als CSV exportieren'}
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors bg-[#F3F4F6] text-[#0F172A] hover:bg-[#E5E7EB]"
+            title="Abrechnung als CSV exportieren"
           >
             <Download size={16} /> CSV
           </button>
-          <button onClick={() => hasBusiness ? setWageModal(true) : setUpgradeOpen(true)} className="btn-primary flex items-center gap-2">
-            {!hasBusiness && <Lock size={14} />}
+          <button onClick={() => setWageModal(true)} className="btn-primary flex items-center gap-2">
             <Euro size={16} /> Stundenlohn setzen
           </button>
         </div>
@@ -537,34 +517,28 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
                     {employee.status === 'sick' && <span className="badge-danger text-[10px]">Krank</span>}
                   </div>
                   <div className="flex items-center gap-4 mt-1.5">
-                    {isPremium ? (
-                      editingWageId === employee.id ? (
-                        <span className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
-                          <input
-                            type="number" step="0.01" min="0"
-                            value={editingWageValue}
-                            onChange={e => setEditingWageValue(e.target.value)}
-                            onKeyDown={e => { if (e.key === 'Enter') handleSaveIndividualWage(employee.id); if (e.key === 'Escape') setEditingWageId(null); }}
-                            autoFocus
-                            className="w-24 text-xs px-2 py-1 border border-[#3B82F6] rounded-lg outline-none bg-white"
-                            placeholder="0.00"
-                          />
-                          <button onClick={() => handleSaveIndividualWage(employee.id)} className="p-1 rounded-lg bg-[#22C55E] text-white hover:bg-[#16A34A] transition-colors"><Check size={11} /></button>
-                          <button onClick={() => setEditingWageId(null)} className="p-1 rounded-lg bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] transition-colors"><X size={11} /></button>
-                        </span>
-                      ) : (
-                        <button
-                          onClick={e => { e.stopPropagation(); setEditingWageId(employee.id); setEditingWageValue(wage != null ? wage.toFixed(2) : ''); }}
-                          className="flex items-center gap-1.5 group text-xs text-[#64748B] hover:text-[#0F172A] transition-colors"
-                        >
-                          <span>{wage != null ? `${wage.toFixed(2)} EUR/h` : 'Kein Lohn'}</span>
-                          <Pencil size={10} className="opacity-0 group-hover:opacity-100 transition-opacity text-[#94A3B8]" />
-                        </button>
-                      )
-                    ) : (
-                      <span className="text-xs text-[#64748B]">
-                        {wage != null ? `${wage.toFixed(2)} EUR/h` : 'Kein Lohn'}
+                    {editingWageId === employee.id ? (
+                      <span className="flex items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                        <input
+                          type="number" step="0.01" min="0"
+                          value={editingWageValue}
+                          onChange={e => setEditingWageValue(e.target.value)}
+                          onKeyDown={e => { if (e.key === 'Enter') handleSaveIndividualWage(employee.id); if (e.key === 'Escape') setEditingWageId(null); }}
+                          autoFocus
+                          className="w-24 text-xs px-2 py-1 border border-[#3B82F6] rounded-lg outline-none bg-white"
+                          placeholder="0.00"
+                        />
+                        <button onClick={() => handleSaveIndividualWage(employee.id)} className="p-1 rounded-lg bg-[#22C55E] text-white hover:bg-[#16A34A] transition-colors"><Check size={11} /></button>
+                        <button onClick={() => setEditingWageId(null)} className="p-1 rounded-lg bg-[#F1F5F9] text-[#64748B] hover:bg-[#E2E8F0] transition-colors"><X size={11} /></button>
                       </span>
+                    ) : (
+                      <button
+                        onClick={e => { e.stopPropagation(); setEditingWageId(employee.id); setEditingWageValue(wage != null ? wage.toFixed(2) : ''); }}
+                        className="flex items-center gap-1.5 group text-xs text-[#64748B] hover:text-[#0F172A] transition-colors"
+                      >
+                        <span>{wage != null ? `${wage.toFixed(2)} EUR/h` : 'Kein Lohn'}</span>
+                        <Pencil size={10} className="opacity-0 group-hover:opacity-100 transition-opacity text-[#94A3B8]" />
+                      </button>
                     )}
                     <span className="text-xs text-[#64748B]">
                       {completedAssignments.length} Einsaetze
@@ -711,22 +685,6 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
         </div>
       )}
 
-      {/* Premium upsell banner for non-premium users */}
-      {!isPremium && employees.length > 0 && (
-        <div className="mt-4 rounded-2xl border border-[#FED7AA] bg-gradient-to-r from-[#FFF7ED] to-[#FFFBF5] p-5 flex items-center gap-4">
-          <div className="w-10 h-10 rounded-xl bg-[#F97316]/10 flex items-center justify-center shrink-0">
-            <Crown size={20} className="text-[#F97316]" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[#0F172A]">Individuelle Stundenlöhne</p>
-            <p className="text-xs text-[#64748B] mt-0.5">Mit dem Premium-Plan kannst du für jeden Mitarbeiter einen eigenen Stundensatz hinterlegen – direkt hier in der Abrechnung.</p>
-          </div>
-          <button onClick={() => setUpgradeOpen(true)} className="shrink-0 flex items-center gap-1.5 bg-[#F97316] text-white text-xs font-semibold px-4 py-2 rounded-xl hover:bg-[#EA6C00] transition-colors">
-            <Crown size={13} /> Premium
-          </button>
-        </div>
-      )}
-
       {/* Set Default Wage Modal */}
       <Modal open={wageModal} onClose={() => { setWageModal(false); setDefaultWage(''); }} width="max-w-sm">
         <div className="p-8">
@@ -748,14 +706,6 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
           </div>
         </div>
       </Modal>
-
-      <UpgradeModal
-        open={upgradeOpen}
-        onClose={() => setUpgradeOpen(false)}
-        currentPlan={plan}
-        requiredPlan="Premium"
-        featureName="Individuelle Stundenlöhne"
-      />
     </div>
   );
 }

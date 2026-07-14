@@ -7,11 +7,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const PRICE_IDS: Record<string, string> = {
-  Starter: "price_1TeyZJ2K9nqVoLEmjtdyDtpQ",
-  Business: "price_1TeyaC2K9nqVoLEmOtPZ3iM8",
-  Premium: "price_1TeyaS2K9nqVoLEmvHLJjJxt",
-};
+// Grundgebühr + Preis pro Mitarbeiter, ersetzt die alten drei festen
+// Starter/Business/Premium-Preise (siehe src/lib/plans.ts für die
+// dazugehörige Preisformel, muss mit diesen IDs übereinstimmen).
+const BASE_FEE_PRICE_ID = "price_1TstyKRoktFw8HCnHaClxF9k";
+const PER_EMPLOYEE_PRICE_ID = "price_1TstyTRoktFw8HCnvWdYVNda";
 
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
@@ -23,9 +23,10 @@ Deno.serve(async (req: Request) => {
       apiVersion: "2024-04-10",
     });
 
-    const { company_id, plan } = await req.json();
+    const { company_id, employee_count } = await req.json();
+    const employeeCount = Math.max(1, Number(employee_count) || 1);
 
-    if (!company_id || !plan || !PRICE_IDS[plan]) {
+    if (!company_id) {
       return new Response(JSON.stringify({ error: "Ungültige Parameter" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -34,15 +35,18 @@ Deno.serve(async (req: Request) => {
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
-      line_items: [{ price: PRICE_IDS[plan], quantity: 1 }],
+      line_items: [
+        { price: BASE_FEE_PRICE_ID, quantity: 1 },
+        { price: PER_EMPLOYEE_PRICE_ID, quantity: employeeCount },
+      ],
       success_url: "https://meizo.de/dashboard?payment=success",
       cancel_url: "https://meizo.de/dashboard?payment=cancelled",
-      metadata: { company_id, plan },
+      metadata: { company_id, employee_count: String(employeeCount) },
       // Metadata zusätzlich auf das Abo selbst spiegeln (nicht nur auf die
       // Checkout Session) — hilfreich als Fallback beim Nachschlagen in
       // Stripe direkt, auch wenn stripe-webhook primär über die auf
       // companies gespeicherte stripe_subscription_id zuordnet.
-      subscription_data: { metadata: { company_id, plan } },
+      subscription_data: { metadata: { company_id } },
     });
 
     return new Response(JSON.stringify({ url: session.url }), {

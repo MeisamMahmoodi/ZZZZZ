@@ -10,9 +10,16 @@ export interface Company {
   owner_name: string;
   owner_email: string;
   owner_id: string | null;
+  // Historisches Feld aus der Zeit fester Pläne (Starter/Business/Premium).
+  // Wird seit der Umstellung auf Preis-pro-Mitarbeiter nirgends mehr zur
+  // Funktionsfreischaltung genutzt, bleibt aber in der DB bestehen.
   contract: string;
   created_at: string;
   trial_ends_at: string | null;
+  paid_until: string | null;
+  stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  stripe_subscription_item_id: string | null;
 }
 
 export interface Employee {

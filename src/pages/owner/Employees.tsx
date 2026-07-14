@@ -1,11 +1,10 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Plus, Search, MoreVertical, Phone, Pencil, Trash2, Mail, Shield, ShieldOff, AlertCircle, Euro, Lock, Users, ArrowRight } from 'lucide-react';
+import { Plus, Search, MoreVertical, Phone, Pencil, Trash2, Mail, Shield, ShieldOff, AlertCircle, Euro, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Avatar } from '../../components/shared/Avatar';
 import { Modal } from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
-import { UpgradeModal } from '../../components/shared/UpgradeModal';
-import { PLAN_EMPLOYEE_LIMITS, type Plan } from '../../lib/plans';
+import { calculateMonthlyPrice, PER_EMPLOYEE_EUR } from '../../lib/plans';
 import type { Employee, Property, EmployeeProperty, Company } from '../../lib/types';
 
 interface EmployeesProps {
@@ -26,16 +25,24 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const [creatingAccount, setCreatingAccount] = useState(false);
   const [loginEnabled, setLoginEnabled] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<Employee | null>(null);
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
-  const [limitReachedOpen, setLimitReachedOpen] = useState(false);
   const { addToast } = useToast();
 
-  const plan = ((company.contract as Plan) || 'Starter') as Plan;
-  const isPremium = plan === 'Premium';
-
-  const currentLimit = PLAN_EMPLOYEE_LIMITS[plan];
-  const nextPlan: Record<Plan, Plan> = { 'Starter': 'Business', 'Business': 'Premium', 'Premium': 'Premium' };
-  const nextPlanName = nextPlan[plan];
+  // Kein Plan-/Limit-Konzept mehr — jede Firma hat alle Funktionen, der
+  // Preis skaliert automatisch mit der Mitarbeiterzahl (siehe lib/plans.ts).
+  // syncSeats hält die Stripe-Subscription-Menge nach jeder Änderung aktuell.
+  const syncSeats = async () => {
+    try {
+      const session = (await supabase.auth.getSession()).data.session;
+      await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sync-subscription-seats`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${session?.access_token || ''}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ company_id: company.id }),
+      });
+    } catch {
+      // Best effort — falls das fehlschlägt, holt der nächste
+      // Hinzufügen/Löschen-Vorgang den Sync automatisch nach.
+    }
+  };
 
   const [newFirst, setNewFirst] = useState('');
   const [newLast, setNewLast] = useState('');
@@ -111,7 +118,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
       company_id: company.id, first_name: newFirst, last_name: newLast, phone: newPhone,
       email: loginEnabled ? (newEmail || null) : null,
       status: 'active',
-      hourly_wage: isPremium && newWage ? parseFloat(newWage) : null,
+      hourly_wage: newWage ? parseFloat(newWage) : null,
     }).select().maybeSingle();
 
     if (error) { addToast('Fehler beim Speichern', 'error'); setCreatingAccount(false); return; }
@@ -137,6 +144,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
     setNewPropertyIds([]); setLoginEnabled(false);
     setCreatingAccount(false);
     onRefresh();
+    syncSeats();
   };
 
   const openEditModal = (emp: Employee) => {
@@ -148,8 +156,10 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
 
   const handleEditEmployee = async () => {
     if (!editModal || !editFirst || !editLast) return;
-    const updatePayload: Record<string, unknown> = { first_name: editFirst, last_name: editLast, phone: editPhone };
-    if (isPremium) updatePayload.hourly_wage = editWage ? parseFloat(editWage) : null;
+    const updatePayload: Record<string, unknown> = {
+      first_name: editFirst, last_name: editLast, phone: editPhone,
+      hourly_wage: editWage ? parseFloat(editWage) : null,
+    };
     const { error } = await supabase.from('employees').update(updatePayload).eq('id', editModal.id);
     if (error) { addToast('Fehler beim Speichern', 'error'); return; }
 
@@ -191,6 +201,7 @@ const handleDelete = async (emp: Employee) => {
   const { error: e2 } = await supabase.from('employees').delete().eq('id', emp.id);
   if (e2) { addToast('Fehler beim Löschen', 'error'); return; }
   setDeleteConfirm(null); setMenuOpen(null); onRefresh(); addToast('Mitarbeiter gelöscht');
+  syncSeats();
 };
 
   const toggleProperty = (pid: string, setter: typeof setNewPropertyIds) => {
@@ -238,7 +249,7 @@ const handleDelete = async (emp: Employee) => {
             <p className="text-sm font-semibold text-[#0F172A]">{emp.first_name} {emp.last_name}</p>
             <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-1"><Phone size={12} className="text-[#94A3B8]" /> {emp.phone}</p>
             {emp.email && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Mail size={12} className="text-[#94A3B8]" /> {emp.email}</p>}
-            {isPremium && emp.hourly_wage != null && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Euro size={12} className="text-[#94A3B8]" /> {emp.hourly_wage.toFixed(2)} EUR/h</p>}
+            {emp.hourly_wage != null && <p className="text-xs text-[#64748B] flex items-center gap-1.5 mt-0.5"><Euro size={12} className="text-[#94A3B8]" /> {emp.hourly_wage.toFixed(2)} EUR/h</p>}
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {emp.status === 'sick' ? <span className="badge-danger">Krank</span> : <span className="badge-success">Aktiv</span>}
@@ -287,16 +298,10 @@ const handleDelete = async (emp: Employee) => {
           </div>
         </td>
         <td className="px-5 py-4">
-          {isPremium ? (
-            emp.hourly_wage != null ? (
-              <span className="text-sm font-medium text-[#0F172A]">{emp.hourly_wage.toFixed(2)} EUR</span>
-            ) : (
-              <span className="text-xs text-[#94A3B8]">—</span>
-            )
+          {emp.hourly_wage != null ? (
+            <span className="text-sm font-medium text-[#0F172A]">{emp.hourly_wage.toFixed(2)} EUR</span>
           ) : (
-            <button onClick={() => setUpgradeOpen(true)} className="flex items-center gap-1.5 text-[11px] font-semibold text-[#64748B] hover:text-[#16A34A] transition-colors">
-              <Lock size={11} /> Premium
-            </button>
+            <span className="text-xs text-[#94A3B8]">—</span>
           )}
         </td>
         <td className="px-5 py-4">
@@ -340,11 +345,11 @@ const handleDelete = async (emp: Employee) => {
           <h1 className="text-2xl font-bold text-[#0F172A] tracking-tight">Mitarbeiter</h1>
           <p className="text-xs text-[#94A3B8] mt-1">
             <Users size={12} className="inline mr-1" />
-            {employees.length} / {currentLimit}
+            {employees.length} Mitarbeiter · {calculateMonthlyPrice(employees.length)}€/Monat
           </p>
         </div>
         <button
-          onClick={() => employees.length >= currentLimit ? setLimitReachedOpen(true) : setAddModal(true)}
+          onClick={() => setAddModal(true)}
           className="btn-primary flex items-center justify-center gap-2"
         >
           <Plus size={16} /> Mitarbeiter hinzufügen
@@ -415,25 +420,16 @@ const handleDelete = async (emp: Employee) => {
               <input type="text" value={newPhone} onChange={e => setNewPhone(e.target.value)} placeholder="+49 171..." className="input-field" />
             </div>
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-[#0F172A]">Stundenlohn (EUR)</label>
-                {!isPremium && (
-                  <button type="button" onClick={() => setUpgradeOpen(true)} className="flex items-center gap-1 text-[10px] font-semibold text-[#16A34A] bg-[#F0FDF4] border border-[#BBF7D0] px-2 py-0.5 rounded-md hover:bg-[#DCFCE7] transition-colors">
-                    <Lock size={9} /> Premium
-                  </button>
-                )}
-              </div>
-              {isPremium ? (
-                <input type="number" step="0.01" min="0" value={newWage} onChange={e => setNewWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
-              ) : (
-                <button type="button" onClick={() => setUpgradeOpen(true)} className="w-full text-left input-field bg-[#F8FAFC] text-[#94A3B8] cursor-pointer flex items-center gap-2 hover:bg-[#F1F5F9]">
-                  <Lock size={13} /> Individuelle Stundensätze (ab Premium)
-                </button>
-              )}
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Stundenlohn (EUR)</label>
+              <input type="number" step="0.01" min="0" value={newWage} onChange={e => setNewWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Bekannte Objekte</label>
               {renderPropertyChips(newPropertyIds, setNewPropertyIds)}
+            </div>
+            <div className="bg-[#F8FAFC] rounded-xl p-3 text-xs text-[#64748B] flex items-center gap-2">
+              <Users size={13} className="text-[#94A3B8]" />
+              Ein weiterer Mitarbeiter erhöht deine monatliche Rechnung um {PER_EMPLOYEE_EUR}€.
             </div>
             <div className="h-px bg-[#F1F5F9] my-1" />
             <div>
@@ -485,21 +481,8 @@ const handleDelete = async (emp: Employee) => {
               <input type="text" value={editPhone} onChange={e => setEditPhone(e.target.value)} placeholder="+49 171..." className="input-field" />
             </div>
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-[#0F172A]">Stundenlohn (EUR)</label>
-                {!isPremium && (
-                  <button type="button" onClick={() => setUpgradeOpen(true)} className="flex items-center gap-1 text-[10px] font-semibold text-[#16A34A] bg-[#F0FDF4] border border-[#BBF7D0] px-2 py-0.5 rounded-md hover:bg-[#DCFCE7] transition-colors">
-                    <Lock size={9} /> Premium
-                  </button>
-                )}
-              </div>
-              {isPremium ? (
-                <input type="number" step="0.01" min="0" value={editWage} onChange={e => setEditWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
-              ) : (
-                <button type="button" onClick={() => setUpgradeOpen(true)} className="w-full text-left input-field bg-[#F8FAFC] text-[#94A3B8] cursor-pointer flex items-center gap-2 hover:bg-[#F1F5F9]">
-                  <Lock size={13} /> Individuelle Stundensätze (ab Premium)
-                </button>
-              )}
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Stundenlohn (EUR)</label>
+              <input type="number" step="0.01" min="0" value={editWage} onChange={e => setEditWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Bekannte Objekte</label>
@@ -514,46 +497,6 @@ const handleDelete = async (emp: Employee) => {
           <div className="flex justify-end gap-3 mt-8">
             <button onClick={() => setEditModal(null)} className="btn-ghost">Abbrechen</button>
             <button onClick={handleEditEmployee} disabled={!editFirst || !editLast} className="btn-primary">Speichern</button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Upgrade Modal */}
-      {upgradeOpen && (
-        <UpgradeModal
-          open={upgradeOpen}
-          onClose={() => setUpgradeOpen(false)}
-          currentPlan={plan}
-          requiredPlan="Premium"
-          featureName="Erweiterte Mitarbeiterprofile"
-        />
-      )}
-
-      {/* Limit Reached Modal */}
-      <Modal open={limitReachedOpen} onClose={() => setLimitReachedOpen(false)} width="max-w-sm">
-        <div className="p-8">
-          <div className="w-12 h-12 rounded-2xl bg-[#FFF7ED] flex items-center justify-center mb-5">
-            <Users size={22} className="text-[#F97316]" />
-          </div>
-          <h2 className="text-lg font-bold text-[#0F172A] mb-2">Limit erreicht!</h2>
-          <p className="text-sm text-[#64748B] leading-relaxed mb-6">
-            Du verwaltest aktuell <span className="font-semibold text-[#0F172A]">{employees.length} Mitarbeiter</span>. Um weitere Teammitglieder hinzuzufügen, erweitere dein Paket auf <span className="font-semibold text-[#0F172A]">{nextPlanName}</span>.
-          </p>
-          <div className="bg-[#FFF7ED] rounded-xl p-4 mb-6">
-            <div className="flex items-center gap-2 text-sm text-[#92400E]">
-              <AlertCircle size={16} />
-              <span>Dein aktuelles Limit: <strong>{currentLimit} Mitarbeiter</strong></span>
-            </div>
-          </div>
-          <div className="flex justify-end gap-3">
-            <button onClick={() => setLimitReachedOpen(false)} className="btn-ghost">Schließen</button>
-            <button
-              onClick={() => window.location.href = '/pricing'}
-              className="btn-primary flex items-center gap-2"
-            >
-              <span>Jetzt Paket upgraden</span>
-              <ArrowRight size={16} />
-            </button>
           </div>
         </div>
       </Modal>

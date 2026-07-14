@@ -1,9 +1,8 @@
-import { useState } from 'react';
-import { Lock, Eye, EyeOff, Package, Check, Zap, Star, Crown, ArrowUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Lock, Eye, EyeOff, Package, Users } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../components/shared/Toast';
-import { UpgradeModal } from '../../components/shared/UpgradeModal';
-import type { Plan } from '../../components/shared/UpgradeModal';
+import { calculateMonthlyPrice } from '../../lib/plans';
 import { ChecklistSettings } from '../../components/owner/ChecklistSettings';
 import type { Company } from '../../lib/types';
 
@@ -21,9 +20,14 @@ export function Settings({ company, onRefresh }: SettingsProps) {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPasswords, setShowPasswords] = useState(false);
   const [savingPassword, setSavingPassword] = useState(false);
-  const [upgradeOpen, setUpgradeOpen] = useState(false);
+  const [employeeCount, setEmployeeCount] = useState(0);
 
   const { addToast } = useToast();
+
+  useEffect(() => {
+    supabase.from('employees').select('id', { count: 'exact', head: true }).eq('company_id', company.id)
+      .then(({ count }) => setEmployeeCount(count ?? 0));
+  }, [company.id]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -66,80 +70,30 @@ export function Settings({ company, onRefresh }: SettingsProps) {
     }
   };
 
-  const plan = ((company.contract as Plan) || 'Starter') as Plan;
-  const isPremium = plan === 'Premium';
-
-  const planConfig = {
-    Starter: {
-      icon: Zap,
-      color: 'text-[#3B82F6]',
-      bg: 'bg-[#EFF6FF]',
-      border: 'border-[#BFDBFE]',
-      badge: 'bg-[#DBEAFE] text-[#1D4ED8]',
-      features: ['Bis zu 10 Mitarbeiter', 'Objekte & Einsätze', 'Krankmeldungen', 'Push-Benachrichtigungen'],
-    },
-    Business: {
-      icon: Star,
-      color: 'text-[#F97316]',
-      bg: 'bg-[#FFF7ED]',
-      border: 'border-[#FED7AA]',
-      badge: 'bg-[#FFEDD5] text-[#C2410C]',
-      features: ['Bis zu 30 Mitarbeiter', 'Alles aus Starter', 'Abrechnung', 'Zeitstempel', 'Ersatz finden'],
-    },
-    Premium: {
-      icon: Crown,
-      color: 'text-[#16A34A]',
-      bg: 'bg-[#F0FDF4]',
-      border: 'border-[#BBF7D0]',
-      badge: 'bg-[#DCFCE7] text-[#15803D]',
-      features: ['Bis zu 99 Mitarbeiter', 'Alles aus Business', 'Mitarbeiter-Logins', 'Stundenlohn', 'Einchecken mit Foto & GPS'],
-    },
-  };
-
-  const cfg = planConfig[plan];
-  const PlanIcon = cfg.icon;
-
   return (
     <div>
       <h1 className="text-2xl sm:text-[28px] font-bold text-ink-900 tracking-tight mb-8">Einstellungen</h1>
 
       <div className="space-y-6 max-w-lg">
-        {/* Current Plan */}
-        <div className={`rounded-2xl border p-6 sm:p-7 ${cfg.bg} ${cfg.border}`}>
+        {/* Preis & Team */}
+        <div className="rounded-2xl border p-6 sm:p-7 bg-[#F0FDF4] border-[#BBF7D0]">
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-3.5">
-              <div className={`w-11 h-11 rounded-2xl bg-white/80 flex items-center justify-center shadow-sm`}>
-                <PlanIcon size={22} className={cfg.color} />
+              <div className="w-11 h-11 rounded-2xl bg-white/80 flex items-center justify-center shadow-sm">
+                <Package size={22} className="text-[#16A34A]" />
               </div>
               <div>
                 <p className="text-xs font-semibold text-ink-400 uppercase tracking-wide mb-0.5 flex items-center gap-1.5">
-                  <Package size={11} /> Aktuelles Paket
+                  <Users size={11} /> {employeeCount} Mitarbeiter
                 </p>
-                <p className="text-xl font-bold text-ink-900">{plan}</p>
+                <p className="text-xl font-bold text-ink-900">{calculateMonthlyPrice(employeeCount)}€/Monat</p>
               </div>
             </div>
-            <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${cfg.badge}`}>Aktiv</span>
+            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-[#DCFCE7] text-[#15803D]">Aktiv</span>
           </div>
-
-          <div className="mt-5 grid grid-cols-1 gap-2">
-            {cfg.features.map(f => (
-              <div key={f} className="flex items-center gap-2">
-                <div className={`w-4 h-4 rounded-full bg-white/80 flex items-center justify-center shrink-0`}>
-                  <Check size={10} className={cfg.color} strokeWidth={3} />
-                </div>
-                <p className="text-sm text-ink-700">{f}</p>
-              </div>
-            ))}
-          </div>
-
-          {!isPremium && (
-            <button
-              onClick={() => setUpgradeOpen(true)}
-              className="w-full mt-5 py-3 rounded-xl bg-ink-900 text-white text-sm font-semibold hover:bg-ink-700 transition-colors flex items-center justify-center gap-2 shadow-sm"
-            >
-              <ArrowUp size={15} /> Jetzt upgraden
-            </button>
-          )}
+          <p className="text-sm text-ink-700 mt-4">
+            Alle Funktionen sind für dich freigeschaltet. Der Preis passt sich automatisch an, sobald du Mitarbeiter hinzufügst oder entfernst — keine Pakete, keine versteckten Grenzen.
+          </p>
         </div>
 
         {/* Company Settings */}
@@ -220,16 +174,6 @@ export function Settings({ company, onRefresh }: SettingsProps) {
         {/* Checklists */}
         <ChecklistSettings company={company} />
       </div>
-
-      {upgradeOpen && (
-        <UpgradeModal
-          open={upgradeOpen}
-          onClose={() => setUpgradeOpen(false)}
-          currentPlan={plan}
-          requiredPlan={plan === 'Starter' ? 'Business' : 'Premium'}
-          featureName="Upgrade"
-        />
-      )}
     </div>
   );
 }

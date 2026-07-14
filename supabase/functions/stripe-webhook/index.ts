@@ -8,6 +8,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey, stripe-signature",
 };
 
+// Muss mit create-checkout-session/index.ts und src/lib/plans.ts übereinstimmen.
+const PER_EMPLOYEE_PRICE_ID = "price_1TstyTRoktFw8HCnvWdYVNda";
+
 function plus31Days(): string {
   const d = new Date();
   d.setDate(d.getDate() + 31);
@@ -53,16 +56,29 @@ Deno.serve(async (req: Request) => {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
         const company_id = session.metadata?.company_id;
-        const plan = session.metadata?.plan;
         if (company_id) {
           const customerId = typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
           const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? null;
+
+          // Die Subscription-Item-ID der Pro-Mitarbeiter-Position merken —
+          // ohne die kann die Mitarbeiterzahl-Sync-Funktion später nicht
+          // gezielt nur diese eine Position aktualisieren (Stripe braucht
+          // dafür die Item-ID, nicht nur die Subscription-ID).
+          let subscriptionItemId: string | null = null;
+          if (subscriptionId) {
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            const perEmployeeItem = subscription.items.data.find(
+              (item) => item.price.id === PER_EMPLOYEE_PRICE_ID
+            );
+            subscriptionItemId = perEmployeeItem?.id ?? null;
+          }
+
           await supabaseAdmin.from("companies").update({
             paid_until: plus31Days(),
             trial_ends_at: null,
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId,
-            ...(plan ? { contract: plan } : {}),
+            stripe_subscription_item_id: subscriptionItemId,
           }).eq("id", company_id);
         }
         break;

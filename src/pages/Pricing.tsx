@@ -1,160 +1,122 @@
-import { Check, Star } from 'lucide-react';
+import { useState } from 'react';
+import { Check } from 'lucide-react';
+import { BASE_FEE_EUR, PER_EMPLOYEE_EUR, calculateMonthlyPrice, isEnterpriseRange, ENTERPRISE_THRESHOLD } from '../lib/plans';
 
 interface PricingProps {
   onContinue: () => void;
 }
 
-const plans = [
-  {
-    name: 'Starter',
-    price: '99',
-    capacity: 'bis 10 Mitarbeiter',
-    payLink: 'https://checkout.revolut.com/pay/ca664746-9487-43fd-92d9-fd40e5b85441',
-    recommended: false,
-    features: [
-      'Kern-Planung: Zugriff auf das Dashboard',
-      'Einsatzplan: Ansicht heutiger Einsätze und Mitarbeiterzuweisung',
-      'Objektverwaltung: Anlegen von Einsatzorten (Praxen, Kindergärten etc.)',
-      'Live-Status: GPS-Check-in und Zeitstempel-Überwachung mit Foto-Nachweis',
-      'Krankheits-Management: Schnelle Übersicht bei Ausfällen direkt im Dashboard',
-    ],
-  },
-  {
-    name: 'Business',
-    price: '199',
-    capacity: 'bis 30 Mitarbeiter',
-    payLink: 'https://checkout.revolut.com/pay/9c765fba-ac0a-49f5-9657-1f8a35556bec',
-    recommended: true,
-    features: [
-      'Alles aus Starter',
-      'DATEV-Export: Fertiger CSV-Export aller Arbeitszeiten für den Steuerberater',
-      'Abrechnungs-Modul: Automatische Verdienst- und Stundenübersicht je Mitarbeiter',
-      'Kostenkontrolle: Überwachung der Gesamtkosten des laufenden Monats',
-      'Standard-Lohn: Zentrale Einstellung des Stundenlohns für das gesamte Team',
-    ],
-  },
-  {
-    name: 'Premium',
-    price: '299',
-    capacity: 'bis 99 Mitarbeiter',
-    payLink: 'https://checkout.revolut.com/pay/48dfba15-279a-4535-95c4-b68808e34dbb',
-    recommended: false,
-    features: [
-      'Alles aus Business',
-      'Lohn-Konfiguration: Individuelle Stundensätze pro Mitarbeiter einstellbar',
-      'Erweiterte Mitarbeiterprofile: Kontaktdaten und Login-Status direkt verwalten',
-      'Feature-Mitbestimmung: Anfrage und Priorisierung neuer Wunsch-Funktionen',
-      'Premium-Support: Bevorzugte Hilfe bei technischen Fragen',
-    ],
-  },
+const FEATURES = [
+  'Kern-Planung: Dashboard, Einsatzplan, Objektverwaltung',
+  'Live-Status: GPS-Check-in und Zeitstempel-Überwachung mit Foto-Nachweis',
+  'Krankheits-Management inkl. Smart-Ersatz-Dispatch',
+  'Abrechnungs-Modul: automatische Verdienst- und Stundenübersicht',
+  'DATEV-Export: fertiger CSV-Export für den Steuerberater',
+  'Individuelle Stundensätze pro Mitarbeiter',
+  'Mehrsprachige Mitarbeiter-App (8 Sprachen)',
 ];
 
 export function Pricing({ onContinue }: PricingProps) {
+  const [employeeCount, setEmployeeCount] = useState(15);
+  const enterprise = isEnterpriseRange(employeeCount);
+  const price = calculateMonthlyPrice(employeeCount);
+
+  const mailSubject = encodeURIComponent('Meizo Anfrage');
+  const mailBody = encodeURIComponent(
+    `Hallo,\n\nich interessiere mich für Meizo (ca. ${employeeCount} Mitarbeiter).\n\nViele Grüße`
+  );
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
       {/* Header */}
       <header className="pt-10 pb-6 px-6 text-center">
         <img src="/meizoLogoL.jpeg" alt="meizo" className="h-12 w-auto mx-auto mb-6 bg-white rounded-xl px-3 py-1.5 shadow-sm" />
         <h1 className="text-3xl sm:text-4xl font-bold text-[#0F172A] tracking-tight">
-          Wählen Sie Ihr Paket
+          Ein Preis. Alle Funktionen.
         </h1>
+        <p className="text-[#64748B] mt-3 max-w-md mx-auto">
+          Keine Pakete, keine versteckten Grenzen. {BASE_FEE_EUR}€ Grundgebühr + {PER_EMPLOYEE_EUR}€ pro Mitarbeiter im Monat.
+        </p>
       </header>
 
-      {/* Cards */}
-      <main className="flex-1 px-4 sm:px-6 pb-12">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
-          {plans.map((plan) => (
-            <div
-              key={plan.name}
-              className={`relative rounded-3xl flex flex-col transition-all duration-200 ${
-                plan.recommended
-                  ? 'bg-[#0F172A] text-white shadow-[0_20px_60px_-10px_rgba(15,23,42,0.35)] scale-[1.03] md:scale-105 z-10'
-                  : 'bg-white border border-[#E2E8F0] shadow-sm hover:shadow-md'
-              }`}
-            >
-              {/* Recommended badge */}
-              {plan.recommended && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                  <div className="flex items-center gap-1.5 bg-[#F59E0B] text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-md whitespace-nowrap">
-                    <Star size={11} fill="white" />
-                    Meistgewählt
-                  </div>
+      {/* Calculator */}
+      <main className="flex-1 px-4 sm:px-6 pb-16">
+        <div className="max-w-lg mx-auto">
+          <div className="bg-white rounded-3xl border border-[#E2E8F0] shadow-sm p-7 sm:p-9">
+            <div className="text-center mb-8">
+              <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-2">Ihr monatlicher Preis</p>
+              {enterprise ? (
+                <p className="text-3xl font-bold text-[#0F172A]">Auf Anfrage</p>
+              ) : (
+                <div className="flex items-baseline justify-center gap-1.5">
+                  <span className="text-5xl font-bold tracking-tight text-[#0F172A]">{price} €</span>
+                  <span className="text-[#94A3B8] font-medium">/ Monat</span>
                 </div>
               )}
-
-              <div className="p-7 pt-8 flex flex-col flex-1">
-                {/* Plan name & capacity */}
-                <div className="mb-6">
-                  <p className={`text-xs font-bold uppercase tracking-widest mb-2 ${plan.recommended ? 'text-[#94A3B8]' : 'text-[#94A3B8]'}`}>
-                    {plan.name}
-                  </p>
-                  <div className="flex items-baseline gap-1.5">
-                    <span className={`text-4xl font-bold tracking-tight ${plan.recommended ? 'text-white' : 'text-[#0F172A]'}`}>
-                      {plan.price} €
-                    </span>
-                  </div>
-                  <p className={`text-sm mt-1.5 font-medium ${plan.recommended ? 'text-[#94A3B8]' : 'text-[#64748B]'}`}>
-                    {plan.capacity}
-                  </p>
-                </div>
-
-                {/* Divider */}
-                <div className={`h-px mb-6 ${plan.recommended ? 'bg-white/[0.08]' : 'bg-[#F1F5F9]'}`} />
-
-                {/* Features */}
-                <ul className="space-y-3 flex-1 mb-8">
-                  {plan.features.map((feature) => {
-                    const [bold, ...rest] = feature.split(':');
-                    const hasColon = feature.includes(':');
-                    return (
-                      <li key={feature} className="flex items-start gap-3">
-                        <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${
-                          plan.recommended ? 'bg-white/[0.12]' : 'bg-[#F0FDF4]'
-                        }`}>
-                          <Check size={11} className={plan.recommended ? 'text-[#86EFAC]' : 'text-[#16A34A]'} strokeWidth={2.5} />
-                        </div>
-                        <span className={`text-sm leading-snug ${plan.recommended ? 'text-[#CBD5E1]' : 'text-[#475569]'}`}>
-                          {hasColon ? (
-                            <>
-                              <span className={`font-semibold ${plan.recommended ? 'text-white' : 'text-[#0F172A]'}`}>{bold}:</span>
-                              {rest.join(':')}
-                            </>
-                          ) : feature}
-                        </span>
-                      </li>
-                    );
-                  })}
-                </ul>
-
-                {/* CTA */}
-                <a
-                  href={plan.payLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`w-full py-3.5 rounded-2xl text-sm font-bold text-center transition-all duration-200 block ${
-                    plan.recommended
-                      ? 'bg-white text-[#0F172A] hover:bg-[#F1F5F9] shadow-sm'
-                      : 'bg-[#0F172A] text-white hover:bg-[#1E293B]'
-                  }`}
-                >
-                  Jetzt starten
-                </a>
-              </div>
             </div>
-          ))}
-        </div>
 
-        {/* Already paid */}
-        <div className="max-w-5xl mx-auto mt-10 text-center">
-          <p className="text-sm text-[#94A3B8]">
-            Sie haben bereits bezahlt?{' '}
-            <button
-              onClick={onContinue}
-              className="text-[#0F172A] font-semibold underline underline-offset-2 hover:no-underline transition-all"
+            <div className="mb-2 flex items-center justify-between">
+              <label htmlFor="employees" className="text-sm font-semibold text-[#0F172A]">Mitarbeiteranzahl</label>
+              <span className="text-sm font-bold text-[#0F172A]">{employeeCount}</span>
+            </div>
+            <input
+              id="employees"
+              type="range"
+              min={1}
+              max={80}
+              value={employeeCount}
+              onChange={e => setEmployeeCount(Number(e.target.value))}
+              className="w-full accent-[#0F172A]"
+            />
+            <div className="flex justify-between text-xs text-[#94A3B8] mt-1 mb-8">
+              <span>1</span>
+              <span>{ENTERPRISE_THRESHOLD}+ (individuelles Angebot)</span>
+            </div>
+
+            <div className="h-px bg-[#F1F5F9] mb-6" />
+
+            <ul className="space-y-3 mb-8">
+              {FEATURES.map((feature) => {
+                const [bold, ...rest] = feature.split(':');
+                const hasColon = feature.includes(':');
+                return (
+                  <li key={feature} className="flex items-start gap-3">
+                    <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5 bg-[#F0FDF4]">
+                      <Check size={11} className="text-[#16A34A]" strokeWidth={2.5} />
+                    </div>
+                    <span className="text-sm leading-snug text-[#475569]">
+                      {hasColon ? (
+                        <>
+                          <span className="font-semibold text-[#0F172A]">{bold}:</span>
+                          {rest.join(':')}
+                        </>
+                      ) : feature}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+
+            <a
+              href={`mailto:meisam@meizo.de?subject=${mailSubject}&body=${mailBody}`}
+              className="w-full py-3.5 rounded-2xl text-sm font-bold text-center transition-all duration-200 block bg-[#0F172A] text-white hover:bg-[#1E293B]"
             >
-              Zum Login
-            </button>
-          </p>
+              {enterprise ? 'Angebot anfragen' : 'Jetzt anfragen'}
+            </a>
+          </div>
+
+          {/* Already paid */}
+          <div className="mt-8 text-center">
+            <p className="text-sm text-[#94A3B8]">
+              Sie haben bereits ein Konto?{' '}
+              <button
+                onClick={onContinue}
+                className="text-[#0F172A] font-semibold underline underline-offset-2 hover:no-underline transition-all"
+              >
+                Zum Login
+              </button>
+            </p>
+          </div>
         </div>
       </main>
     </div>

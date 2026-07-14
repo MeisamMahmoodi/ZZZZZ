@@ -45,7 +45,7 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const { owner_name, company_name, email, password, contract, contract_start, paid_until, trial_ends_at } = await req.json();
+    const { owner_name, company_name, email, password, contract_start, paid_until, trial_ends_at } = await req.json();
 
     if (!owner_name || !company_name || !email || !password) {
       return new Response(JSON.stringify({ error: "Alle Pflichtfelder ausfüllen" }), {
@@ -53,8 +53,10 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    const validContracts = ["Starter", "Business", "Premium"];
-    const finalContract = validContracts.includes(contract) ? contract : "Starter";
+    // "contract" (Starter/Business/Premium) gibt es seit der Umstellung auf
+    // Preis-pro-Mitarbeiter nicht mehr als benannten Plan — die Spalte bleibt
+    // in der DB bestehen (Default 'Starter'), wird aber nirgends mehr im
+    // Frontend gelesen oder zur Funktionsfreischaltung genutzt.
 
     // Create auth user
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
@@ -84,7 +86,6 @@ Deno.serve(async (req: Request) => {
       owner_name,
       owner_email: email,
       owner_id: ownerId,
-      contract: finalContract,
       contract_start: contract_start ?? new Date().toISOString(),
       paid_until: paid_until ?? null,
       trial_ends_at: trial_ends_at ?? null,
