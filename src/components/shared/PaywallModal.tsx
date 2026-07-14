@@ -52,7 +52,7 @@ export function PaywallModal({ companyId }: Props) {
       <div className="absolute inset-0 bg-white/70 backdrop-blur-sm" />
       <div className="relative z-10 bg-white rounded-2xl shadow-2xl border border-slate-100 px-6 py-8 max-w-sm w-full mx-4">
         <div className="text-center mb-6">
-          <img src="/meizoLogoL.jpeg" alt="meizo" className="h-10 w-auto mx-auto mb-5" />
+          <img src="/meizoLogoMarkDark.png" alt="meizo" className="h-8 w-auto mx-auto mb-5" />
           <h2 className="text-xl font-bold text-slate-900">Deine Testphase ist abgelaufen.</h2>
           <p className="text-slate-500 text-sm mt-2">Ein Preis, alle Funktionen — kein Paket zum Auswählen.</p>
         </div>

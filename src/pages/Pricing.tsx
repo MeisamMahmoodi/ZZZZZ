@@ -41,7 +41,7 @@ export function Pricing({ onContinue }: PricingProps) {
     <div className="min-h-screen bg-[#F8FAFC] flex flex-col">
       {/* Header */}
       <header className="pt-10 pb-6 px-6 text-center">
-        <img src="/meizoLogoL.jpeg" alt="meizo" className="h-12 w-auto mx-auto mb-6 bg-white rounded-xl px-3 py-1.5 shadow-sm" />
+        <img src="/meizoLogoMarkDark.png" alt="meizo" className="h-10 w-auto mx-auto mb-6" />
         <p className="text-xs font-bold uppercase tracking-widest text-[#16A34A] mb-3">
           Nutzen Sie schon Blink oder Crewmeister? Ein Wechsel lohnt sich.
         </p>
