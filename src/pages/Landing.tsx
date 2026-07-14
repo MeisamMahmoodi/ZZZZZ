@@ -1,8 +1,66 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import type { ReactNode } from 'react';
 import { Check, MapPin, Clock, Users, MessageCircle, Globe2 } from 'lucide-react';
 import { BASE_FEE_EUR, PER_EMPLOYEE_EUR, calculateMonthlyPrice } from '../lib/plans';
 
 const CALENDLY = 'https://calendly.com/meisam-meizo/30min';
+
+/* ---------- Shared building blocks ---------- */
+
+function RevealOnScroll({ children, className = '' }: { children: ReactNode; className?: string }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.15 }
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return (
+    <div
+      ref={ref}
+      className={`transition-all duration-700 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'} ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+function PhoneMockup({ children }: { children: ReactNode }) {
+  return (
+    <div className="bg-[#0B0B0F] rounded-[2rem] p-2.5 shadow-[0_20px_60px_-10px_rgba(15,23,42,0.25)] w-full max-w-[260px] mx-auto">
+      <div className="bg-white rounded-[1.6rem] overflow-hidden relative min-h-[340px]">
+        <div className="absolute top-2 left-1/2 -translate-x-1/2 w-16 h-4 bg-[#0B0B0F] rounded-full z-10" />
+        <div className="pt-8">{children}</div>
+      </div>
+    </div>
+  );
+}
+
+function BrowserMockup({ url, children }: { url: string; children: ReactNode }) {
+  return (
+    <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-[0_16px_48px_-12px_rgba(15,23,42,0.15)] overflow-hidden">
+      <div className="bg-[#F3F4F6] px-4 py-2.5 flex items-center gap-2 border-b border-[#E5E7EB]">
+        <span className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
+        <span className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
+        <span className="ml-2 text-[11px] text-[#6B7280] bg-white border border-[#E5E7EB] rounded px-2 py-0.5 flex-1 truncate">{url}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/* ---------- Nav ---------- */
 
 function Nav() {
   return (
@@ -30,6 +88,38 @@ function Nav() {
   );
 }
 
+/* ---------- Hero ---------- */
+
+function HeroVisual() {
+  const [solved, setSolved] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => setSolved(s => !s), 2600);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <div className="bg-white rounded-2xl border border-[#E2E8F0] shadow-[0_20px_60px_-10px_rgba(15,23,42,0.15)] p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="w-2.5 h-2.5 rounded-full bg-[#DC2626] animate-pulse" />
+        <span className="text-xs font-bold text-[#991B1B] uppercase tracking-wide">Krankmeldung · 06:47 Uhr</span>
+      </div>
+      <div className="bg-[#F8FAFC] rounded-xl p-4 mb-4 flex items-center gap-3">
+        <div className="w-9 h-9 rounded-full bg-[#FEE2E2] text-[#DC2626] font-bold text-sm flex items-center justify-center shrink-0">AY</div>
+        <div>
+          <p className="text-sm font-semibold text-[#0F172A]">Anis Yildiz</p>
+          <p className="text-xs text-[#64748B]">📍 Objekt Müller · 07:30 Uhr</p>
+        </div>
+      </div>
+      <div className={`rounded-xl p-4 border transition-colors duration-500 ${solved ? 'bg-[#F0FDF4] border-[#BBF7D0]' : 'bg-[#FFF7ED] border-[#FED7AA]'}`}>
+        {!solved ? (
+          <p className="text-sm font-semibold text-[#9A3412]">🔍 meizo sucht automatisch einen Ersatz …</p>
+        ) : (
+          <p className="text-sm font-bold text-[#15803D]">✓ Fatima übernimmt — 90 Sekunden später</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Hero() {
   return (
     <section className="max-w-6xl mx-auto px-5 sm:px-6 pt-14 sm:pt-20 pb-16 grid lg:grid-cols-2 gap-12 items-center">
@@ -42,18 +132,10 @@ function Hero() {
           Statt WhatsApp-Rundruf und Durchtelefonieren sucht meizo automatisch einen Ersatz — während Sie noch Ihren Kaffee trinken.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
-          <a
-            href={CALENDLY}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-[#0F172A] text-white font-bold px-6 py-3.5 rounded-2xl hover:bg-[#1E293B] transition-colors shadow-sm"
-          >
+          <a href={CALENDLY} target="_blank" rel="noopener noreferrer" className="bg-[#0F172A] text-white font-bold px-6 py-3.5 rounded-2xl hover:bg-[#1E293B] transition-colors shadow-sm">
             Gratis Termin buchen →
           </a>
-          <a
-            href="/pricing"
-            className="bg-white text-[#0F172A] font-bold px-6 py-3.5 rounded-2xl border border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors"
-          >
+          <a href="/pricing" className="bg-white text-[#0F172A] font-bold px-6 py-3.5 rounded-2xl border border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors">
             Preis berechnen
           </a>
         </div>
@@ -63,16 +145,12 @@ function Hero() {
           <span>Keine Vertragsbindung</span>
         </div>
       </div>
-      <div className="relative">
-        <img
-          src="/Dashboard_mit_Einsatz.png"
-          alt="meizo Dashboard mit heutigen Einsätzen"
-          className="rounded-2xl border border-[#E2E8F0] shadow-[0_20px_60px_-10px_rgba(15,23,42,0.15)] w-full"
-        />
-      </div>
+      <HeroVisual />
     </section>
   );
 }
+
+/* ---------- Problem ---------- */
 
 function ProblemSection() {
   const cards = [
@@ -83,14 +161,18 @@ function ProblemSection() {
   return (
     <section className="bg-[#F8FAFC] py-16 border-y border-[#F1F5F9]">
       <div className="max-w-6xl mx-auto px-5 sm:px-6">
-        <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-2">Das Problem</p>
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight mb-10">Kommt Ihnen das bekannt vor?</h2>
+        <RevealOnScroll>
+          <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-2">Das Problem</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight mb-10">Kommt Ihnen das bekannt vor?</h2>
+        </RevealOnScroll>
         <div className="grid sm:grid-cols-3 gap-5">
           {cards.map(c => (
-            <div key={c.title} className="bg-white rounded-2xl border border-[#E2E8F0] p-6">
-              <h3 className="font-bold text-[#0F172A] mb-2">{c.title}</h3>
-              <p className="text-sm text-[#64748B] leading-relaxed">{c.text}</p>
-            </div>
+            <RevealOnScroll key={c.title}>
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 h-full">
+                <h3 className="font-bold text-[#0F172A] mb-2">{c.title}</h3>
+                <p className="text-sm text-[#64748B] leading-relaxed">{c.text}</p>
+              </div>
+            </RevealOnScroll>
           ))}
         </div>
       </div>
@@ -98,41 +180,278 @@ function ProblemSection() {
   );
 }
 
+/* ---------- Stats (Vorher/Nachher) ---------- */
+
+function StatsSection() {
+  return (
+    <RevealOnScroll className="max-w-4xl mx-auto px-5 sm:px-6 py-14">
+      <div className="grid sm:grid-cols-2 gap-5">
+        <div className="rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-6 text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#991B1B] mb-2">Ohne meizo</p>
+          <p className="text-5xl font-extrabold text-[#DC2626] tracking-tight">52 Min.</p>
+          <p className="text-sm text-[#991B1B] mt-2">8 Nachrichten, kein Springer gefunden</p>
+        </div>
+        <div className="rounded-2xl border border-[#BBF7D0] bg-[#F0FDF4] p-6 text-center">
+          <p className="text-xs font-bold uppercase tracking-widest text-[#15803D] mb-2">Mit meizo</p>
+          <p className="text-5xl font-extrabold text-[#16A34A] tracking-tight">90 Sek.</p>
+          <p className="text-sm text-[#15803D] mt-2">Ein Klick, Ersatz bestätigt</p>
+        </div>
+      </div>
+    </RevealOnScroll>
+  );
+}
+
+/* ---------- Feature demos ---------- */
+
+function DispatchDemo() {
+  const [phase, setPhase] = useState<'asking1' | 'asking2' | 'success'>('asking1');
+  const [seconds, setSeconds] = useState(8);
+
+  useEffect(() => {
+    if (phase === 'success') {
+      const t = setTimeout(() => { setPhase('asking1'); setSeconds(8); }, 3000);
+      return () => clearTimeout(t);
+    }
+    if (seconds <= 0) {
+      const t = setTimeout(() => {
+        if (phase === 'asking1') { setPhase('asking2'); setSeconds(5); } else { setPhase('success'); }
+      }, 500);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => setSeconds(s => s - 1), 650);
+    return () => clearTimeout(t);
+  }, [phase, seconds]);
+
+  const candidate = phase === 'asking1' ? 'Maximilian Schulz' : 'Fatima Al-Hassan';
+
+  return (
+    <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-2xl p-6 max-w-sm mx-auto">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 rounded-full bg-[#FEE2E2] text-[#DC2626] font-bold text-sm flex items-center justify-center">AY</div>
+        <div>
+          <p className="font-bold text-sm text-[#0F172A]">Anis Yildiz</p>
+          <span className="text-[11px] font-bold text-[#DC2626] bg-[#FEE2E2] px-2 py-0.5 rounded-full">Krankgemeldet</span>
+        </div>
+      </div>
+      <div className="bg-white rounded-xl p-3.5 mb-3">
+        <p className="text-sm font-bold text-[#0F172A]">📍 Objekt Müller</p>
+        <p className="text-xs text-[#64748B] mt-0.5">07:30 – 09:30 Uhr</p>
+      </div>
+      <div className={`rounded-xl p-3.5 border transition-colors duration-300 ${phase === 'success' ? 'bg-[#F0FDF4] border-[#BBF7D0]' : 'bg-white border-[#FED7AA]'}`}>
+        {phase !== 'success' ? (
+          <>
+            <p className="text-sm flex items-center gap-1.5"><MessageCircle size={13} className="text-[#16A34A]" /> <span className="font-bold text-[#0F172A]">{candidate}</span> <span className="text-[#6B7280]">wird per WhatsApp gefragt</span></p>
+            <p className="text-xs text-[#94A3B8] mt-1.5">⏱ Antwort in 0:0{seconds} Min</p>
+          </>
+        ) : (
+          <p className="text-sm font-bold text-[#15803D]">✓ {candidate} übernimmt · 30,00 €</p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CheckInDemo() {
+  const [checked, setChecked] = useState(false);
+  useEffect(() => {
+    const t = setInterval(() => setChecked(c => !c), 2600);
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <PhoneMockup>
+      <div className="px-5 pb-5">
+        <p className="text-xs font-semibold text-[#94A3B8] mb-3">GPS-Check-in</p>
+        <div
+          className="relative h-32 rounded-xl overflow-hidden mb-4"
+          style={{
+            backgroundColor: '#EEF2F7',
+            backgroundImage: 'linear-gradient(#E2E8F0 1px, transparent 1px), linear-gradient(90deg, #E2E8F0 1px, transparent 1px)',
+            backgroundSize: '18px 18px',
+          }}
+        >
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[#16A34A] z-10 shadow-[0_0_0_4px_rgba(22,163,74,0.18)]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-[#16A34A] animate-ping" />
+        </div>
+        <div className={`rounded-xl p-3.5 text-center border transition-colors duration-300 ${checked ? 'bg-[#F0FDF4] border-[#BBF7D0]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
+          {checked ? (
+            <>
+              <div className="w-9 h-9 rounded-full bg-[#16A34A] flex items-center justify-center mx-auto">
+                <Check className="text-white" size={16} strokeWidth={3} />
+              </div>
+              <p className="text-xs font-bold text-[#15803D] mt-2">Standort bestätigt ✓</p>
+            </>
+          ) : (
+            <p className="text-xs font-semibold text-[#64748B]">Wird geprüft …</p>
+          )}
+        </div>
+      </div>
+    </PhoneMockup>
+  );
+}
+
+function ChecklistDemo() {
+  const items = ['Böden gewischt', 'Mülleimer geleert', 'Fenster geputzt'];
+  const [done, setDone] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setDone(d => (d + 1) % (items.length + 1)), 850);
+    return () => clearInterval(t);
+  }, [items.length]);
+  return (
+    <PhoneMockup>
+      <div className="px-5 pb-5">
+        <p className="text-xs font-semibold text-[#94A3B8] mb-3">Checkliste vor dem Beweisfoto</p>
+        <div className="space-y-2">
+          {items.map((label, i) => {
+            const isDone = i < done;
+            return (
+              <div key={label} className={`flex items-center gap-2.5 rounded-xl px-3 py-2.5 border transition-colors duration-300 ${isDone ? 'bg-[#FFF7ED] border-[#FED7AA]' : 'bg-[#F8FAFC] border-[#E2E8F0]'}`}>
+                <span className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors duration-300 ${isDone ? 'bg-[#F97316]' : 'bg-white border border-[#CBD5E1]'}`}>
+                  {isDone && <Check size={12} className="text-white" strokeWidth={3} />}
+                </span>
+                <span className={`text-xs ${isDone ? 'text-[#0F172A] font-semibold' : 'text-[#64748B]'}`}>{label}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </PhoneMockup>
+  );
+}
+
+function BillingDemo() {
+  const rows = [
+    ['Ionut P.', 'Wohnung Müller', '0,50', '7,50 €'],
+    ['Mustafa Y.', 'Büropark Schwabing', '2,50', '35,00 €'],
+    ['Anna K.', 'Praxis Bogenhausen', '2,00', '30,00 €'],
+  ];
+  const [visible, setVisible] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setVisible(v => (v + 1) % (rows.length + 1)), 750);
+    return () => clearInterval(t);
+  }, [rows.length]);
+  return (
+    <BrowserMockup url="meizo.de · Abrechnung_2026-05.csv">
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-semibold text-[#64748B]">DATEV-Export</span>
+          <span className="text-[11px] font-bold text-white bg-[#16A34A] px-2.5 py-1 rounded-md">↓ CSV</span>
+        </div>
+        <table className="w-full text-xs">
+          <thead>
+            <tr className="text-left text-[#94A3B8] border-b border-[#F1F5F9]">
+              <th className="py-1.5 font-semibold">Name</th>
+              <th className="font-semibold">Objekt</th>
+              <th className="font-semibold">Std.</th>
+              <th className="font-semibold">Gesamt</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.slice(0, visible).map(r => (
+              <tr key={r[0]} className="border-b border-[#F8FAFC]">
+                <td className="py-1.5 font-medium text-[#0F172A]">{r[0]}</td>
+                <td className="text-[#64748B]">{r[1]}</td>
+                <td className="text-[#64748B]">{r[2]}</td>
+                <td className="font-semibold text-[#16A34A]">{r[3]}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </BrowserMockup>
+  );
+}
+
+function LanguageDemo() {
+  const langs = [
+    { flag: '🇩🇪', name: 'Deutsch', greet: 'Guten Morgen' },
+    { flag: '🇷🇴', name: 'Română', greet: 'Bună ziua' },
+    { flag: '🇹🇷', name: 'Türkçe', greet: 'Günaydın' },
+    { flag: '🇵🇱', name: 'Polski', greet: 'Dzień dobry' },
+    { flag: '🇸🇦', name: 'عربي', greet: 'RTL-Layout' },
+    { flag: '🇧🇬', name: 'Български', greet: 'Добро утро' },
+  ];
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setActive(a => (a + 1) % langs.length), 1000);
+    return () => clearInterval(t);
+  }, [langs.length]);
+  return (
+    <div className="grid grid-cols-3 gap-2.5 max-w-sm mx-auto">
+      {langs.map((l, i) => (
+        <div
+          key={l.name}
+          className={`rounded-xl border p-3 text-center transition-all duration-300 ${active === i ? 'border-[#16A34A] bg-[#F0FDF4] scale-105 shadow-sm' : 'border-[#E2E8F0] bg-white'}`}
+        >
+          <div className="text-2xl mb-1">{l.flag}</div>
+          <div className="text-xs font-bold text-[#0F172A]">{l.name}</div>
+          <div className="text-[10px] text-[#94A3B8]">{l.greet}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function RecurringDemo() {
+  const days = ['Mo', 'Di', 'Mi', 'Do', 'Fr'];
+  const [filled, setFilled] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setFilled(f => (f + 1) % (days.length + 2)), 500);
+    return () => clearInterval(t);
+  }, [days.length]);
+  return (
+    <BrowserMockup url="meizo.de · Serientermin">
+      <div className="p-5">
+        <p className="text-xs font-semibold text-[#64748B] mb-3">Büropark Schwabing · Mo–Fr, 06:00–08:00</p>
+        <div className="grid grid-cols-5 gap-2">
+          {days.map((d, i) => (
+            <div key={d} className="text-center">
+              <div className="text-[10px] text-[#94A3B8] mb-1">{d}</div>
+              <div className={`h-11 rounded-lg border flex items-center justify-center transition-colors duration-300 ${i < filled ? 'bg-[#F0FDF4] border-[#BBF7D0]' : 'bg-[#F8FAFC] border-[#E2E8F0] border-dashed'}`}>
+                {i < filled && <Check size={13} className="text-[#16A34A]" strokeWidth={3} />}
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="text-[11px] text-[#94A3B8] mt-3">Einmal eingestellt — läuft automatisch jede Woche.</p>
+      </div>
+    </BrowserMockup>
+  );
+}
+
+/* ---------- Modules ---------- */
+
 interface ModuleProps {
   eyebrow: string;
   eyebrowColor: string;
   title: string;
   text: string;
   bullets: string[];
-  image: string;
-  imageAlt: string;
+  visual: ReactNode;
   reverse?: boolean;
 }
 
-function Module({ eyebrow, eyebrowColor, title, text, bullets, image, imageAlt, reverse }: ModuleProps) {
+function Module({ eyebrow, eyebrowColor, title, text, bullets, visual, reverse }: ModuleProps) {
   return (
-    <div className={`grid lg:grid-cols-2 gap-12 items-center py-14 ${reverse ? 'lg:[&>*:first-child]:order-2' : ''}`}>
-      <div>
-        <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: eyebrowColor }}>{eyebrow}</p>
-        <h3 className="text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight mb-4">{title}</h3>
-        <p className="text-[#475569] leading-relaxed mb-5">{text}</p>
-        <ul className="space-y-2.5">
-          {bullets.map(b => (
-            <li key={b} className="flex items-center gap-2.5 text-sm text-[#334155] font-medium">
-              <span className="w-5 h-5 rounded-full bg-[#F0FDF4] flex items-center justify-center shrink-0">
-                <Check size={11} className="text-[#16A34A]" strokeWidth={3} />
-              </span>
-              {b}
-            </li>
-          ))}
-        </ul>
+    <RevealOnScroll>
+      <div className={`grid lg:grid-cols-2 gap-12 items-center py-14 ${reverse ? 'lg:[&>*:first-child]:order-2' : ''}`}>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-widest mb-3" style={{ color: eyebrowColor }}>{eyebrow}</p>
+          <h3 className="text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight mb-4">{title}</h3>
+          <p className="text-[#475569] leading-relaxed mb-5">{text}</p>
+          <ul className="space-y-2.5">
+            {bullets.map(b => (
+              <li key={b} className="flex items-center gap-2.5 text-sm text-[#334155] font-medium">
+                <span className="w-5 h-5 rounded-full bg-[#F0FDF4] flex items-center justify-center shrink-0">
+                  <Check size={11} className="text-[#16A34A]" strokeWidth={3} />
+                </span>
+                {b}
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div>{visual}</div>
       </div>
-      <img
-        src={image}
-        alt={imageAlt}
-        className="rounded-2xl border border-[#E2E8F0] shadow-[0_16px_48px_-12px_rgba(15,23,42,0.15)] w-full"
-      />
-    </div>
+    </RevealOnScroll>
   );
 }
 
@@ -143,10 +462,9 @@ function ModulesSection() {
         eyebrow="Das hat kein anderer"
         eyebrowColor="#7C3AED"
         title="Automatische Ersatzsuche bei Krankmeldung"
-        text="Meldet sich jemand krank, fragt meizo selbst die passenden Kollegen an — per WhatsApp oder SMS, mit Kontext zu Ort und Uhrzeit. Kein Durchtelefonieren, keine Rundruf-Nachrichten."
+        text="Meldet sich jemand krank, fragt meizo selbst die passenden Kollegen an — per WhatsApp, mit Kontext zu Ort und Uhrzeit. Kein Durchtelefonieren, kein Rundruf."
         bullets={['Läuft automatisch, ohne Ihr Zutun', 'Kennt Verfügbarkeit und Qualifikation', 'Sie behalten jederzeit die manuelle Kontrolle']}
-        image="/Anfrage_Mitarbeiter.png"
-        imageAlt="meizo fragt automatisch einen Ersatz-Mitarbeiter per WhatsApp an"
+        visual={<DispatchDemo />}
       />
       <Module
         eyebrow="Nachweis & Vertrauen"
@@ -154,18 +472,33 @@ function ModulesSection() {
         title="GPS-Check-in mit Foto-Nachweis"
         text="Ihre Mitarbeiter checken vor Ort ein — mit Standortprüfung und Foto. Sie sehen live, wer wo ist, ohne nachzufragen."
         bullets={['Fälschungssicherer Nachweis fürs Kundengespräch', 'Live-Status ohne Anruf', 'Automatisch in der Abrechnung erfasst']}
-        image="/CheckInFotoBestätigung.PNG"
-        imageAlt="Check-in mit Foto- und GPS-Bestätigung in der Mitarbeiter-App"
+        visual={<CheckInDemo />}
         reverse
+      />
+      <Module
+        eyebrow="Qualität"
+        eyebrowColor="#F97316"
+        title="Checklisten machen Sie professioneller"
+        text="Objekttyp-Checkliste vor jedem Beweisfoto — Sie sehen vor Ihrem Kunden aus wie ein Profi, nicht wie Zettelwirtschaft."
+        bullets={['Pro Objekttyp individuell einstellbar', 'Automatisch im Kundenbericht', 'Weniger Reklamationen']}
+        visual={<ChecklistDemo />}
       />
       <Module
         eyebrow="Abrechnung"
         eyebrowColor="#0F172A"
         title="Zeiterfassung, die sich von selbst rechnet"
         text="Jeder Check-in und Check-out landet automatisch in der Abrechnung — mit GPS- und Foto-Nachweis, fertig für den Steuerberater."
-        bullets={['DATEV-Export mit einem Klick', 'Individuelle Stundensätze pro Mitarbeiter', 'Keine manuell abgetippten Stundenzettel mehr']}
-        image="/Zeitstempel.png"
-        imageAlt="Zeitstempel-Übersicht mit Check-in und Check-out je Mitarbeiter"
+        bullets={['DATEV-Export mit einem Klick', 'Individuelle Stundensätze pro Mitarbeiter', 'Keine abgetippten Stundenzettel mehr']}
+        visual={<BillingDemo />}
+        reverse
+      />
+      <Module
+        eyebrow="Wiederkehrende Aufträge"
+        eyebrowColor="#2563EB"
+        title="Einmal einstellen, läuft von selbst"
+        text="Feste Objekte mit festen Zeiten müssen Sie nicht jede Woche neu einplanen — meizo trägt die Serie automatisch ein."
+        bullets={['Einmal konfigurieren statt jede Woche neu', 'Änderungen wirken auf die ganze Serie', 'Weniger Klicks für den Alltag']}
+        visual={<RecurringDemo />}
       />
       <Module
         eyebrow="8 Sprachen"
@@ -173,13 +506,14 @@ function ModulesSection() {
         title="Sie reden Deutsch. Ihr Team redet acht Sprachen."
         text="Die Mitarbeiter-App spricht automatisch Rumänisch, Türkisch, Polnisch, Arabisch, Bulgarisch und mehr — kein Missverständnis bei Krankmeldung oder Einsatzplan."
         bullets={['Automatische Übersetzung, kein Zusatzaufwand', 'Auch Rechts-nach-Links-Sprachen (Arabisch)', 'Senkt die Hemmschwelle für nicht-deutschsprachiges Personal']}
-        image="/Rumänisch.PNG"
-        imageAlt="Mitarbeiter-App auf Rumänisch"
+        visual={<LanguageDemo />}
         reverse
       />
     </section>
   );
 }
+
+/* ---------- Switch comparison ---------- */
 
 function SwitchSection() {
   const groups = [
@@ -203,23 +537,27 @@ function SwitchSection() {
   return (
     <section className="bg-[#F8FAFC] py-16 border-y border-[#F1F5F9]">
       <div className="max-w-6xl mx-auto px-5 sm:px-6">
-        <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-2">Warum wechseln</p>
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight mb-10">Egal wo Sie herkommen — es lohnt sich.</h2>
+        <RevealOnScroll>
+          <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-2">Warum wechseln</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight mb-10">Egal wo Sie herkommen — es lohnt sich.</h2>
+        </RevealOnScroll>
         <div className="grid sm:grid-cols-2 gap-6">
           {groups.map(g => (
-            <div key={g.from} className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-7">
-              <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4">Schon bei {g.from}?</p>
-              <div className="space-y-4">
-                {g.points.map(p => (
-                  <div key={p.good} className="flex flex-col gap-1 pb-4 border-b border-[#F1F5F9] last:border-0 last:pb-0">
-                    <span className="text-sm text-[#94A3B8] line-through">{p.bad}</span>
-                    <span className="text-sm font-semibold text-[#15803D] flex items-center gap-1.5">
-                      <Check size={13} strokeWidth={3} /> {p.good}
-                    </span>
-                  </div>
-                ))}
+            <RevealOnScroll key={g.from}>
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 sm:p-7 h-full">
+                <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-4">Schon bei {g.from}?</p>
+                <div className="space-y-4">
+                  {g.points.map(p => (
+                    <div key={p.good} className="flex flex-col gap-1 pb-4 border-b border-[#F1F5F9] last:border-0 last:pb-0">
+                      <span className="text-sm text-[#94A3B8] line-through">{p.bad}</span>
+                      <span className="text-sm font-semibold text-[#15803D] flex items-center gap-1.5">
+                        <Check size={13} strokeWidth={3} /> {p.good}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            </RevealOnScroll>
           ))}
         </div>
         <p className="text-sm text-[#64748B] mt-8 text-center">
@@ -230,11 +568,13 @@ function SwitchSection() {
   );
 }
 
+/* ---------- Price teaser ---------- */
+
 function PriceTeaser() {
   const [count, setCount] = useState(10);
   const price = calculateMonthlyPrice(count);
   return (
-    <section className="max-w-3xl mx-auto px-5 sm:px-6 py-16 text-center">
+    <RevealOnScroll className="max-w-3xl mx-auto px-5 sm:px-6 py-16 text-center">
       <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-2">Preis</p>
       <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight mb-8">Ein Preis. Alle Funktionen.</h2>
       <div className="bg-white rounded-3xl border border-[#E2E8F0] shadow-sm p-8">
@@ -258,16 +598,15 @@ function PriceTeaser() {
           className="w-full max-w-sm accent-[#0F172A]"
         />
         <p className="text-xs text-[#94A3B8] mt-3">{BASE_FEE_EUR}€ Grundgebühr + {PER_EMPLOYEE_EUR}€ pro Mitarbeiter, keine Zusatzmodule</p>
-        <a
-          href="/pricing"
-          className="inline-block mt-6 bg-[#0F172A] text-white font-bold px-6 py-3 rounded-2xl hover:bg-[#1E293B] transition-colors"
-        >
+        <a href="/pricing" className="inline-block mt-6 bg-[#0F172A] text-white font-bold px-6 py-3 rounded-2xl hover:bg-[#1E293B] transition-colors">
           Preisrechner öffnen →
         </a>
       </div>
-    </section>
+    </RevealOnScroll>
   );
 }
+
+/* ---------- FAQ ---------- */
 
 const FAQS = [
   { q: 'Fallen Einrichtungsgebühren an?', a: 'Nein. Sie zahlen nur den monatlichen Preis. Einrichtung und Datenübernahme sind kostenlos.' },
@@ -282,17 +621,16 @@ function FaqSection() {
   return (
     <section className="bg-[#F8FAFC] py-16 border-y border-[#F1F5F9]">
       <div className="max-w-3xl mx-auto px-5 sm:px-6">
-        <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-2">Häufige Fragen</p>
-        <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight mb-8">Noch Fragen?</h2>
+        <RevealOnScroll>
+          <p className="text-xs font-bold uppercase tracking-widest text-[#94A3B8] mb-2">Häufige Fragen</p>
+          <h2 className="text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight mb-8">Noch Fragen?</h2>
+        </RevealOnScroll>
         <div className="space-y-3">
           {FAQS.map((f, i) => {
             const isOpen = open === i;
             return (
               <div key={f.q} className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden">
-                <button
-                  onClick={() => setOpen(isOpen ? null : i)}
-                  className="w-full text-left px-5 py-4 flex items-center justify-between gap-4"
-                >
+                <button onClick={() => setOpen(isOpen ? null : i)} className="w-full text-left px-5 py-4 flex items-center justify-between gap-4">
                   <span className="font-semibold text-[#0F172A] text-sm">{f.q}</span>
                   <span className={`text-[#94A3B8] transition-transform ${isOpen ? 'rotate-45' : ''}`}>+</span>
                 </button>
@@ -306,32 +644,22 @@ function FaqSection() {
   );
 }
 
+/* ---------- Final CTA & footer ---------- */
+
 function FinalCta() {
   return (
-    <section className="max-w-4xl mx-auto px-5 sm:px-6 py-20 text-center">
-      <h2 className="text-3xl sm:text-4xl font-bold text-[#0F172A] tracking-tight mb-4">
-        Nie wieder 06:47-Uhr-Panik.
-      </h2>
-      <p className="text-[#64748B] mb-8 max-w-md mx-auto">
-        Erster Monat kostenlos, keine Kreditkarte, keine Vertragsbindung.
-      </p>
+    <RevealOnScroll className="max-w-4xl mx-auto px-5 sm:px-6 py-20 text-center">
+      <h2 className="text-3xl sm:text-4xl font-bold text-[#0F172A] tracking-tight mb-4">Nie wieder 06:47-Uhr-Panik.</h2>
+      <p className="text-[#64748B] mb-8 max-w-md mx-auto">Erster Monat kostenlos, keine Kreditkarte, keine Vertragsbindung.</p>
       <div className="flex flex-wrap gap-3 justify-center">
-        <a
-          href={CALENDLY}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="bg-[#16A34A] text-white font-bold px-7 py-3.5 rounded-2xl hover:bg-[#15803D] transition-colors shadow-sm"
-        >
+        <a href={CALENDLY} target="_blank" rel="noopener noreferrer" className="bg-[#16A34A] text-white font-bold px-7 py-3.5 rounded-2xl hover:bg-[#15803D] transition-colors shadow-sm">
           Gratis Termin buchen →
         </a>
-        <a
-          href="mailto:meisam@meizo.de?subject=Meizo%20Anfrage"
-          className="bg-white text-[#0F172A] font-bold px-7 py-3.5 rounded-2xl border border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors"
-        >
+        <a href="mailto:meisam@meizo.de?subject=Meizo%20Anfrage" className="bg-white text-[#0F172A] font-bold px-7 py-3.5 rounded-2xl border border-[#E2E8F0] hover:bg-[#F8FAFC] transition-colors">
           meisam@meizo.de
         </a>
       </div>
-    </section>
+    </RevealOnScroll>
   );
 }
 
@@ -357,6 +685,7 @@ export function Landing() {
       <Nav />
       <Hero />
       <ProblemSection />
+      <StatsSection />
       <ModulesSection />
       <SwitchSection />
       <PriceTeaser />
