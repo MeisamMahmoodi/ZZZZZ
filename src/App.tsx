@@ -22,6 +22,7 @@ import { IosInstallButton } from './components/shared/IosInstallGuide';
 import type { Company } from './lib/types';
 import { Eye, EyeOff } from 'lucide-react';
 import { Pricing } from './pages/Pricing';
+import { Landing } from './pages/Landing';
 import { PaywallModal } from './components/shared/PaywallModal';
 
 function OwnerApp({ company }: { company: Company & { paid_until: string | null } }) {
@@ -184,24 +185,12 @@ function AccountSuspendedScreen() {
 function LandingPage() {
   const isPwa = window.matchMedia('(display-mode: standalone)').matches
     || (window.navigator as any).standalone === true;
-  const isMobile = window.innerWidth < 768;
 
   if (isPwa) {
     return <UnifiedLogin />;
   }
 
-  return (
-    <div className="bg-white flex flex-col">
-      <div className="w-full" style={{ height: '100vh' }}>
-        <iframe
-          src={isMobile ? '/mobile-hero.html' : '/hero.html'}
-          className="w-full h-full border-0"
-          title="meizo Präsentation"
-          allow="autoplay"
-        />
-      </div>
-    </div>
-  );
+  return <Landing />;
 }
 
   
