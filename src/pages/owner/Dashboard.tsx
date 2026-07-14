@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays, AlertCircle, AlarmClock, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bell, AlertTriangle, MapPin, User, Clock, Search, UserCheck, X, Check, CalendarDays, AlertCircle, AlarmClock, ChevronDown, ChevronUp, Users, HeartPulse } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { formatDateLong, formatTime, getTodayDayAbbrev, toLocalDateStr } from '../../lib/utils';
 import type { Employee, Property, Assignment, SickReport, EmployeeProperty } from '../../lib/types';
@@ -479,45 +479,60 @@ export function Dashboard({ company, refreshKey, onRefresh }: DashboardProps) {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
         <div className="card p-5 sm:p-6">
-          <p className="section-label mb-3">Mitarbeiter</p>
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="stat-icon" style={{ backgroundColor: '#EFF6FF' }}>
+              <Users size={20} className="text-[#2563EB]" />
+            </div>
+            <p className="section-label">Mitarbeiter</p>
+          </div>
           {loading ? (
-            <div className="h-7 w-16 bg-[#F1F5F9] rounded-lg animate-pulse" />
+            <div className="h-8 w-16 bg-[#F1F5F9] rounded-lg animate-pulse" />
           ) : (
             <div className="flex items-baseline gap-1.5">
-              <p className="text-2xl font-bold text-[#0F172A]">{activeEmployees.length}</p>
+              <p className="text-[1.75rem] leading-none font-bold text-[#0F172A] tracking-tight">{activeEmployees.length}</p>
               <span className="text-sm text-[#94A3B8]">/</span>
               <span className="text-sm text-[#94A3B8]">{companyEmployees.length}</span>
             </div>
           )}
-          <p className="text-xs text-[#94A3B8] mt-2">verfügbar</p>
+          <p className="text-xs text-[#94A3B8] mt-2.5">verfügbar</p>
           {!loading && sickCount > 0 && <p className="text-xs text-[#F97316] font-semibold mt-1">{sickCount} krank</p>}
         </div>
         <div className="card p-5 sm:p-6">
-          <p className="section-label mb-3">Einsätze heute</p>
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="stat-icon" style={{ backgroundColor: '#F0FDF4' }}>
+              <CalendarDays size={20} className="text-[#16A34A]" />
+            </div>
+            <p className="section-label">Einsätze heute</p>
+          </div>
           {loading ? (
-            <div className="h-7 w-10 bg-[#F1F5F9] rounded-lg animate-pulse" />
+            <div className="h-8 w-10 bg-[#F1F5F9] rounded-lg animate-pulse" />
           ) : (
-            <p className="text-2xl font-bold text-[#0F172A]">{todayAssignments.length}</p>
+            <p className="text-[1.75rem] leading-none font-bold text-[#0F172A] tracking-tight">{todayAssignments.length}</p>
           )}
           {!loading && (todayAssignments.length > 0 ? (
-            <p className="text-xs text-[#16A34A] font-medium mt-2">{propertiesWithAssignments.length} Objekte</p>
+            <p className="text-xs text-[#16A34A] font-medium mt-2.5">{propertiesWithAssignments.length} Objekte</p>
           ) : (
-            <p className="text-xs text-[#94A3B8] mt-2">Keine Einsätze</p>
+            <p className="text-xs text-[#94A3B8] mt-2.5">Keine Einsätze</p>
           ))}
         </div>
         <div className="card p-5 sm:p-6 col-span-2 lg:col-span-1">
-          <p className="section-label mb-3">Krankmeldungen</p>
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="stat-icon" style={{ backgroundColor: sickCount > 0 ? '#FEF2F2' : '#F0FDF4' }}>
+              <HeartPulse size={20} className={sickCount > 0 ? 'text-[#EF4444]' : 'text-[#16A34A]'} />
+            </div>
+            <p className="section-label">Krankmeldungen</p>
+          </div>
           {loading ? (
-            <div className="h-7 w-10 bg-[#F1F5F9] rounded-lg animate-pulse" />
+            <div className="h-8 w-10 bg-[#F1F5F9] rounded-lg animate-pulse" />
           ) : (
-            <p className="text-2xl font-bold text-[#0F172A]">{sickCount}</p>
+            <p className="text-[1.75rem] leading-none font-bold text-[#0F172A] tracking-tight">{sickCount}</p>
           )}
           {!loading && (openSickCount > 0 ? (
-            <p className="text-xs text-[#EF4444] font-semibold mt-2">{openSickCount} Ersatz fehlt</p>
+            <p className="text-xs text-[#EF4444] font-semibold mt-2.5">{openSickCount} Ersatz fehlt</p>
           ) : coveredSickCount > 0 ? (
-            <p className="text-xs text-[#16A34A] font-medium mt-2">{coveredSickCount} mit Ersatz</p>
+            <p className="text-xs text-[#16A34A] font-medium mt-2.5">{coveredSickCount} mit Ersatz</p>
           ) : (
-            <p className="text-xs text-[#16A34A] font-medium mt-2">Alles erledigt</p>
+            <p className="text-xs text-[#16A34A] font-medium mt-2.5">Alles erledigt</p>
           ))}
         </div>
       </div>
