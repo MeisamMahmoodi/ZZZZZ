@@ -428,6 +428,58 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
     addToast('Abrechnung exportiert');
   };
 
+  // Echter DATEV-Lohn-und-Gehalt-Bewegungsdaten-Export (ASCII/CSV, semikolon-
+  // getrennt). Beraternummer/Mandantennummer/Abrechnungsmonat müssen laut
+  // DATEV-Spezifikation in Zelle A1/B1/C1 der ersten Zeile stehen. Die
+  // Spaltenreihenfolge der Bewegungsdaten-Zeilen danach (hier: Personalnummer,
+  // Lohnart, Stunden) ist beim Steuerberater einmalig im ASCII-Import-
+  // Assistenten zu hinterlegen — das ist keine Meizo-Einschränkung, sondern
+  // wie DATEV Lohn und Gehalt Fremdimporte grundsätzlich handhabt.
+  const handleExportDatev = () => {
+    if (!company.datev_beraternummer || !company.datev_mandantennummer || !company.datev_lohnart_stunden) {
+      addToast('Bitte zuerst Beraternummer, Mandantennummer und Lohnart in den Einstellungen eintragen', 'error');
+      return;
+    }
+
+    const employeesWithoutPersonalnummer = payrollData.results.filter(
+      r => r.worked > 0 && !r.employee.datev_personalnummer
+    );
+    if (employeesWithoutPersonalnummer.length > 0) {
+      addToast(
+        `${employeesWithoutPersonalnummer.length} Mitarbeiter ohne Personalnummer werden übersprungen (in Mitarbeiter-Bearbeitung nachtragen)`,
+        'error'
+      );
+    }
+
+    const monthFormatted = `${String(selMonth).padStart(2, '0')}/${selYear}`;
+    const rows: string[] = [
+      `${company.datev_beraternummer};${company.datev_mandantennummer};${monthFormatted}`,
+    ];
+
+    for (const r of payrollData.results) {
+      if (r.worked <= 0 || !r.employee.datev_personalnummer) continue;
+      const hours = (r.worked / 60).toFixed(2).replace('.', ',');
+      rows.push(`${r.employee.datev_personalnummer};${company.datev_lohnart_stunden};${hours}`);
+    }
+
+    if (rows.length === 1) {
+      addToast('Keine exportierbaren Mitarbeiter (Personalnummer fehlt oder keine Stunden erfasst)', 'error');
+      return;
+    }
+
+    const csvContent = rows.join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=windows-1252;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `DATEV_Bewegungsdaten_${selectedMonth}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    addToast('DATEV-Export erstellt');
+  };
+
   const monthLabel = new Date(selYear, selMonth - 1).toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
 
   const monthOptions = [];
@@ -458,6 +510,13 @@ export function Payroll({ company, refreshKey, onRefresh }: PayrollProps) {
             title="Abrechnung als PDF exportieren"
           >
             <Download size={16} /> PDF
+          </button>
+          <button
+            onClick={handleExportDatev}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-colors bg-[#EFF6FF] text-[#2563EB] hover:bg-[#DBEAFE]"
+            title="Bewegungsdaten für DATEV Lohn und Gehalt exportieren"
+          >
+            <Download size={16} /> DATEV
           </button>
           <button
             onClick={handleExportCSV}

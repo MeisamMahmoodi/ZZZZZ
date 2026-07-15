@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Lock, Eye, EyeOff, Package, Users } from 'lucide-react';
+import { Lock, Eye, EyeOff, Package, Users, FileSpreadsheet } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../components/shared/Toast';
 import { calculateMonthlyPrice } from '../../lib/plans';
@@ -22,6 +22,11 @@ export function Settings({ company, onRefresh }: SettingsProps) {
   const [savingPassword, setSavingPassword] = useState(false);
   const [employeeCount, setEmployeeCount] = useState(0);
 
+  const [beraternummer, setBeraternummer] = useState(company.datev_beraternummer || '');
+  const [mandantennummer, setMandantennummer] = useState(company.datev_mandantennummer || '');
+  const [lohnartStunden, setLohnartStunden] = useState(company.datev_lohnart_stunden || '');
+  const [savingDatev, setSavingDatev] = useState(false);
+
   const { addToast } = useToast();
 
   useEffect(() => {
@@ -43,6 +48,26 @@ export function Settings({ company, onRefresh }: SettingsProps) {
       addToast('Fehler beim Speichern', 'error');
     } else {
       addToast('Einstellungen gespeichert');
+      onRefresh();
+    }
+  };
+
+  const handleSaveDatev = async () => {
+    setSavingDatev(true);
+    const { error } = await supabase
+      .from('companies')
+      .update({
+        datev_beraternummer: beraternummer || null,
+        datev_mandantennummer: mandantennummer || null,
+        datev_lohnart_stunden: lohnartStunden || null,
+      })
+      .eq('id', company.id);
+
+    setSavingDatev(false);
+    if (error) {
+      addToast('Fehler beim Speichern', 'error');
+    } else {
+      addToast('DATEV-Angaben gespeichert');
       onRefresh();
     }
   };
@@ -126,6 +151,33 @@ export function Settings({ company, onRefresh }: SettingsProps) {
             className="btn-primary mt-6"
           >
             {saving ? 'Speichern...' : 'Speichern'}
+          </button>
+        </div>
+
+        {/* DATEV Export */}
+        <div className="card p-6 sm:p-8">
+          <h2 className="text-base font-semibold text-ink-900 mb-2 flex items-center gap-2.5">
+            <FileSpreadsheet size={18} className="text-ink-500" /> DATEV-Export einrichten
+          </h2>
+          <p className="text-sm text-ink-500 mb-5 leading-relaxed">
+            Diese drei Angaben bekommst du einmalig von deinem Steuerberater — Beraternummer und Mandantennummer kennt er, die Lohnart-Nummer für Stundenlohn muss er einmal in seinem DATEV-System für dich einrichten. Danach funktioniert der monatliche Export in der Abrechnung automatisch.
+          </p>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-ink-900 mb-1.5">Beraternummer</label>
+              <input type="text" value={beraternummer} onChange={e => setBeraternummer(e.target.value)} placeholder="z. B. 12345" className="input-field" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink-900 mb-1.5">Mandantennummer</label>
+              <input type="text" value={mandantennummer} onChange={e => setMandantennummer(e.target.value)} placeholder="z. B. 678" className="input-field" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-ink-900 mb-1.5">Lohnart-Nummer für Stundenlohn</label>
+              <input type="text" value={lohnartStunden} onChange={e => setLohnartStunden(e.target.value)} placeholder="von deinem Steuerberater erfragen" className="input-field" />
+            </div>
+          </div>
+          <button onClick={handleSaveDatev} disabled={savingDatev} className="btn-primary mt-6">
+            {savingDatev ? 'Speichern...' : 'Speichern'}
           </button>
         </div>
 

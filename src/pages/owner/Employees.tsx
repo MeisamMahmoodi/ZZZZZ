@@ -52,12 +52,14 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
   const [newPassword, setNewPassword] = useState('');
   const [newWage, setNewWage] = useState('');
   const [newPropertyIds, setNewPropertyIds] = useState<string[]>([]);
+  const [newPersonalnummer, setNewPersonalnummer] = useState('');
 
   const [editFirst, setEditFirst] = useState('');
   const [editLast, setEditLast] = useState('');
   const [editPhone, setEditPhone] = useState('');
   const [editWage, setEditWage] = useState('');
   const [editPropertyIds, setEditPropertyIds] = useState<string[]>([]);
+  const [editPersonalnummer, setEditPersonalnummer] = useState('');
 
   useEffect(() => { loadData(); }, [company.id, refreshKey]);
 
@@ -120,6 +122,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
       email: loginEnabled ? (newEmail || null) : null,
       status: 'active',
       hourly_wage: newWage ? parseFloat(newWage) : null,
+      datev_personalnummer: newPersonalnummer || null,
     }).select().maybeSingle();
 
     if (error) { addToast('Fehler beim Speichern', 'error'); setCreatingAccount(false); return; }
@@ -142,7 +145,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
 
     setAddModal(false);
     setNewFirst(''); setNewLast(''); setNewPhone(''); setNewEmail(''); setNewPassword(''); setNewWage('');
-    setNewPropertyIds([]); setLoginEnabled(false);
+    setNewPropertyIds([]); setLoginEnabled(false); setNewPersonalnummer('');
     setCreatingAccount(false);
     onRefresh();
     syncSeats();
@@ -152,6 +155,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
     setEditFirst(emp.first_name); setEditLast(emp.last_name); setEditPhone(emp.phone);
     setEditWage(emp.hourly_wage != null ? String(emp.hourly_wage) : '');
     setEditPropertyIds(employeeProperties.filter(ep => ep.employee_id === emp.id).map(ep => ep.property_id));
+    setEditPersonalnummer(emp.datev_personalnummer || '');
     setEditModal(emp); setMenuOpen(null);
   };
 
@@ -160,6 +164,7 @@ export function Employees({ company, refreshKey, onRefresh }: EmployeesProps) {
     const updatePayload: Record<string, unknown> = {
       first_name: editFirst, last_name: editLast, phone: editPhone,
       hourly_wage: editWage ? parseFloat(editWage) : null,
+      datev_personalnummer: editPersonalnummer || null,
     };
     const { error } = await supabase.from('employees').update(updatePayload).eq('id', editModal.id);
     if (error) { addToast('Fehler beim Speichern', 'error'); return; }
@@ -425,6 +430,10 @@ const handleDelete = async (emp: Employee) => {
               <input type="number" step="0.01" min="0" value={newWage} onChange={e => setNewWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
             </div>
             <div>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Personalnummer beim Steuerberater (optional)</label>
+              <input type="text" value={newPersonalnummer} onChange={e => setNewPersonalnummer(e.target.value)} placeholder="für DATEV-Export" className="input-field" />
+            </div>
+            <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Bekannte Objekte</label>
               {renderPropertyChips(newPropertyIds, setNewPropertyIds)}
             </div>
@@ -484,6 +493,10 @@ const handleDelete = async (emp: Employee) => {
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Stundenlohn (EUR)</label>
               <input type="number" step="0.01" min="0" value={editWage} onChange={e => setEditWage(e.target.value)} placeholder="z.B. 14.50" className="input-field" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Personalnummer beim Steuerberater (optional)</label>
+              <input type="text" value={editPersonalnummer} onChange={e => setEditPersonalnummer(e.target.value)} placeholder="für DATEV-Export" className="input-field" />
             </div>
             <div>
               <label className="block text-sm font-medium text-[#0F172A] mb-1.5">Bekannte Objekte</label>

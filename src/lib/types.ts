@@ -20,6 +20,14 @@ export interface Company {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   stripe_subscription_item_id: string | null;
+  // DATEV Lohn und Gehalt: Beraternummer/Mandantennummer sind pro Steuerberater-
+  // Mandat fest vergeben, die Lohnart-Nummer für den Stundenlohn wird beim
+  // Steuerberater individuell im ASCII-Import-Assistenten konfiguriert — daher
+  // müssen alle drei einmalig mit dem Steuerberater abgestimmt werden, bevor
+  // der DATEV-Export nutzbar ist.
+  datev_beraternummer: string | null;
+  datev_mandantennummer: string | null;
+  datev_lohnart_stunden: string | null;
 }
 
 export interface Employee {
@@ -33,6 +41,10 @@ export interface Employee {
   email: string | null;
   hourly_wage: number | null;
   created_at: string;
+  // Personalnummer, wie sie beim Steuerberater in DATEV Lohn und Gehalt
+  // hinterlegt ist — ohne Übereinstimmung kann der Steuerberater die
+  // exportierte Zeile keinem bestehenden Mitarbeiter zuordnen.
+  datev_personalnummer: string | null;
 }
 
 export interface Property {

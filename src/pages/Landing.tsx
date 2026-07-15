@@ -537,7 +537,7 @@ function ModulesSection() {
         eyebrowColor="#0F172A"
         title="Zeiterfassung, die sich von selbst rechnet"
         text="Jeder Check-in und Check-out landet automatisch in der Abrechnung — mit GPS- und Foto-Nachweis, fertig für Steuerberater und Mitarbeiter."
-        bullets={['DATEV-Export mit einem Klick', 'Lohnabrechnung als PDF pro Mitarbeiter', 'Keine abgetippten Stundenzettel mehr']}
+        bullets={['DATEV-Export nach einmaliger Einrichtung mit dem Steuerberater', 'Lohnabrechnung als PDF pro Mitarbeiter', 'Keine abgetippten Stundenzettel mehr']}
         visual={<BillingDemo />}
         reverse
       />
