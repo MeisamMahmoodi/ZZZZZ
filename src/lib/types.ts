@@ -64,6 +64,9 @@ export interface Property {
   // und Margenberechnung im Controlling. Optional, da bestehende Objekte
   // das Feld noch nicht gepflegt haben.
   monthly_price?: number | null;
+  // Unrateter Token für den öffentlichen Kunden-Link (/kunde/:token) — wird
+  // per DB-Default automatisch vergeben, nie manuell gesetzt.
+  public_token: string;
 }
 
 export interface EmployeeProperty {

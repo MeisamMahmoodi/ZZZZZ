@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Plus, MapPin, MoreVertical, Pencil, Trash2, Building2, GraduationCap, ShoppingCart, HeartPulse, CalendarPlus, Euro } from 'lucide-react';
+import { Plus, MapPin, MoreVertical, Pencil, Trash2, Building2, GraduationCap, ShoppingCart, HeartPulse, CalendarPlus, Euro, Link2 } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { Modal } from '../../components/shared/Modal';
 import { useToast } from '../../components/shared/Toast';
@@ -105,6 +105,17 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
     setDeleteConfirm(null); setMenuOpen(null); onRefresh(); addToast('Objekt gelöscht');
   };
 
+  const handleCopyCustomerLink = async (prop: Property) => {
+    const link = `${window.location.origin}/kunde/${prop.public_token}`;
+    try {
+      await navigator.clipboard.writeText(link);
+      addToast('Kunden-Link kopiert — direkt an Facility Manager o.ä. weitergeben');
+    } catch {
+      addToast('Link konnte nicht kopiert werden', 'error');
+    }
+    setMenuOpen(null);
+  };
+
   const resetForm = () => {
     setNewName(''); setNewAddress({ formatted: '', lat: null, lng: null }); setNewType('office'); setNewPrice('');
   };
@@ -158,6 +169,7 @@ export function Properties({ company, refreshKey, onRefresh, onNavigate }: Prope
                     <div className="absolute right-0 top-9 bg-white rounded-xl shadow-[0_10px_15px_-3px_rgba(0,0,0,0.08),0_4px_6px_-4px_rgba(0,0,0,0.04)] border border-[#E2E8F0]/60 py-1.5 z-20 min-w-[180px] animate-scale-in">
                       <button onClick={() => openEditModal(prop)} className="w-full text-left px-4 py-2.5 text-sm text-[#0F172A] hover:bg-[#F8FAFC] transition-colors flex items-center gap-2.5"><Pencil size={14} className="text-[#94A3B8]" /> Bearbeiten</button>
                       <button onClick={() => { setMenuOpen(null); onNavigate?.('assignments'); }} className="w-full text-left px-4 py-2.5 text-sm text-[#16A34A] hover:bg-[#F0FDF4] transition-colors flex items-center gap-2.5"><CalendarPlus size={14} /> Einsatz erstellen</button>
+                      <button onClick={() => handleCopyCustomerLink(prop)} className="w-full text-left px-4 py-2.5 text-sm text-[#2563EB] hover:bg-[#EFF6FF] transition-colors flex items-center gap-2.5"><Link2 size={14} /> Kunden-Link kopieren</button>
                       <div className="mx-3 my-1 h-px bg-[#F1F5F9]" />
                       <button onClick={() => { setDeleteConfirm(prop); setMenuOpen(null); }} className="w-full text-left px-4 py-2.5 text-sm text-[#EF4444] hover:bg-[#FEF2F2] transition-colors flex items-center gap-2.5"><Trash2 size={14} /> Löschen</button>
                     </div>

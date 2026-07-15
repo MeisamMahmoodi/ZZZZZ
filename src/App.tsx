@@ -25,6 +25,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Pricing } from './pages/Pricing';
 import { Landing } from './pages/Landing';
 import { PaywallModal } from './components/shared/PaywallModal';
+import { CustomerPortal } from './pages/CustomerPortal';
 
 function OwnerApp({ company }: { company: Company & { paid_until: string | null } }) {
   const [page, setPage] = useState('dashboard');
@@ -296,6 +297,14 @@ function AppRoutes() {
 
     return () => { supabase.removeChannel(channel); };
   }, [companyId, role, signOut]);
+
+  // Öffentlicher Kunden-Link — muss für jeden funktionieren, auch für Besucher
+  // ohne Login oder mit einer fremden Session im selben Browser. Alle Hooks
+  // oben sind schon deklariert, dieser Return kommt erst danach (React-Regel:
+  // Hooks nie nach einem bedingten Return aufrufen).
+  if (typeof window !== 'undefined' && window.location.pathname.startsWith('/kunde/')) {
+    return <CustomerPortal />;
+  }
 
   if (suspended) {
     return <AccountSuspendedScreen />;
